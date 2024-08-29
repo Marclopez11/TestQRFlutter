@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import '../models/map_item.dart';
 
 class ItemDetailPage extends StatelessWidget {
@@ -14,12 +12,20 @@ class ItemDetailPage extends StatelessWidget {
       appBar: AppBar(title: Text(item.title)),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Image.network(
-              'https://picsum.photos/400/200',
+              item.imageUrl,
               height: 200,
+              width: double.infinity,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 200,
+                  color: Colors.grey[300],
+                  child: Center(child: Text('Error al cargar la imagen')),
+                );
+              },
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -28,42 +34,14 @@ class ItemDetailPage extends StatelessWidget {
                 children: [
                   Text(
                     item.title,
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(item.description),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 300,
-                    child: FlutterMap(
-                      options: MapOptions(
-                        center: item.position,
-                        zoom: 13,
-                        minZoom: 5,
-                        maxZoom: 18,
-                        interactiveFlags:
-                            InteractiveFlag.all & ~InteractiveFlag.rotate,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          subdomains: ['a', 'b', 'c'],
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: item.position,
-                              builder: (ctx) => const Icon(
-                                Icons.location_on,
-                                color: Colors.red,
-                                size: 40,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Ubicación: ${item.position.latitude}, ${item.position.longitude}',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),

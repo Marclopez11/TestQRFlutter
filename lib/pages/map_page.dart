@@ -32,9 +32,24 @@ class _MapPageState extends State<MapPage> {
         .get(Uri.parse('https://felanitx.drupal.auroracities.com/lloc'));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
+
+      // Fetch categories
+      final categoriesResponse = await http.get(
+          Uri.parse('https://felanitx.drupal.auroracities.com/categories'));
+      final List<dynamic> categoriesData = json.decode(categoriesResponse.body);
+
+      Map<int, String> categoryMap = {};
+      for (var category in categoriesData) {
+        int tid = category['tid'][0]['value'];
+        String name = category['name'][0]['value'];
+        categoryMap[tid] = name;
+      }
+
       setState(() {
         _mapItems = data.map((item) {
           final location = item['field_place_location'][0];
+          final image = item['field_place_main_image'][0];
+          final categoryId = item['field_place_categoria'][0]['target_id'];
           return MapItem(
             id: item['nid'][0]['value'].toString(),
             title: item['title'][0]['value'],
@@ -43,6 +58,9 @@ class _MapPageState extends State<MapPage> {
               double.parse(location['lat'].toString()),
               double.parse(location['lng'].toString()),
             ),
+            imageUrl: image['url'],
+            categoryId: categoryId,
+            categoryName: categoryMap[categoryId] ?? 'Unknown',
           );
         }).toList();
         _centerPosition = _calculateCenterPosition();
