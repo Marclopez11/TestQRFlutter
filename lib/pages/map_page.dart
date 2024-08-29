@@ -16,6 +16,9 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState extends State<MapPage> {
   List<MapItem> _mapItems = [];
+  List<MapItem> _filteredItems = [];
+  List<String> _categories = ['All'];
+  String? _selectedCategory;
   LatLng _centerPosition = LatLng(0, 0);
   double _zoomLevel = 5.0;
   late MapController _mapController;
@@ -63,11 +66,27 @@ class _MapPageState extends State<MapPage> {
             categoryName: categoryMap[categoryId] ?? 'Unknown',
           );
         }).toList();
+        _filteredItems = _mapItems;
+        _categories = ['All'] + categoryMap.values.toSet().toList();
         _centerPosition = _calculateCenterPosition();
         _zoomLevel = _calculateZoomLevel();
         _mapController.move(_centerPosition, _zoomLevel);
       });
     }
+  }
+
+  void _filterByCategory(String category) {
+    setState(() {
+      _selectedCategory = category == 'All' ? null : category;
+      _filteredItems = _selectedCategory == null
+          ? _mapItems
+          : _mapItems
+              .where((item) => item.categoryName == _selectedCategory)
+              .toList();
+      _centerPosition = _calculateCenterPosition();
+      _zoomLevel = _calculateZoomLevel();
+      _mapController.move(_centerPosition, _zoomLevel);
+    });
   }
 
   LatLng _calculateCenterPosition() {
@@ -125,38 +144,63 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        center: _centerPosition,
-        zoom: _zoomLevel,
-        minZoom: 3,
-        maxZoom: 18,
-        interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-      ),
+    return Column(
       children: [
-        TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: _categories.map((category) {
+              return Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  onPressed: () => _filterByCategory(category),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        category == _selectedCategory ? Colors.blue : null,
+                  ),
+                  child: Text(category),
+                ),
+              );
+            }).toList(),
+          ),
         ),
-        MarkerLayer(
-          markers: _mapItems.map((item) {
-            return Marker(
-              point: item.position,
-              builder: (ctx) => GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ItemDetailPage(item: item),
+        Expanded(
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              center: _centerPosition,
+              zoom: _zoomLevel,
+              minZoom: 3,
+              maxZoom: 18,
+              interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: ['a', 'b', 'c'],
+              ),
+              MarkerLayer(
+                markers: _filteredItems.map((item) {
+                  return Marker(
+                    point: item.position,
+                    builder: (ctx) => GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ItemDetailPage(item: item),
+                          ),
+                        );
+                      },
+                      child: const Icon(Icons.location_on,
+                          color: Colors.red, size: 40),
                     ),
                   );
-                },
-                child:
-                    const Icon(Icons.location_on, color: Colors.red, size: 40),
+                }).toList(),
               ),
-            );
-          }).toList(),
+            ],
+          ),
         ),
       ],
     );
