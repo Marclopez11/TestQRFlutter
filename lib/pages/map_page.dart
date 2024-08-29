@@ -19,8 +19,8 @@ class _MapPageState extends State<MapPage> {
   List<MapItem> _filteredItems = [];
   List<String> _categories = ['All'];
   String? _selectedCategory;
-  LatLng _centerPosition = LatLng(0, 0);
-  double _zoomLevel = 5.0;
+  LatLng _centerPosition = LatLng(39.4697, 3.1483); // Coordenadas de Felanitx
+  double _zoomLevel = 14.0; // Nivel de zoom fijo
   late MapController _mapController;
 
   @override
@@ -68,9 +68,9 @@ class _MapPageState extends State<MapPage> {
         }).toList();
         _filteredItems = _mapItems;
         _categories = ['All'] + categoryMap.values.toSet().toList();
-        _centerPosition = _calculateCenterPosition();
-        _zoomLevel = _calculateZoomLevel();
-        _mapController.move(_centerPosition, _zoomLevel);
+
+        // Calculate initial map view
+        _updateMapView(useAllItems: true);
       });
     }
   }
@@ -83,63 +83,53 @@ class _MapPageState extends State<MapPage> {
           : _mapItems
               .where((item) => item.categoryName == _selectedCategory)
               .toList();
-      _centerPosition = _calculateCenterPosition();
-      _zoomLevel = _calculateZoomLevel();
-      _mapController.move(_centerPosition, _zoomLevel);
+      _updateMapView();
     });
   }
 
-  LatLng _calculateCenterPosition() {
-    if (_mapItems.isEmpty) {
-      return LatLng(0, 0);
+  void _updateMapView({bool useAllItems = false}) {
+    List<MapItem> itemsToUse = useAllItems ? _mapItems : _filteredItems;
+
+    if (itemsToUse.isNotEmpty) {
+      double minLat = itemsToUse[0].position.latitude;
+      double maxLat = itemsToUse[0].position.latitude;
+      double minLng = itemsToUse[0].position.longitude;
+      double maxLng = itemsToUse[0].position.longitude;
+
+      for (var item in itemsToUse) {
+        minLat = min(minLat, item.position.latitude);
+        maxLat = max(maxLat, item.position.latitude);
+        minLng = min(minLng, item.position.longitude);
+        maxLng = max(maxLng, item.position.longitude);
+      }
+
+      double centerLat = (minLat + maxLat) / 2;
+      double centerLng = (minLng + maxLng) / 2;
+      LatLng centerPosition = LatLng(centerLat, centerLng);
+
+      double zoomLevel = _calculateZoomLevel(minLat, maxLat, minLng, maxLng);
+
+      _mapController.move(centerPosition, zoomLevel);
     }
-
-    double minLatitude = _mapItems[0].position.latitude;
-    double maxLatitude = _mapItems[0].position.latitude;
-    double minLongitude = _mapItems[0].position.longitude;
-    double maxLongitude = _mapItems[0].position.longitude;
-
-    for (var item in _mapItems) {
-      minLatitude = min(minLatitude, item.position.latitude);
-      maxLatitude = max(maxLatitude, item.position.latitude);
-      minLongitude = min(minLongitude, item.position.longitude);
-      maxLongitude = max(maxLongitude, item.position.longitude);
-    }
-
-    double centerLatitude = (minLatitude + maxLatitude) / 2;
-    double centerLongitude = (minLongitude + maxLongitude) / 2;
-
-    return LatLng(centerLatitude, centerLongitude);
   }
 
-  double _calculateZoomLevel() {
-    if (_mapItems.isEmpty) {
-      return 5;
-    }
+  double _calculateZoomLevel(
+      double minLat, double maxLat, double minLng, double maxLng) {
+    const int zoomMax = 18;
+    const int zoomMin = 3;
 
-    double minLatitude = _mapItems[0].position.latitude;
-    double maxLatitude = _mapItems[0].position.latitude;
-    double minLongitude = _mapItems[0].position.longitude;
-    double maxLongitude = _mapItems[0].position.longitude;
+    double latDiff = maxLat - minLat;
+    double lngDiff = maxLng - minLng;
+    double maxDiff = max(latDiff, lngDiff);
 
-    for (var item in _mapItems) {
-      minLatitude = min(minLatitude, item.position.latitude);
-      maxLatitude = max(maxLatitude, item.position.latitude);
-      minLongitude = min(minLongitude, item.position.longitude);
-      maxLongitude = max(maxLongitude, item.position.longitude);
-    }
+    // Ajustamos estos valores para obtener un zoom más alejado
+    if (maxDiff < 0.01)
+      return 14.0; // Zoom más alejado para diferencias pequeñas
+    if (maxDiff > 1) return zoomMin.toDouble();
 
-    double latitudeDelta = maxLatitude - minLatitude;
-    double longitudeDelta = maxLongitude - minLongitude;
-
-    double zoomLevel = 5;
-
-    if (latitudeDelta > 0 && longitudeDelta > 0) {
-      double maxDelta = max(latitudeDelta, longitudeDelta);
-      zoomLevel = 18 - log(maxDelta) / log(2);
-    }
-
-    return zoomLevel.clamp(3, 18);
+    // Ajustamos la fórmula para obtener un zoom más alejado en general
+    double zoomLevel = 15 - log(maxDiff * 111) / log(2);
+    return max(zoomLevel.clamp(zoomMin.toDouble(), zoomMax.toDouble()), 10.0);
   }
 
   @override

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/map_item.dart';
 
 class ItemDetailPage extends StatelessWidget {
@@ -39,9 +41,30 @@ class ItemDetailPage extends StatelessWidget {
                   SizedBox(height: 8),
                   Text(item.description),
                   SizedBox(height: 16),
-                  Text(
-                    'Ubicación: ${item.position.latitude}, ${item.position.longitude}',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  SizedBox(
+                    height: 200,
+                    child: FlutterMap(
+                      options: MapOptions(
+                        center: item.position,
+                        zoom: 15.0,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          subdomains: ['a', 'b', 'c'],
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: item.position,
+                              builder: (ctx) => Icon(Icons.location_on,
+                                  color: Colors.red, size: 40),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
