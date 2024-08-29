@@ -28,19 +28,20 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _fetchMapItems() async {
-    final response = await http.get(Uri.parse(
-        'https://jo3wdm44wdd7ij7hjauasqvc2i0fgzey.lambda-url.eu-central-1.on.aws/'));
+    final response = await http
+        .get(Uri.parse('https://felanitx.drupal.auroracities.com/lloc'));
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       setState(() {
         _mapItems = data.map((item) {
+          final location = item['field_place_location'][0];
           return MapItem(
-            id: item['id'].toString(),
-            title: item['name'],
-            description: item['description'],
+            id: item['nid'][0]['value'].toString(),
+            title: item['title'][0]['value'],
+            description: item['field_place_description'][0]['value'],
             position: LatLng(
-              item['coordinates']['latitude'],
-              item['coordinates']['longitude'],
+              double.parse(location['lat'].toString()),
+              double.parse(location['lng'].toString()),
             ),
           );
         }).toList();
