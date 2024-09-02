@@ -60,7 +60,9 @@ class _HomePageState extends State<HomePage> {
           );
         }).toList();
 
-        categories = ['All'] + categoryMap.values.toSet().toList();
+        // Obtener las categorías únicas de los ítems
+        categories =
+            ['All'] + items.map((item) => item.categoryName).toSet().toList();
       });
     }
   }

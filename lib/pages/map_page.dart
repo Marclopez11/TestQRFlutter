@@ -69,10 +69,12 @@ class _MapPageState extends State<MapPage> {
             categoryName: categoryMap[categoryId] ?? 'Unknown',
           );
         }).toList();
-        _filteredItems = _mapItems;
-        _categories = ['All'] + categoryMap.values.toSet().toList();
 
-        // Calculate initial map view
+        // Obtener las categorías únicas de los ítems
+        _categories = ['All'] +
+            _mapItems.map((item) => item.categoryName).toSet().toList();
+
+        _filteredItems = _mapItems;
         _updateMapView(useAllItems: true);
       });
     }
