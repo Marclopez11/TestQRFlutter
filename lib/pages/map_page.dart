@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -6,6 +7,8 @@ import 'dart:convert';
 import 'dart:math';
 import '../models/map_item.dart';
 import 'item_detail_page.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -132,6 +135,29 @@ class _MapPageState extends State<MapPage> {
     return max(zoomLevel.clamp(zoomMin.toDouble(), zoomMax.toDouble()), 10.0);
   }
 
+  String get _mapTileUrl {
+    if (Platform.isIOS) {
+      print('iOS map tile URL: https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+      return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    } else if (Platform.isAndroid) {
+      return 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+    } else {
+      return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+  }
+
+  void _openInMaps(MapItem item) async {
+    final url = Platform.isIOS
+        ? 'http://maps.apple.com/?daddr=${item.position.latitude},${item.position.longitude}'
+        : 'https://www.google.com/maps/dir/?api=1&destination=${item.position.latitude},${item.position.longitude}';
+
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      print('Could not launch $url');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -166,33 +192,75 @@ class _MapPageState extends State<MapPage> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                subdomains: ['a', 'b', 'c'],
+                urlTemplate: _mapTileUrl,
+                subdomains:
+                    Platform.isAndroid ? ['0', '1', '2', '3'] : ['a', 'b', 'c'],
               ),
-              MarkerLayer(
-                markers: _filteredItems.map((item) {
-                  return Marker(
-                    point: item.position,
-                    builder: (ctx) => GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ItemDetailPage(item: item),
+              PopupMarkerLayerWidget(
+                options: PopupMarkerLayerOptions(
+                  markers: _filteredItems.map((item) {
+                    return Marker(
+                      point: item.position,
+                      width: 40,
+                      height: 40,
+                      builder: (_) => const Icon(Icons.location_on, size: 40),
+                      anchorPos: AnchorPos.align(AnchorAlign.top),
+                    );
+                  }).toList(),
+                  popupDisplayOptions: PopupDisplayOptions(
+                    builder: (BuildContext context, Marker marker) {
+                      final item = _filteredItems.firstWhere(
+                        (item) => item.position == marker.point,
+                      );
+                      return Container(
+                        width: 200,
+                        child: Card(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ListTile(
+                                title: Text(item.title),
+                                subtitle: Text(item.categoryName),
+                              ),
+                              ButtonBar(
+                                children: [
+                                  TextButton(
+                                    child: Text('Ver detalle'),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ItemDetailPage(item: item),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: Text('Abrir en mapa'),
+                                    onPressed: () {
+                                      _openInMaps(item);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                      child: const Icon(Icons.location_on,
-                          color: Colors.red, size: 40),
-                    ),
-                  );
-                }).toList(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ],
           ),
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
