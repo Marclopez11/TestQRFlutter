@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import '../models/map_item.dart';
 
+/// La classe `ItemDetailPage` és un `StatelessWidget` que representa la pàgina de detall d'un element del mapa.
 class ItemDetailPage extends StatelessWidget {
   final MapItem item;
 
