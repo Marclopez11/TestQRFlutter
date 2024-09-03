@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/map_item.dart';
+import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 
 /// La classe `ItemDetailPage` és un `StatelessWidget` que representa la pàgina de detall d'un element del mapa.
 class ItemDetailPage extends StatelessWidget {
   final MapItem item;
 
   const ItemDetailPage({Key? key, required this.item}) : super(key: key);
+
+  void _openInMaps() async {
+    final url =
+        'https://www.google.com/maps/dir/?api=1&destination=${item.position.latitude},${item.position.longitude}';
+
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      print('Could not launch $url');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +67,101 @@ class ItemDetailPage extends StatelessWidget {
                               'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                           subdomains: ['a', 'b', 'c'],
                         ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              point: item.position,
-                              builder: (ctx) => Icon(Icons.location_on,
-                                  color: Colors.red, size: 40),
+                        PopupMarkerLayerWidget(
+                          options: PopupMarkerLayerOptions(
+                            markers: [
+                              Marker(
+                                point: item.position,
+                                width: 40,
+                                height: 40,
+                                builder: (_) =>
+                                    const Icon(Icons.location_on, size: 40),
+                                anchorPos: AnchorPos.align(AnchorAlign.top),
+                              ),
+                            ],
+                            popupDisplayOptions: PopupDisplayOptions(
+                              builder: (BuildContext context, Marker marker) {
+                                return Container(
+                                  width: 150,
+                                  margin: EdgeInsets.only(bottom: 10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.5),
+                                        spreadRadius: 1,
+                                        blurRadius: 3,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.vertical(
+                                                top: Radius.circular(8.0)),
+                                            child: Image.network(
+                                              item.imageUrl,
+                                              width: 150,
+                                              height: 80,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  item.title,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14.0,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4.0),
+                                                Text(
+                                                  item.categoryName,
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12.0,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 8.0),
+                                                Center(
+                                                  child: IconButton(
+                                                    onPressed: _openInMaps,
+                                                    icon: Icon(Icons.map,
+                                                        color: Colors.green,
+                                                        size: 30),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Positioned(
+                                        top: -12,
+                                        right: -12,
+                                        child: IconButton(
+                                          icon: Icon(Icons.close,
+                                              color: Colors.red, size: 20),
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

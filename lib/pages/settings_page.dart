@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -13,19 +16,42 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _bluetoothEnabled = false;
   bool _qrScanningEnabled = false;
 
+  BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
+  late StreamSubscription<BluetoothAdapterState> _adapterStateSubscription;
+
   @override
   void initState() {
     super.initState();
     _checkBluetoothStatus();
     _checkCameraPermission();
+    _adapterStateSubscription = FlutterBluePlus.adapterState.listen((state) {
+      _adapterState = state;
+      if (mounted) {
+        setState(() {
+          _bluetoothEnabled = state == BluetoothAdapterState.on;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _adapterStateSubscription.cancel();
+    super.dispose();
   }
 
   Future<void> _checkBluetoothStatus() async {
-    // TODO: Verificar el estado real del Bluetooth y actualizar _bluetoothEnabled
-    // Por ahora, simulando que el Bluetooth está habilitado
-    setState(() {
-      _bluetoothEnabled = true;
-    });
+    try {
+      _adapterState = await FlutterBluePlus.adapterState.first;
+      setState(() {
+        _bluetoothEnabled = _adapterState == BluetoothAdapterState.on;
+      });
+    } catch (e) {
+      print('Error al obtener el estado del Bluetooth: $e');
+      setState(() {
+        _bluetoothEnabled = false;
+      });
+    }
   }
 
   Future<void> _checkCameraPermission() async {
@@ -35,15 +61,39 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
-  Future<void> _toggleBluetooth(bool value) async {
-    if (value) {
-      // TODO: Abrir configuración de Bluetooth
+  void _toggleBluetooth() async {
+    if (!_bluetoothEnabled) {
+      _showBluetoothDisabledDialog();
     } else {
-      // TODO: Desactivar Bluetooth
+      // TODO: Implementar lógica para desconectar beacons si es necesario
+      setState(() {
+        _bluetoothEnabled = false;
+      });
     }
-    setState(() {
-      _bluetoothEnabled = value;
-    });
+  }
+
+  void _showBluetoothDisabledDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Bluetooth desactivado'),
+        content: const Text(
+            'Para conectarse a los beacons, necesitas activar el Bluetooth en los ajustes del dispositivo.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text('Abrir ajustes'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _toggleQRScanning(bool value) async {
@@ -88,6 +138,10 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  void _openBluetoothSettings() {
+    openAppSettings();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,10 +154,9 @@ class _SettingsPageState extends State<SettingsPage> {
             (value) => setState(() => _notificationsEnabled = value),
           ),
           _buildSectionTitle('BLUETOOTH'),
-          _buildSwitchTile(
-            'Habilitar Bluetooth para Beacons',
+          _buildBluetoothTile(
+            'Bluetooth para Beacons',
             _bluetoothEnabled,
-            (value) => _toggleBluetooth(value),
           ),
           _buildSectionTitle('ESCANEO DE CÓDIGO QR'),
           _buildPermissionTile(
@@ -149,6 +202,18 @@ class _SettingsPageState extends State<SettingsPage> {
       onTap: () {
         openAppSettings();
       },
+    );
+  }
+
+  Widget _buildBluetoothTile(String title, bool value) {
+    return ListTile(
+      title: Text(title),
+      trailing: Icon(
+        value ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
+        color: value ? Colors.green : Colors.red,
+      ),
+      subtitle: Text(value ? 'Activado' : 'Desactivado'),
+      onTap: _openBluetoothSettings,
     );
   }
 }

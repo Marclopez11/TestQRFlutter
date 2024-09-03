@@ -216,38 +216,82 @@ class _MapPageState extends State<MapPage> {
                       );
                       return Container(
                         width: 200,
-                        child: Card(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ListTile(
-                                title: Text(item.title),
-                                subtitle: Text(item.categoryName),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(8.0)),
+                              child: Image.network(
+                                item.imageUrl,
+                                width: 200,
+                                height: 100,
+                                fit: BoxFit.cover,
                               ),
-                              ButtonBar(
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  TextButton(
-                                    child: Text('Ver detalle'),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ItemDetailPage(item: item),
-                                        ),
-                                      );
-                                    },
+                                  Text(
+                                    item.title,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16.0,
+                                    ),
                                   ),
-                                  TextButton(
-                                    child: Text('Abrir en mapa'),
-                                    onPressed: () {
-                                      _openInMaps(item);
-                                    },
+                                  SizedBox(height: 4.0),
+                                  Text(
+                                    item.categoryName,
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14.0,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8.0),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ItemDetailPage(item: item),
+                                            ),
+                                          );
+                                        },
+                                        icon: Icon(Icons.info),
+                                        color: Colors.blue,
+                                      ),
+                                      IconButton(
+                                        onPressed: () {
+                                          _openInMaps(item);
+                                        },
+                                        icon: Icon(Icons.map),
+                                        color: Colors.green,
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       );
                     },
