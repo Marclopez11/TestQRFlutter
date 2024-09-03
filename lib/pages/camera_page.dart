@@ -3,6 +3,7 @@ import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async'; // Add this import
+import 'package:flutter/cupertino.dart'; // Add this import
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -47,8 +48,16 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     });
     if (_cameraPermissionGranted) {
       _initializeCamera();
-    } else {
-      controller?.stopCamera();
+    }
+  }
+
+  Future<void> _requestCameraPermission() async {
+    final status = await Permission.camera.request();
+    setState(() {
+      _cameraPermissionGranted = status.isGranted;
+    });
+    if (_cameraPermissionGranted) {
+      _initializeCamera();
     }
   }
 
@@ -102,58 +111,114 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       },
       child: Scaffold(
         body: _cameraPermissionGranted
-            ? Column(
-                children: <Widget>[
-                  Expanded(
-                    flex: 4,
-                    child: QRView(
-                      key: qrKey,
-                      onQRViewCreated: _onQRViewCreated,
-                      overlay: QrScannerOverlayShape(
-                        borderColor: Colors.red,
-                        borderRadius: 10,
-                        borderLength: 30,
-                        borderWidth: 10,
-                        cutOutSize: 300,
-                      ),
-                    ),
+            ? _buildQRScanner()
+            : _buildPermissionRequest(),
+      ),
+    );
+  }
+
+  Widget _buildQRScanner() {
+    return Column(
+      children: <Widget>[
+        Expanded(
+          flex: 4,
+          child: Stack(
+            children: [
+              QRView(
+                key: qrKey,
+                onQRViewCreated: _onQRViewCreated,
+              ),
+              Container(
+                decoration: ShapeDecoration(
+                  shape: QrScannerOverlayShape(
+                    borderColor: Theme.of(context).primaryColor,
+                    borderRadius: 10,
+                    borderLength: 30,
+                    borderWidth: 10,
+                    cutOutSize: 300,
                   ),
-                  Expanded(
-                    flex: 1,
-                    child: Center(
-                      child: _showButton
-                          ? ElevatedButton(
-                              onPressed: _launchURL,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 40,
-                                  vertical: 16,
-                                ),
-                              ),
-                              child: const Text(
-                                'PULSA AQUÍ',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            )
-                          : const Text('Escanea un código QR'),
-                    ),
-                  )
-                ],
-              )
-            : Center(
-                child: ElevatedButton(
-                  onPressed: _requestCameraPermission,
-                  child: const Text('Activar cámara'),
                 ),
               ),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: Center(
+            child: _showButton
+                ? ElevatedButton(
+                    onPressed: _launchURL,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 16,
+                      ),
+                    ),
+                    child: const Text(
+                      'PULSA AQUÍ',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : const Text('Escanea un código QR'),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildPermissionRequest() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.camera,
+              size: 80,
+              color: Theme.of(context).primaryColor,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Permiso de cámara requerido',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Para escanear códigos QR, necesitas permitir el acceso a la cámara en los ajustes de la aplicación.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _requestCameraPermission,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 16,
+                ),
+              ),
+              child: const Text(
+                'Activar cámara',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -170,31 +235,19 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     }
   }
 
-  void _requestCameraPermission() async {
-    final status = await Permission.camera.request();
-    setState(() {
-      _cameraPermissionGranted = status.isGranted;
-    });
-    if (_cameraPermissionGranted) {
-      _initializeCamera();
-    } else {
-      _showPermissionDeniedDialog();
-    }
-  }
-
   void _showPermissionDeniedDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('Permiso de cámara requerido'),
+        title: const Text('Permiso denegado'),
         content: const Text(
-            'Para escanear códigos QR, necesitas permitir el acceso a la cámara en los ajustes de la aplicación.'),
+            'Sin acceso a la cámara no podrás escanear códigos QR. Por favor, activa el permiso en los ajustes de la aplicación.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancelar'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
