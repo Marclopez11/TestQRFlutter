@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async'; // Add this import
 import 'package:flutter/cupertino.dart'; // Add this import
+import 'dart:math'; // Add this import at the top of the file
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -19,6 +20,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   bool _cameraPermissionGranted = false;
   bool _showButton = false;
   bool _isQRInitialized = false;
+  String _lastScannedLink = '';
+  String _lastNotifiedLink = '';
 
   @override
   void initState() {
@@ -72,10 +75,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
     controller.scannedDataStream.listen((scanData) {
-      setState(() {
-        scannedLink = scanData.code!;
-        _showButton = true;
-      });
+      if (scanData.code != null && scanData.code != _lastScannedLink) {
+        setState(() {
+          scannedLink = scanData.code!;
+          _lastScannedLink = scannedLink;
+          _showButton = true;
+        });
+        if (scannedLink != _lastNotifiedLink) {
+          _showNewQRScannedNotification();
+          _lastNotifiedLink = scannedLink;
+        }
+      }
     }, onError: (error) => _onQRError(controller));
 
     // Usar Future.delayed para asegurarse de que el controlador esté completamente inicializado
@@ -88,6 +98,31 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         });
       }
     });
+  }
+
+  void _showNewQRScannedNotification() {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.qr_code, color: Colors.white),
+            SizedBox(width: 16),
+            Text(
+              '¡Nuevo QR detectado!',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        backgroundColor: Theme.of(context).primaryColor,
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: EdgeInsets.all(8),
+      ),
+    );
   }
 
   void _onQRError(QRViewController controller) {
@@ -110,40 +145,59 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         return true;
       },
       child: Scaffold(
-        body: _cameraPermissionGranted
-            ? _buildQRScanner()
-            : _buildPermissionRequest(),
+        // Removed AppBar
+        body: SafeArea(
+          child: _cameraPermissionGranted
+              ? _buildQRScanner()
+              : _buildPermissionRequest(),
+        ),
       ),
     );
   }
 
   Widget _buildQRScanner() {
-    return Column(
+    return Stack(
       children: <Widget>[
-        Expanded(
-          flex: 4,
-          child: Stack(
-            children: [
-              QRView(
-                key: qrKey,
-                onQRViewCreated: _onQRViewCreated,
-              ),
-              Container(
-                decoration: ShapeDecoration(
-                  shape: QrScannerOverlayShape(
-                    borderColor: Theme.of(context).primaryColor,
-                    borderRadius: 10,
-                    borderLength: 30,
-                    borderWidth: 10,
-                    cutOutSize: 300,
-                  ),
-                ),
-              ),
-            ],
+        QRView(
+          key: qrKey,
+          onQRViewCreated: _onQRViewCreated,
+        ),
+        Container(
+          decoration: ShapeDecoration(
+            shape: QrScannerOverlayShape(
+              borderColor: Theme.of(context).primaryColor,
+              borderRadius: 10,
+              borderLength: 30,
+              borderWidth: 10,
+              cutOutSize: MediaQuery.of(context).size.width * 0.8,
+            ),
           ),
         ),
-        Expanded(
-          flex: 1,
+        Positioned(
+          bottom: 20,
+          left: 0,
+          right: 0,
+          child: Text(
+            'Coloca el código QR dentro del marco',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(
+                  blurRadius: 4,
+                  color: Colors.black,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 80,
+          left: 0,
+          right: 0,
           child: Center(
             child: _showButton
                 ? ElevatedButton(
@@ -152,24 +206,51 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                       backgroundColor: Theme.of(context).primaryColor,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(30),
                       ),
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 16,
+                        horizontal: 50,
+                        vertical: 20,
                       ),
+                      elevation: 5,
                     ),
                     child: const Text(
-                      'PULSA AQUÍ',
+                      'ABRIR ENLACE',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
                       ),
                     ),
                   )
-                : const Text('Escanea un código QR'),
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.qr_code_scanner,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Escanea un código QR',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 4,
+                              color: Colors.black,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -178,46 +259,58 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              CupertinoIcons.camera,
-              size: 80,
-              color: Theme.of(context).primaryColor,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Permiso de cámara requerido',
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Para escanear códigos QR, necesitas permitir el acceso a la cámara en los ajustes de la aplicación.',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _requestCameraPermission,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+        child: Card(
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  CupertinoIcons.camera,
+                  size: 80,
+                  color: Theme.of(context).primaryColor,
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 16,
+                const SizedBox(height: 24),
+                Text(
+                  'Permiso de cámara requerido',
+                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              child: const Text(
-                'Activar cámara',
-                style: TextStyle(fontSize: 18),
-              ),
+                const SizedBox(height: 16),
+                Text(
+                  'Para escanear códigos QR, necesitas permitir el acceso a la cámara en los ajustes de la aplicación.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _requestCameraPermission,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 16,
+                    ),
+                    elevation: 5,
+                  ),
+                  child: const Text(
+                    'Activar cámara',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -229,6 +322,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       setState(() {
         _showButton = false;
         scannedLink = '';
+        _lastNotifiedLink = ''; // Reset the last notified link
       });
     } else {
       throw 'Could not launch $scannedLink';
