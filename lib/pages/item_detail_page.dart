@@ -55,7 +55,7 @@ class ItemDetailPage extends StatelessWidget {
                   Text(item.description),
                   SizedBox(height: 16),
                   SizedBox(
-                    height: 200,
+                    height: 250, // Aumentamos la altura del mapa
                     child: FlutterMap(
                       options: MapOptions(
                         center: item.position,
@@ -82,8 +82,10 @@ class ItemDetailPage extends StatelessWidget {
                             popupDisplayOptions: PopupDisplayOptions(
                               builder: (BuildContext context, Marker marker) {
                                 return Container(
-                                  width: 150,
-                                  margin: EdgeInsets.only(bottom: 10),
+                                  width: 120,
+                                  margin: EdgeInsets.only(
+                                      bottom:
+                                          20), // Aumentamos el margen inferior
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(8.0),
@@ -96,64 +98,50 @@ class ItemDetailPage extends StatelessWidget {
                                       ),
                                     ],
                                   ),
-                                  child: Stack(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.vertical(
-                                                top: Radius.circular(8.0)),
-                                            child: Image.network(
-                                              item.imageUrl,
-                                              width: 150,
-                                              height: 80,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  item.title,
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14.0,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 4.0),
-                                                Text(
-                                                  item.categoryName,
-                                                  style: TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 12.0,
-                                                  ),
-                                                ),
-                                                SizedBox(height: 8.0),
-                                                Center(
-                                                  child: IconButton(
-                                                    onPressed: _openInMaps,
-                                                    icon: Icon(Icons.map,
-                                                        color: Colors.green,
-                                                        size: 30),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(8.0)),
+                                        child: Image.network(
+                                          item.imageUrl,
+                                          width: 120,
+                                          height: 60,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
-                                      Positioned(
-                                        top: -12,
-                                        right: -12,
-                                        child: IconButton(
-                                          icon: Icon(Icons.close,
-                                              color: Colors.red, size: 20),
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.title,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12.0,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4.0),
+                                            Text(
+                                              item.categoryName,
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 10.0,
+                                              ),
+                                            ),
+                                            SizedBox(height: 8.0),
+                                            Center(
+                                              child: IconButton(
+                                                onPressed: _openInMaps,
+                                                icon: Icon(Icons.map,
+                                                    color: Colors.green,
+                                                    size: 24),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
