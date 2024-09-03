@@ -9,6 +9,7 @@ import '../models/map_item.dart';
 import 'item_detail_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
+import 'package:collection/collection.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -25,11 +26,13 @@ class _MapPageState extends State<MapPage> {
   LatLng _centerPosition = LatLng(39.4697, 3.1483); // Coordenadas de Felanitx
   double _zoomLevel = 14.0; // Nivel de zoom fijo
   late MapController _mapController;
+  late PopupController _popupController;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    _popupController = PopupController();
     _fetchMapItems();
   }
 
@@ -89,6 +92,7 @@ class _MapPageState extends State<MapPage> {
               .where((item) => item.categoryName == _selectedCategory)
               .toList();
       _updateMapView();
+      _popupController.hideAllPopups();
     });
   }
 
@@ -209,11 +213,15 @@ class _MapPageState extends State<MapPage> {
                       anchorPos: AnchorPos.align(AnchorAlign.top),
                     );
                   }).toList(),
+                  popupController: _popupController,
                   popupDisplayOptions: PopupDisplayOptions(
                     builder: (BuildContext context, Marker marker) {
-                      final item = _filteredItems.firstWhere(
+                      final item = _filteredItems.firstWhereOrNull(
                         (item) => item.position == marker.point,
                       );
+                      if (item == null) {
+                        return SizedBox.shrink();
+                      }
                       return Container(
                         width: 200,
                         decoration: BoxDecoration(
@@ -228,68 +236,100 @@ class _MapPageState extends State<MapPage> {
                             ),
                           ],
                         ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                        child: Stack(
                           children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(8.0)),
-                              child: Image.network(
-                                item.imageUrl,
-                                width: 200,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.title,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16.0,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4.0),
-                                  Text(
-                                    item.categoryName,
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14.0,
-                                    ),
-                                  ),
-                                  SizedBox(height: 8.0),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(8.0)),
+                                  child: Stack(
                                     children: [
-                                      IconButton(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  ItemDetailPage(item: item),
-                                            ),
-                                          );
-                                        },
-                                        icon: Icon(Icons.info),
-                                        color: Colors.blue,
+                                      Image.network(
+                                        item.imageUrl,
+                                        width: 200,
+                                        height: 100,
+                                        fit: BoxFit.cover,
                                       ),
-                                      IconButton(
-                                        onPressed: () {
-                                          _openInMaps(item);
-                                        },
-                                        icon: Icon(Icons.map),
-                                        color: Colors.green,
+                                      Positioned(
+                                        top: 4,
+                                        right: 4,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            _popupController.hideAllPopups();
+                                          },
+                                          child: Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              Icons.close,
+                                              color: Colors.red,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.title,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16.0,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4.0),
+                                      Text(
+                                        item.categoryName,
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 14.0,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8.0),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          IconButton(
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      ItemDetailPage(
+                                                          item: item),
+                                                ),
+                                              );
+                                            },
+                                            icon: Icon(Icons.info),
+                                            color: Colors.blue,
+                                          ),
+                                          IconButton(
+                                            onPressed: () {
+                                              _openInMaps(item);
+                                            },
+                                            icon: Icon(Icons.map),
+                                            color: Colors.green,
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
