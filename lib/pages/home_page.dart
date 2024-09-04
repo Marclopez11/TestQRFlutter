@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:testapp/pages/item_detail_page.dart';
 import 'package:testapp/models/map_item.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -15,7 +16,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<MapItem> items = [];
   List<String> categories = [];
-  String? selectedCategory;
+  List<MapItem> featuredItems = [];
+  int _currentCarouselIndex = 0;
 
   @override
   void initState() {
@@ -63,61 +65,166 @@ class _HomePageState extends State<HomePage> {
         // Obtener las categorías únicas de los ítems
         categories =
             ['All'] + items.map((item) => item.categoryName).toSet().toList();
+
+        // Select some items as featured (you might want to add a 'featured' field to your API)
+        featuredItems = items.take(5).toList();
       });
     }
   }
 
-  void filterByCategory(String category) {
-    setState(() {
-      selectedCategory = category == 'All' ? null : category;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final filteredItems = selectedCategory == null
-        ? items
-        : items.where((item) => item.categoryName == selectedCategory).toList();
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildFeaturedSlider(),
+            SizedBox(height: 20),
+            for (var category in categories.where((c) => c != 'All'))
+              _buildCategorySection(category),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Column(
+  Widget _buildFeaturedSlider() {
+    return Stack(
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (var category in categories)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                    onPressed: () => filterByCategory(category),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          category == selectedCategory ? Colors.blue : null,
+        CarouselSlider(
+          options: CarouselOptions(
+            height: 350.0,
+            autoPlay: true,
+            enlargeCenterPage: false,
+            viewportFraction: 1.0,
+            onPageChanged: (index, reason) {
+              setState(() {
+                _currentCarouselIndex = index;
+              });
+            },
+          ),
+          items: featuredItems.map((item) {
+            return Builder(
+              builder: (BuildContext context) {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ItemDetailPage(item: item),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: MediaQuery.of(context).size.width,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: NetworkImage(item.imageUrl),
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                    child: Text(category),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.8)
+                          ],
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.title,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                item.categoryName,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
+                );
+              },
+            );
+          }).toList(),
+        ),
+        Positioned(
+          bottom: 20,
+          left: 0,
+          right: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: featuredItems.asMap().entries.map((entry) {
+              return Container(
+                width: 10.0,
+                height: 10.0,
+                margin: EdgeInsets.symmetric(horizontal: 5.0),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).primaryColor.withOpacity(
+                        _currentCarouselIndex == entry.key ? 0.9 : 0.4,
+                      ),
                 ),
-            ],
+              );
+            }).toList(),
           ),
         ),
-        Expanded(
+      ],
+    );
+  }
+
+  Widget _buildCategorySection(String category) {
+    final categoryItems =
+        items.where((item) => item.categoryName == category).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
+          child: Text(
+            category,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        Container(
+          height: 250,
           child: ListView.builder(
-            itemCount: filteredItems.length,
+            scrollDirection: Axis.horizontal,
+            itemCount: categoryItems.length,
             itemBuilder: (context, index) {
-              final item = filteredItems[index];
-              return ListTile(
-                leading: Container(
-                  width: 60, // Ancho fijo para todas las imágenes
-                  height: 60, // Alto fijo para todas las imágenes
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      fit: BoxFit.cover,
-                      image: NetworkImage(item.imageUrl),
-                    ),
-                  ),
-                ),
-                title: Text(item.title),
-                subtitle: Text(item.categoryName),
+              final item = categoryItems[index];
+              return GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
@@ -126,6 +233,64 @@ class _HomePageState extends State<HomePage> {
                     ),
                   );
                 },
+                child: Container(
+                  width: 200,
+                  margin: EdgeInsets.only(left: 20, bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 5,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(15)),
+                            image: DecorationImage(
+                              image: NetworkImage(item.imageUrl),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(15.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.black87,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 5),
+                            Text(
+                              item.categoryName,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               );
             },
           ),

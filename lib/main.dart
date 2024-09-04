@@ -55,27 +55,14 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  String _getTitleForIndex(int index) {
-    switch (index) {
-      case 0:
-        return 'Inicio';
-      case 1:
-        return 'Mapa';
-      case 2:
-        return 'Cámara';
-      case 3:
-        return 'Ajustes';
-      default:
-        return 'Mi Aplicación';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_getTitleForIndex(_selectedIndex)),
-      ),
+      appBar: _selectedIndex == 0 || _selectedIndex == 2
+          ? null
+          : AppBar(
+              title: Text(_getTitleForIndex(_selectedIndex)),
+            ),
       body: IndexedStack(
         index: _selectedIndex,
         children: _buildWidgetOptions(),
@@ -104,5 +91,20 @@ class _MainScreenState extends State<MainScreen> {
         type: BottomNavigationBarType.fixed,
       ),
     );
+  }
+
+  String _getTitleForIndex(int index) {
+    switch (index) {
+      case 0:
+        return 'Inicio';
+      case 1:
+        return 'Mapa';
+      case 2:
+        return 'Cámara';
+      case 3:
+        return 'Ajustes';
+      default:
+        return 'Mi Aplicación';
+    }
   }
 }

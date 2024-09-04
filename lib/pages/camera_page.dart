@@ -145,113 +145,112 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         return true;
       },
       child: Scaffold(
-        // Removed AppBar
-        body: SafeArea(
-          child: _cameraPermissionGranted
-              ? _buildQRScanner()
-              : _buildPermissionRequest(),
-        ),
+        body: _cameraPermissionGranted
+            ? _buildQRScanner()
+            : _buildPermissionRequest(),
       ),
     );
   }
 
   Widget _buildQRScanner() {
-    return Stack(
-      children: <Widget>[
-        QRView(
-          key: qrKey,
-          onQRViewCreated: _onQRViewCreated,
-        ),
-        Container(
-          decoration: ShapeDecoration(
-            shape: QrScannerOverlayShape(
-              borderColor: Theme.of(context).primaryColor,
-              borderRadius: 10,
-              borderLength: 30,
-              borderWidth: 10,
-              cutOutSize: MediaQuery.of(context).size.width * 0.8,
+    return SafeArea(
+      child: Stack(
+        children: <Widget>[
+          QRView(
+            key: qrKey,
+            onQRViewCreated: _onQRViewCreated,
+          ),
+          Container(
+            decoration: ShapeDecoration(
+              shape: QrScannerOverlayShape(
+                borderColor: Theme.of(context).primaryColor,
+                borderRadius: 10,
+                borderLength: 30,
+                borderWidth: 10,
+                cutOutSize: MediaQuery.of(context).size.width * 0.8,
+              ),
             ),
           ),
-        ),
-        Positioned(
-          bottom: 20,
-          left: 0,
-          right: 0,
-          child: Text(
-            'Coloca el código QR dentro del marco',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(
-                  blurRadius: 4,
-                  color: Colors.black,
-                  offset: Offset(0, 2),
-                ),
-              ],
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Text(
+              'Coloca el código QR dentro del marco',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    blurRadius: 4,
+                    color: Colors.black,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        Positioned(
-          bottom: 80,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: _showButton
-                ? ElevatedButton(
-                    onPressed: _launchURL,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+          Positioned(
+            bottom: 80,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _showButton
+                  ? ElevatedButton(
+                      onPressed: _launchURL,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 50,
+                          vertical: 20,
+                        ),
+                        elevation: 5,
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 50,
-                        vertical: 20,
-                      ),
-                      elevation: 5,
-                    ),
-                    child: const Text(
-                      'ABRIR ENLACE',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  )
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.qr_code_scanner,
-                        size: 48,
-                        color: Colors.white,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        'Escanea un código QR',
+                      child: const Text(
+                        'ABRIR ENLACE',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 4,
-                              color: Colors.black,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
                         ),
                       ),
-                    ],
-                  ),
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.qr_code_scanner,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Escanea un código QR',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 4,
+                                color: Colors.black,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
