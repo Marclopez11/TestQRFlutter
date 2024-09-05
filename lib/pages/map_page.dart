@@ -10,6 +10,7 @@ import 'item_detail_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:collection/collection.dart';
+import '../widgets/app_scaffold.dart'; // Agrega esta línea
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -166,202 +167,214 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
+    return AppScaffold(
+      body: Column(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              center: _centerPosition,
-              zoom: _zoomLevel,
-              minZoom: 3,
-              maxZoom: 18,
-              interactiveFlags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: _mapTileUrl,
-                subdomains:
-                    Platform.isAndroid ? ['0', '1', '2', '3'] : ['a', 'b', 'c'],
-              ),
-              PopupMarkerLayerWidget(
-                options: PopupMarkerLayerOptions(
-                  markers: _filteredItems.map((item) {
-                    return Marker(
-                      point: item.position,
-                      width: 40,
-                      height: 40,
-                      builder: (_) => const Icon(Icons.location_on, size: 40),
-                      anchorPos: AnchorPos.align(AnchorAlign.top),
-                    );
-                  }).toList(),
-                  popupController: _popupController,
-                  popupDisplayOptions: PopupDisplayOptions(
-                    builder: (BuildContext context, Marker marker) {
-                      final item = _filteredItems.firstWhereOrNull(
-                        (item) => item.position == marker.point,
-                      );
-                      if (item == null) {
-                        return SizedBox.shrink();
-                      }
-                      return Container(
-                        width: 200,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 2,
-                              blurRadius: 5,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(8.0)),
-                                  child: Stack(
-                                    children: [
-                                      Image.network(
-                                        item.imageUrl,
-                                        width: 200,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                      ),
-                                      Positioned(
-                                        top: 4,
-                                        right: 4,
-                                        child: GestureDetector(
-                                          onTap: () {
-                                            _popupController.hideAllPopups();
-                                          },
-                                          child: Container(
-                                            width: 24,
-                                            height: 24,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: Icon(
-                                              Icons.close,
-                                              color: Colors.red,
-                                              size: 16,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+          Expanded(
+            child: Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    center: _centerPosition,
+                    zoom: _zoomLevel,
+                    minZoom: 3,
+                    maxZoom: 18,
+                    interactiveFlags:
+                        InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate: _mapTileUrl,
+                      subdomains: Platform.isAndroid
+                          ? ['0', '1', '2', '3']
+                          : ['a', 'b', 'c'],
+                    ),
+                    PopupMarkerLayerWidget(
+                      options: PopupMarkerLayerOptions(
+                        markers: _filteredItems.map((item) {
+                          return Marker(
+                            point: item.position,
+                            width: 40,
+                            height: 40,
+                            builder: (_) =>
+                                const Icon(Icons.location_on, size: 40),
+                            anchorPos: AnchorPos.align(AnchorAlign.top),
+                          );
+                        }).toList(),
+                        popupController: _popupController,
+                        popupDisplayOptions: PopupDisplayOptions(
+                          builder: (BuildContext context, Marker marker) {
+                            final item = _filteredItems.firstWhereOrNull(
+                              (item) => item.position == marker.point,
+                            );
+                            if (item == null) {
+                              return SizedBox.shrink();
+                            }
+                            return Container(
+                              width: 200,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8.0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                ],
+                              ),
+                              child: Stack(
+                                children: [
+                                  Column(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        item.title,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16.0,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.0),
-                                      Text(
-                                        item.categoryName,
-                                        style: TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 14.0,
-                                        ),
-                                      ),
-                                      SizedBox(height: 8.0),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          IconButton(
-                                            onPressed: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      ItemDetailPage(
-                                                          item: item),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.vertical(
+                                            top: Radius.circular(8.0)),
+                                        child: Stack(
+                                          children: [
+                                            Image.network(
+                                              item.imageUrl,
+                                              width: 200,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                            ),
+                                            Positioned(
+                                              top: 4,
+                                              right: 4,
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  _popupController
+                                                      .hideAllPopups();
+                                                },
+                                                child: Container(
+                                                  width: 24,
+                                                  height: 24,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.close,
+                                                    color: Colors.red,
+                                                    size: 16,
+                                                  ),
                                                 ),
-                                              );
-                                            },
-                                            icon: Icon(Icons.info),
-                                            color: Colors.blue,
-                                          ),
-                                          IconButton(
-                                            onPressed: () {
-                                              _openInMaps(item);
-                                            },
-                                            icon: Icon(Icons.map),
-                                            color: Colors.green,
-                                          ),
-                                        ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.title,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16.0,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4.0),
+                                            Text(
+                                              item.categoryName,
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 14.0,
+                                              ),
+                                            ),
+                                            SizedBox(height: 8.0),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ItemDetailPage(
+                                                                item: item),
+                                                      ),
+                                                    );
+                                                  },
+                                                  icon: Icon(Icons.info),
+                                                  color: Colors.blue,
+                                                ),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    _openInMaps(item);
+                                                  },
+                                                  icon: Icon(Icons.map),
+                                                  color: Colors.green,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                            );
+                          },
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 80,
+                  right: 20,
+                  child: FloatingActionButton(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        builder: (context) {
+                          return StatefulBuilder(
+                            builder:
+                                (BuildContext context, StateSetter setState) {
+                              return Container(
+                                padding: EdgeInsets.all(20),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: _categories.map((category) {
+                                    return CheckboxListTile(
+                                      title: Text(category),
+                                      value: _selectedCategory == category,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _filterByCategory(category);
+                                        });
+                                        Navigator.pop(context);
+                                      },
+                                    );
+                                  }).toList(),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       );
                     },
+                    child: Icon(Icons.filter_list),
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Colors.white,
                   ),
                 ),
-              ),
-            ],
-          ),
-          Positioned(
-            top: 80, // Ajustamos la posición vertical del botón de filtro
-            right: 20,
-            child: FloatingActionButton(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  builder: (context) {
-                    return StatefulBuilder(
-                      builder: (BuildContext context, StateSetter setState) {
-                        return Container(
-                          padding: EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: _categories.map((category) {
-                              return CheckboxListTile(
-                                title: Text(category),
-                                value: _selectedCategory == category,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _filterByCategory(category);
-                                  });
-                                  Navigator.pop(context);
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-              child: Icon(Icons.filter_list),
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
+              ],
             ),
           ),
         ],

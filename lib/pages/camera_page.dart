@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async'; // Add this import
 import 'package:flutter/cupertino.dart'; // Add this import
-import 'dart:math'; // Add this import at the top of the file
+import '../widgets/app_scaffold.dart'; // Add this import
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -144,10 +144,22 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         }
         return true;
       },
-      child: Scaffold(
-        body: _cameraPermissionGranted
-            ? _buildQRScanner()
-            : _buildPermissionRequest(),
+      child: AppScaffold(
+        body: Column(
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _cameraPermissionGranted
+                        ? _buildQRScanner()
+                        : _buildPermissionRequest(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

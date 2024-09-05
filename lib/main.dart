@@ -90,19 +90,4 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
-  String _getTitleForIndex(int index) {
-    switch (index) {
-      case 0:
-        return 'Inicio';
-      case 1:
-        return 'Mapa';
-      case 2:
-        return 'Cámara';
-      case 3:
-        return 'Ajustes';
-      default:
-        return 'Mi Aplicación';
-    }
-  }
 }
