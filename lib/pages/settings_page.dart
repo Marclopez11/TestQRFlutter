@@ -145,23 +145,44 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Ajustes'),
+      ),
       body: ListView(
+        padding: EdgeInsets.all(20),
         children: [
           _buildSectionTitle('NOTIFICACIONES'),
-          _buildSwitchTile(
-            'Habilitar Notificaciones',
-            _notificationsEnabled,
-            (value) => setState(() => _notificationsEnabled = value),
+          Card(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            elevation: 2,
+            child: _buildSwitchTile(
+              'Habilitar Notificaciones',
+              _notificationsEnabled,
+              (value) => setState(() => _notificationsEnabled = value),
+            ),
           ),
+          SizedBox(height: 20),
           _buildSectionTitle('BLUETOOTH'),
-          _buildBluetoothTile(
-            'Bluetooth para Beacons',
-            _bluetoothEnabled,
+          Card(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            elevation: 2,
+            child: _buildBluetoothTile(
+              'Bluetooth para Beacons',
+              _bluetoothEnabled,
+            ),
           ),
+          SizedBox(height: 20),
           _buildSectionTitle('ESCANEO DE CÓDIGO QR'),
-          _buildPermissionTile(
-            'Escaneo de Código QR',
-            _qrScanningEnabled,
+          Card(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            elevation: 2,
+            child: _buildPermissionTile(
+              'Escaneo de Código QR',
+              _qrScanningEnabled,
+            ),
           ),
         ],
       ),
@@ -170,25 +191,26 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Text(
         title,
         style: TextStyle(
-          color: Colors.grey[600],
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
+          color: Theme.of(context).primaryColor,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
   Widget _buildSwitchTile(String title, bool value, Function(bool) onChanged) {
-    return SwitchListTile(
+    return ListTile(
       title: Text(title),
-      value: value,
-      onChanged: onChanged,
-      activeColor: Colors.green,
-      subtitle: value ? Text('Habilitado') : null,
+      trailing: Switch(
+        value: value,
+        onChanged: onChanged,
+        activeColor: Theme.of(context).primaryColor,
+      ),
     );
   }
 
@@ -196,7 +218,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return ListTile(
       title: Text(title),
       trailing: Icon(
-        value ? Icons.check : Icons.close,
+        value ? Icons.check_circle : Icons.cancel,
         color: value ? Colors.green : Colors.red,
       ),
       onTap: () {
@@ -210,9 +232,8 @@ class _SettingsPageState extends State<SettingsPage> {
       title: Text(title),
       trailing: Icon(
         value ? Icons.bluetooth_connected : Icons.bluetooth_disabled,
-        color: value ? Colors.green : Colors.red,
+        color: value ? Colors.blue : Colors.grey,
       ),
-      subtitle: Text(value ? 'Activado' : 'Desactivado'),
       onTap: _openBluetoothSettings,
     );
   }

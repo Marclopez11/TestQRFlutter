@@ -16,8 +16,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primaryColor: Color(0xFF1E88E5), // Azul corporativo
+        // ... existing code ...
       ),
       home: const MainScreen(),
     );
@@ -58,11 +58,6 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _selectedIndex == 0 || _selectedIndex == 2
-          ? null
-          : AppBar(
-              title: Text(_getTitleForIndex(_selectedIndex)),
-            ),
       body: IndexedStack(
         index: _selectedIndex,
         children: _buildWidgetOptions(),
@@ -89,6 +84,9 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
+        selectedItemColor:
+            Theme.of(context).primaryColor, // Agregamos esta línea
+        unselectedItemColor: Colors.grey, // Agregamos esta línea
       ),
     );
   }

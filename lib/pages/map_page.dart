@@ -166,28 +166,10 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _categories.map((category) {
-              return Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                  onPressed: () => _filterByCategory(category),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        category == _selectedCategory ? Colors.blue : null,
-                  ),
-                  child: Text(category),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        Expanded(
-          child: FlutterMap(
+    return Scaffold(
+      body: Stack(
+        children: [
+          FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               center: _centerPosition,
@@ -340,8 +322,50 @@ class _MapPageState extends State<MapPage> {
               ),
             ],
           ),
-        ),
-      ],
+          Positioned(
+            top: 80, // Ajustamos la posición vertical del botón de filtro
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (context) {
+                    return StatefulBuilder(
+                      builder: (BuildContext context, StateSetter setState) {
+                        return Container(
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: _categories.map((category) {
+                              return CheckboxListTile(
+                                title: Text(category),
+                                value: _selectedCategory == category,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _filterByCategory(category);
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+              child: Icon(Icons.filter_list),
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
