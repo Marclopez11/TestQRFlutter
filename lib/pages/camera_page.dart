@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:async'; // Add this import
-import 'package:flutter/cupertino.dart'; // Add this import
-import '../widgets/app_scaffold.dart'; // Add this import
+import 'dart:async';
+import 'package:flutter/cupertino.dart';
+import '../widgets/header.dart'; // Add this import statement
+import '../widgets/app_scaffold.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -144,19 +145,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         }
         return true;
       },
-      child: AppScaffold(
+      child: Scaffold(
         body: Column(
           children: [
+            SafeArea(
+              bottom: false,
+              child: Header(),
+            ),
             Expanded(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: _cameraPermissionGranted
-                        ? _buildQRScanner()
-                        : _buildPermissionRequest(),
-                  ),
-                ],
-              ),
+              child: _cameraPermissionGranted
+                  ? _buildQRScanner()
+                  : _buildPermissionRequest(),
             ),
           ],
         ),
@@ -165,104 +164,102 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   Widget _buildQRScanner() {
-    return SafeArea(
-      child: Stack(
-        children: <Widget>[
-          QRView(
-            key: qrKey,
-            onQRViewCreated: _onQRViewCreated,
-          ),
-          Container(
-            decoration: ShapeDecoration(
-              shape: QrScannerOverlayShape(
-                borderColor: Theme.of(context).primaryColor,
-                borderRadius: 10,
-                borderLength: 30,
-                borderWidth: 10,
-                cutOutSize: MediaQuery.of(context).size.width * 0.8,
-              ),
+    return Stack(
+      children: <Widget>[
+        QRView(
+          key: qrKey,
+          onQRViewCreated: _onQRViewCreated,
+        ),
+        Container(
+          decoration: ShapeDecoration(
+            shape: QrScannerOverlayShape(
+              borderColor: Theme.of(context).primaryColor,
+              borderRadius: 10,
+              borderLength: 30,
+              borderWidth: 10,
+              cutOutSize: MediaQuery.of(context).size.width * 0.8,
             ),
           ),
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Text(
-              'Coloca el código QR dentro del marco',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    blurRadius: 4,
-                    color: Colors.black,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
+        ),
+        Positioned(
+          bottom: 20,
+          left: 0,
+          right: 0,
+          child: Text(
+            'Coloca el código QR dentro del marco',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(
+                  blurRadius: 4,
+                  color: Colors.black,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
           ),
-          Positioned(
-            bottom: 80,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: _showButton
-                  ? ElevatedButton(
-                      onPressed: _launchURL,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 50,
-                          vertical: 20,
-                        ),
-                        elevation: 5,
+        ),
+        Positioned(
+          bottom: 80,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: _showButton
+                ? ElevatedButton(
+                    onPressed: _launchURL,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
                       ),
-                      child: const Text(
-                        'ABRIR ENLACE',
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 50,
+                        vertical: 20,
+                      ),
+                      elevation: 5,
+                    ),
+                    child: const Text(
+                      'ABRIR ENLACE',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.qr_code_scanner,
+                        size: 48,
+                        color: Colors.white,
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        'Escanea un código QR',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 4,
+                              color: Colors.black,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
                         ),
                       ),
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.qr_code_scanner,
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Escanea un código QR',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 4,
-                                color: Colors.black,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+                    ],
+                  ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
