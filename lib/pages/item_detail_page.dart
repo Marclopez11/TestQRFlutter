@@ -54,6 +54,8 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
             expandedHeight: 250.0,
             floating: false,
             pinned: true,
+            snap: false,
+            elevation: 0,
             backgroundColor: Colors.white,
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: Colors.black),
@@ -69,33 +71,34 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    widget.item.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
                   Positioned(
-                    bottom: 0,
+                    top: 105,
                     left: 0,
                     right: 0,
+                    bottom: 0,
+                    child: Image.network(
+                      widget.item.imageUrl,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
                     child: Container(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.8),
-                            Colors.black.withOpacity(0.0),
-                          ],
-                        ),
+                        color: Colors.white.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         widget.item.title,
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
+                          color: Colors.black,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
