@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/map_item.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ItemDetailPage extends StatefulWidget {
   final MapItem item;
@@ -84,21 +85,47 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                   Positioned(
                     bottom: 20,
                     left: 20,
+                    right: 20,
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.7),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
-                        widget.item.title,
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.item.title,
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 16,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                widget.item.averageRating.toStringAsFixed(1),
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -135,55 +162,80 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        GestureDetector(
-                          onTap: () => launch(
-                              'https://www.instagram.com/tu_perfil_real'),
-                          child: Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/1200px-Instagram_logo_2016.svg.png',
-                            width: 30,
-                            height: 30,
+                        if (widget.item.facebookUrl != null)
+                          GestureDetector(
+                            onTap: () => launch(widget.item.facebookUrl!),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: FaIcon(FontAwesomeIcons.facebook,
+                                  size: 30, color: Color(0xFF1877F2)),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 15),
-                        GestureDetector(
-                          onTap: () => launch(
-                              'https://www.linkedin.com/in/tu_perfil_real'),
-                          child: Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/640px-LinkedIn_logo_initials.png',
-                            width: 30,
-                            height: 30,
+                        if (widget.item.instagramUrl != null)
+                          GestureDetector(
+                            onTap: () => launch(widget.item.instagramUrl!),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: FaIcon(FontAwesomeIcons.instagram,
+                                  size: 30, color: Color(0xFFE4405F)),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 15),
-                        GestureDetector(
-                          onTap: () =>
-                              launch('https://www.facebook.com/tu_perfil_real'),
-                          child: Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/1200px-Facebook_Logo_%282019%29.png',
-                            width: 30,
-                            height: 30,
+                        if (widget.item.twitterUrl != null)
+                          GestureDetector(
+                            onTap: () => launch(widget.item.twitterUrl!),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: FaIcon(FontAwesomeIcons.twitter,
+                                  size: 30, color: Color(0xFF1DA1F2)),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 15),
-                        GestureDetector(
-                          onTap: () =>
-                              launch('https://twitter.com/tu_perfil_real'),
-                          child: Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Logo_of_Twitter.svg/512px-Logo_of_Twitter.svg.png',
-                            width: 30,
-                            height: 30,
+                        if (widget.item.websiteUrl != null)
+                          GestureDetector(
+                            onTap: () => launch(widget.item.websiteUrl!),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: FaIcon(FontAwesomeIcons.globe,
+                                  size: 30, color: Colors.blue),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: 15),
-                        GestureDetector(
-                          onTap: () =>
-                              launch('https://www.youtube.com/tu_canal_real'),
-                          child: Image.network(
-                            'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1280px-YouTube_full-color_icon_%282017%29.svg.png',
-                            width: 30,
-                            height: 30,
+                        if (widget.item.whatsappNumber != null)
+                          GestureDetector(
+                            onTap: () => Share.share(
+                              widget.item.whatsappNumber!,
+                              subject: 'Mensaje de ${widget.item.title}',
+                            ),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: FaIcon(FontAwesomeIcons.whatsapp,
+                                  size: 30, color: Color(0xFF25D366)),
+                            ),
                           ),
-                        ),
+                        if (widget.item.phoneNumber != null)
+                          GestureDetector(
+                            onTap: () =>
+                                launch('tel:${widget.item.phoneNumber}'),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: FaIcon(FontAwesomeIcons.phone,
+                                  size: 30, color: Colors.green),
+                            ),
+                          ),
+                        if (widget.item.email != null)
+                          GestureDetector(
+                            onTap: () => launch('mailto:${widget.item.email}'),
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: FaIcon(FontAwesomeIcons.envelope,
+                                  size: 30, color: Colors.red),
+                            ),
+                          ),
                       ],
                     ),
                     SizedBox(height: 20),

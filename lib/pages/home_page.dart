@@ -5,7 +5,7 @@ import 'package:testapp/pages/item_detail_page.dart';
 import 'package:testapp/models/map_item.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import '../widgets/app_scaffold.dart'; // Importa el widget AppScaffold
+import '../widgets/app_scaffold.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -49,6 +49,32 @@ class _HomePageState extends State<HomePage> {
           final location = item['field_place_location'][0];
           final image = item['field_place_main_image'][0];
           final categoryId = item['field_place_categoria'][0]['target_id'];
+          final featured = item['field_place_featured']?.isNotEmpty == true
+              ? item['field_place_featured'][0]['value']
+              : false;
+          final facebookUrl = item['field_place_facebook']?.isNotEmpty == true
+              ? item['field_place_facebook'][0]['value']
+              : null;
+          final instagramUrl = item['field_place_instagram']?.isNotEmpty == true
+              ? item['field_place_instagram'][0]['value']
+              : null;
+          final twitterUrl = item['field_place_twitter']?.isNotEmpty == true
+              ? item['field_place_twitter'][0]['value']
+              : null;
+          final websiteUrl = item['field_place_web']?.isNotEmpty == true
+              ? item['field_place_web'][0]['value']
+              : null;
+          final whatsappNumber =
+              item['field_place_whatsapp']?.isNotEmpty == true
+                  ? item['field_place_whatsapp'][0]['value']
+                  : null;
+          final phoneNumber =
+              item['field_place_phone_number']?.isNotEmpty == true
+                  ? item['field_place_phone_number'][0]['value']
+                  : null;
+          final email = item['field_place_email']?.isNotEmpty == true
+              ? item['field_place_email'][0]['value']
+              : null;
           return MapItem(
             id: item['nid'][0]['value'].toString(),
             title: item['title'][0]['value'],
@@ -60,6 +86,16 @@ class _HomePageState extends State<HomePage> {
             imageUrl: image['url'],
             categoryId: categoryId,
             categoryName: categoryMap[categoryId] ?? 'Unknown',
+            averageRating:
+                4.5, // Example average rating, replace with actual data
+            featured: featured,
+            facebookUrl: facebookUrl,
+            instagramUrl: instagramUrl,
+            twitterUrl: twitterUrl,
+            websiteUrl: websiteUrl,
+            whatsappNumber: whatsappNumber,
+            phoneNumber: phoneNumber,
+            email: email,
           );
         }).toList();
 
@@ -67,8 +103,8 @@ class _HomePageState extends State<HomePage> {
         categories =
             ['All'] + items.map((item) => item.categoryName).toSet().toList();
 
-        // Select some items as featured (you might want to add a 'featured' field to your API)
-        featuredItems = items.take(5).toList();
+        // Select featured items based on the 'featured' property
+        featuredItems = items.where((item) => item.featured).toList();
       });
     }
   }
@@ -140,31 +176,70 @@ class _HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.all(20.0),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              item.title,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                item.categoryName,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.title,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 10),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).primaryColor,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          item.categoryName,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                                Container(
+                                  padding: EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.star,
+                                        color: Colors.amber,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 5),
+                                      Text(
+                                        item.averageRating.toStringAsFixed(1),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -286,6 +361,8 @@ class _HomePageState extends State<HomePage> {
                                 fontSize: 14,
                               ),
                             ),
+                            SizedBox(height: 10),
+                            _buildAverageRating(item.averageRating),
                           ],
                         ),
                       ),
@@ -294,6 +371,34 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAverageRating(double averageRating) {
+    return Row(
+      children: [
+        Icon(
+          Icons.star,
+          color: Colors.amber,
+          size: 20,
+        ),
+        SizedBox(width: 4),
+        Text(
+          averageRating.toStringAsFixed(1),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(width: 4),
+        Text(
+          'de 5',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
           ),
         ),
       ],

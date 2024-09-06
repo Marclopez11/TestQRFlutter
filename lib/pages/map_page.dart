@@ -10,7 +10,7 @@ import 'item_detail_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:collection/collection.dart';
-import '../widgets/app_scaffold.dart'; // Agrega esta línea
+import '../widgets/app_scaffold.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -71,6 +71,7 @@ class _MapPageState extends State<MapPage> {
             imageUrl: image['url'],
             categoryId: categoryId,
             categoryName: categoryMap[categoryId] ?? 'Unknown',
+            averageRating: 4.5, // Add the averageRating property here
           );
         }).toList();
 
