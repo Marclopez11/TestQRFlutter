@@ -1,4 +1,4 @@
-package com.example.testapp
+package com.example.felanitx
 
 import io.flutter.embedding.android.FlutterActivity
 

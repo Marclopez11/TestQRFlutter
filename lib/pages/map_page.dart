@@ -55,11 +55,21 @@ class _MapPageState extends State<MapPage> {
         categoryMap[tid] = name;
       }
 
+      final averageRatings = await _fetchAverageRatings();
+
       setState(() {
         _mapItems = data.map((item) {
           final location = item['field_place_location'][0];
           final image = item['field_place_main_image'][0];
           final categoryId = item['field_place_categoria'][0]['target_id'];
+          final averageRating =
+              averageRatings[item['nid'][0]['value'].toString()]
+                      ?['average_rating'] ??
+                  0.0;
+          final commentCount =
+              averageRatings[item['nid'][0]['value'].toString()]
+                      ?['comment_count'] ??
+                  0;
           return MapItem(
             id: item['nid'][0]['value'].toString(),
             title: item['title'][0]['value'],
@@ -71,7 +81,8 @@ class _MapPageState extends State<MapPage> {
             imageUrl: image['url'],
             categoryId: categoryId,
             categoryName: categoryMap[categoryId] ?? 'Unknown',
-            averageRating: 4.5, // Add the averageRating property here
+            averageRating: averageRating,
+            commentCount: commentCount,
           );
         }).toList();
 
@@ -82,6 +93,22 @@ class _MapPageState extends State<MapPage> {
         _filteredItems = _mapItems;
         _updateMapView(useAllItems: true);
       });
+    }
+  }
+
+  Future<Map<String, Map<String, dynamic>>> _fetchAverageRatings() async {
+    final response = await http.get(Uri.parse(
+        'https://v5zl55fl4h.execute-api.eu-central-1.amazonaws.com/comment'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return Map.fromIterable(data,
+          key: (item) => item['nid'].toString(),
+          value: (item) => {
+                'average_rating': item['average_rating'].toDouble(),
+                'comment_count': item['comment_count'],
+              });
+    } else {
+      throw Exception('Failed to load average ratings');
     }
   }
 
@@ -318,6 +345,35 @@ class _MapPageState extends State<MapPage> {
                                                 ),
                                               ],
                                             ),
+                                            if (item.averageRating > 0)
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.star,
+                                                    color: Colors.amber,
+                                                    size: 16,
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Text(
+                                                    item.averageRating
+                                                        .toStringAsFixed(1),
+                                                    style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 4),
+                                                  Text(
+                                                    '(${item.commentCount})',
+                                                    style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                           ],
                                         ),
                                       ),

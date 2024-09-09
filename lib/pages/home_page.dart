@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:testapp/pages/item_detail_page.dart';
-import 'package:testapp/models/map_item.dart';
+import 'package:felanitx/pages/item_detail_page.dart';
+import 'package:felanitx/models/map_item.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../widgets/app_scaffold.dart';
@@ -44,6 +44,8 @@ class _HomePageState extends State<HomePage> {
         categoryMap[tid] = name;
       }
 
+      final averageRatings = await fetchAverageRatings();
+
       setState(() {
         items = data.map((item) {
           final location = item['field_place_location'][0];
@@ -75,6 +77,14 @@ class _HomePageState extends State<HomePage> {
           final email = item['field_place_email']?.isNotEmpty == true
               ? item['field_place_email'][0]['value']
               : null;
+          final averageRating =
+              averageRatings[item['nid'][0]['value'].toString()]
+                      ?['average_rating'] ??
+                  0.0;
+          final commentCount =
+              averageRatings[item['nid'][0]['value'].toString()]
+                      ?['comment_count'] ??
+                  0;
           return MapItem(
             id: item['nid'][0]['value'].toString(),
             title: item['title'][0]['value'],
@@ -86,8 +96,7 @@ class _HomePageState extends State<HomePage> {
             imageUrl: image['url'],
             categoryId: categoryId,
             categoryName: categoryMap[categoryId] ?? 'Unknown',
-            averageRating:
-                4.5, // Example average rating, replace with actual data
+            averageRating: averageRating,
             featured: featured,
             facebookUrl: facebookUrl,
             instagramUrl: instagramUrl,
@@ -96,6 +105,7 @@ class _HomePageState extends State<HomePage> {
             whatsappNumber: whatsappNumber,
             phoneNumber: phoneNumber,
             email: email,
+            commentCount: commentCount,
           );
         }).toList();
 
@@ -106,6 +116,22 @@ class _HomePageState extends State<HomePage> {
         // Select featured items based on the 'featured' property
         featuredItems = items.where((item) => item.featured).toList();
       });
+    }
+  }
+
+  Future<Map<String, Map<String, dynamic>>> fetchAverageRatings() async {
+    final response = await http.get(Uri.parse(
+        'https://v5zl55fl4h.execute-api.eu-central-1.amazonaws.com/comment'));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return Map.fromIterable(data,
+          key: (item) => item['nid'].toString(),
+          value: (item) => {
+                'average_rating': item['average_rating'].toDouble(),
+                'comment_count': item['comment_count'],
+              });
+    } else {
+      throw Exception('Failed to load average ratings');
     }
   }
 
@@ -222,20 +248,33 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(
-                                        Icons.star,
-                                        color: Colors.amber,
-                                        size: 20,
-                                      ),
-                                      SizedBox(width: 5),
-                                      Text(
-                                        item.averageRating.toStringAsFixed(1),
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                      if (item.averageRating > 0)
+                                        Icon(
+                                          Icons.star,
+                                          color: Colors.amber,
+                                          size: 20,
                                         ),
-                                      ),
+                                      if (item.averageRating > 0)
+                                        SizedBox(width: 5),
+                                      if (item.averageRating > 0)
+                                        Text(
+                                          item.averageRating.toStringAsFixed(1),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      if (item.commentCount > 0)
+                                        SizedBox(width: 5),
+                                      if (item.commentCount > 0)
+                                        Text(
+                                          '(${item.commentCount})',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
@@ -362,7 +401,9 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                             SizedBox(height: 10),
-                            _buildAverageRating(item.averageRating),
+                            if (item.averageRating > 0)
+                              _buildAverageRating(
+                                  item.averageRating, item.commentCount),
                           ],
                         ),
                       ),
@@ -377,7 +418,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildAverageRating(double averageRating) {
+  Widget _buildAverageRating(double averageRating, int commentCount) {
     return Row(
       children: [
         Icon(
@@ -395,7 +436,7 @@ class _HomePageState extends State<HomePage> {
         ),
         SizedBox(width: 4),
         Text(
-          'de 5',
+          '($commentCount)',
           style: TextStyle(
             fontSize: 14,
             color: Colors.grey,

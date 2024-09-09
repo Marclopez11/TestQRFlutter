@@ -1,4 +1,4 @@
-# testapp
+# felanitx
 
 A new Flutter project.
 

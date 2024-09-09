@@ -17,6 +17,7 @@ class MapItem {
   final String? whatsappNumber;
   final String? phoneNumber;
   final String? email;
+  final int commentCount;
 
   MapItem({
     required this.id,
@@ -35,5 +36,6 @@ class MapItem {
     this.whatsappNumber,
     this.phoneNumber,
     this.email,
+    required this.commentCount,
   });
 }

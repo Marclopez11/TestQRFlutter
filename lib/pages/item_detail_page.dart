@@ -6,6 +6,7 @@ import '../models/map_item.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:http/http.dart' as http;
 
 class ItemDetailPage extends StatefulWidget {
   final MapItem item;
@@ -18,9 +19,9 @@ class ItemDetailPage extends StatefulWidget {
 
 class _ItemDetailPageState extends State<ItemDetailPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _commentController = TextEditingController();
   double _rating = 0;
+  bool _isSubmitting = false;
 
   void _openInMaps() async {
     final url = Platform.isIOS
@@ -44,6 +45,68 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
       'Mira este lugar interesante: ${widget.item.title}\n\nhttps://www.google.com/maps/dir/?api=1&destination=${widget.item.position.latitude},${widget.item.position.longitude}',
       subject: widget.item.title,
     );
+  }
+
+  Future<void> _submitComment() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isSubmitting = true;
+      });
+
+      final comment = _commentController.text;
+      final rating = _rating.toInt();
+      final nid = widget.item.id;
+
+      final url =
+          'https://v5zl55fl4h.execute-api.eu-central-1.amazonaws.com/comment?comment=$comment&nid=$nid&rating=$rating';
+
+      // Imprimir en la consola los datos enviados en la petición
+      print('Enviando petición:');
+      print('URL: $url');
+      print('Comentario: $comment');
+      print('Rating: $rating');
+      print('NID: $nid');
+
+      try {
+        final response = await http.get(Uri.parse(url));
+
+        if (response.statusCode == 200) {
+          // Comentario enviado exitosamente
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Comentario enviado'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+
+          // Limpiar los campos del formulario
+          _commentController.clear();
+          setState(() {
+            _rating = 0;
+          });
+        } else {
+          // Error al enviar el comentario
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al enviar el comentario'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        // Error de conexión
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error de conexión'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } finally {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
@@ -107,24 +170,33 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 16,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                widget.item.averageRating.toStringAsFixed(1),
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                          if (widget.item.averageRating > 0)
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 16,
                                 ),
-                              ),
-                            ],
-                          ),
+                                SizedBox(width: 4),
+                                Text(
+                                  widget.item.averageRating.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  '(${widget.item.commentCount})',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
                         ],
                       ),
                     ),
@@ -338,20 +410,6 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             TextFormField(
-                              controller: _nameController,
-                              decoration: InputDecoration(
-                                labelText: 'Nombre',
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor, ingresa tu nombre';
-                                }
-                                return null;
-                              },
-                            ),
-                            SizedBox(height: 10),
-                            TextFormField(
                               controller: _commentController,
                               decoration: InputDecoration(
                                 labelText: 'Comentario',
@@ -396,35 +454,26 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                             ),
                             SizedBox(height: 20),
                             Center(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
-                                    // Aquí puedes enviar el comentario y la valoración a tu backend o realizar alguna acción
-                                    print('Nombre: ${_nameController.text}');
-                                    print(
-                                        'Comentario: ${_commentController.text}');
-                                    print('Valoración: $_rating');
-                                    _nameController.clear();
-                                    _commentController.clear();
-                                    setState(() {
-                                      _rating = 0;
-                                    });
-                                  }
-                                },
-                                child: Text('Enviar comentario'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).primaryColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
+                              child: _isSubmitting
+                                  ? CircularProgressIndicator()
+                                  : ElevatedButton(
+                                      onPressed:
+                                          _isSubmitting ? null : _submitComment,
+                                      child: Text('Enviar comentario'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            Theme.of(context).primaryColor,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 32,
+                                          vertical: 16,
+                                        ),
+                                      ),
+                                    ),
                             ),
                           ],
                         ),
@@ -437,6 +486,34 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAverageRating(double averageRating, int commentCount) {
+    return Row(
+      children: [
+        Icon(
+          Icons.star,
+          color: Colors.amber,
+          size: 20,
+        ),
+        SizedBox(width: 4),
+        Text(
+          averageRating.toStringAsFixed(1),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(width: 4),
+        Text(
+          'de 5 ($commentCount)',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }
