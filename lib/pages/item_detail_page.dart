@@ -390,14 +390,6 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                       ),
                     ),
                     SizedBox(height: 20),
-                    Text(
-                      'Comentarios',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 10),
                     Container(
                       padding: EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -486,34 +478,6 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildAverageRating(double averageRating, int commentCount) {
-    return Row(
-      children: [
-        Icon(
-          Icons.star,
-          color: Colors.amber,
-          size: 20,
-        ),
-        SizedBox(width: 4),
-        Text(
-          averageRating.toStringAsFixed(1),
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(width: 4),
-        Text(
-          'de 5 ($commentCount)',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
-        ),
-      ],
     );
   }
 }

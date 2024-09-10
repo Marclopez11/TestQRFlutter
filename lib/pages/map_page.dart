@@ -11,6 +11,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:collection/collection.dart';
 import '../widgets/app_scaffold.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -28,6 +30,7 @@ class _MapPageState extends State<MapPage> {
   double _zoomLevel = 14.0; // Nivel de zoom fijo
   late MapController _mapController;
   late PopupController _popupController;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -38,62 +41,73 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _fetchMapItems() async {
-    final response = await http
-        .get(Uri.parse('https://felanitx.drupal.auroracities.com/lloc'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
+    final prefs = await SharedPreferences.getInstance();
+    final cachedData = prefs.getString('mapItemsData');
 
-      // Fetch categories
-      final categoriesResponse = await http.get(
-          Uri.parse('https://felanitx.drupal.auroracities.com/categories'));
-      final List<dynamic> categoriesData = json.decode(categoriesResponse.body);
-
-      Map<int, String> categoryMap = {};
-      for (var category in categoriesData) {
-        int tid = category['tid'][0]['value'];
-        String name = category['name'][0]['value'];
-        categoryMap[tid] = name;
+    if (cachedData != null) {
+      final List<dynamic> data = json.decode(cachedData);
+      _processData(data);
+    } else {
+      final response = await http
+          .get(Uri.parse('https://felanitx.drupal.auroracities.com/lloc'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        await prefs.setString('mapItemsData', response.body);
+        _processData(data);
       }
-
-      final averageRatings = await _fetchAverageRatings();
-
-      setState(() {
-        _mapItems = data.map((item) {
-          final location = item['field_place_location'][0];
-          final image = item['field_place_main_image'][0];
-          final categoryId = item['field_place_categoria'][0]['target_id'];
-          final averageRating =
-              averageRatings[item['nid'][0]['value'].toString()]
-                      ?['average_rating'] ??
-                  0.0;
-          final commentCount =
-              averageRatings[item['nid'][0]['value'].toString()]
-                      ?['comment_count'] ??
-                  0;
-          return MapItem(
-            id: item['nid'][0]['value'].toString(),
-            title: item['title'][0]['value'],
-            description: item['field_place_description'][0]['value'],
-            position: LatLng(
-              double.parse(location['lat'].toString()),
-              double.parse(location['lng'].toString()),
-            ),
-            imageUrl: image['url'],
-            categoryId: categoryId,
-            categoryName: categoryMap[categoryId] ?? 'Unknown',
-            averageRating: averageRating,
-            commentCount: commentCount,
-          );
-        }).toList();
-
-        // Obtener las categorías únicas de los ítems
-        _categories = ['All'] +
-            _mapItems.map((item) => item.categoryName).toSet().toList();
-
-        _filteredItems = _mapItems;
-        _updateMapView(useAllItems: true);
-      });
     }
+  }
+
+  void _processData(List<dynamic> data) async {
+    // Fetch categories
+    final categoriesResponse = await http
+        .get(Uri.parse('https://felanitx.drupal.auroracities.com/categories'));
+    final List<dynamic> categoriesData = json.decode(categoriesResponse.body);
+
+    Map<int, String> categoryMap = {};
+    for (var category in categoriesData) {
+      int tid = category['tid'][0]['value'];
+      String name = category['name'][0]['value'];
+      categoryMap[tid] = name;
+    }
+
+    final averageRatings = await _fetchAverageRatings();
+
+    setState(() {
+      _mapItems = data.map((item) {
+        final location = item['field_place_location'][0];
+        final image = item['field_place_main_image'][0];
+        final categoryId = item['field_place_categoria'][0]['target_id'];
+        final averageRating = averageRatings[item['nid'][0]['value'].toString()]
+                ?['average_rating'] ??
+            0.0;
+        final commentCount = averageRatings[item['nid'][0]['value'].toString()]
+                ?['comment_count'] ??
+            0;
+        return MapItem(
+          id: item['nid'][0]['value'].toString(),
+          title: item['title'][0]['value'],
+          description: item['field_place_description'][0]['value'],
+          position: LatLng(
+            double.parse(location['lat'].toString()),
+            double.parse(location['lng'].toString()),
+          ),
+          imageUrl: image['url'],
+          categoryId: categoryId,
+          categoryName: categoryMap[categoryId] ?? 'Unknown',
+          averageRating: averageRating,
+          commentCount: commentCount,
+        );
+      }).toList();
+
+      // Obtener las categorías únicas de los ítems
+      _categories =
+          ['All'] + _mapItems.map((item) => item.categoryName).toSet().toList();
+
+      _filteredItems = _mapItems;
+      _updateMapView(useAllItems: true);
+      _isLoading = false;
+    });
   }
 
   Future<Map<String, Map<String, dynamic>>> _fetchAverageRatings() async {
@@ -147,7 +161,9 @@ class _MapPageState extends State<MapPage> {
 
       double zoomLevel = _calculateZoomLevel(minLat, maxLat, minLng, maxLng);
 
-      _mapController.move(centerPosition, zoomLevel);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _mapController.move(centerPosition, zoomLevel);
+      });
     }
   }
 
@@ -196,243 +212,262 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: Stack(
+      body: _isLoading
+          ? _buildLoadingIndicator()
+          : Column(
               children: [
-                FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    center: _centerPosition,
-                    zoom: _zoomLevel,
-                    minZoom: 3,
-                    maxZoom: 18,
-                    interactiveFlags:
-                        InteractiveFlag.all & ~InteractiveFlag.rotate,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: _mapTileUrl,
-                      subdomains: Platform.isAndroid
-                          ? ['0', '1', '2', '3']
-                          : ['a', 'b', 'c'],
-                    ),
-                    PopupMarkerLayerWidget(
-                      options: PopupMarkerLayerOptions(
-                        markers: _filteredItems.map((item) {
-                          return Marker(
-                            point: item.position,
-                            width: 40,
-                            height: 40,
-                            builder: (_) =>
-                                const Icon(Icons.location_on, size: 40),
-                            anchorPos: AnchorPos.align(AnchorAlign.top),
-                          );
-                        }).toList(),
-                        popupController: _popupController,
-                        popupDisplayOptions: PopupDisplayOptions(
-                          builder: (BuildContext context, Marker marker) {
-                            final item = _filteredItems.firstWhereOrNull(
-                              (item) => item.position == marker.point,
-                            );
-                            if (item == null) {
-                              return SizedBox.shrink();
-                            }
-                            return Container(
-                              width: 200,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.5),
-                                    spreadRadius: 2,
-                                    blurRadius: 5,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
+                Expanded(
+                  child: Stack(
+                    children: [
+                      FlutterMap(
+                        mapController: _mapController,
+                        options: MapOptions(
+                          center: _centerPosition,
+                          zoom: _zoomLevel,
+                          minZoom: 3,
+                          maxZoom: 18,
+                          interactiveFlags:
+                              InteractiveFlag.all & ~InteractiveFlag.rotate,
+                        ),
+                        children: [
+                          TileLayer(
+                            urlTemplate: _mapTileUrl,
+                            subdomains: Platform.isAndroid
+                                ? ['0', '1', '2', '3']
+                                : ['a', 'b', 'c'],
+                          ),
+                          PopupMarkerLayerWidget(
+                            options: PopupMarkerLayerOptions(
+                              markers: _filteredItems.map((item) {
+                                return Marker(
+                                  point: item.position,
+                                  width: 40,
+                                  height: 40,
+                                  builder: (_) =>
+                                      const Icon(Icons.location_on, size: 40),
+                                  anchorPos: AnchorPos.align(AnchorAlign.top),
+                                );
+                              }).toList(),
+                              popupController: _popupController,
+                              popupDisplayOptions: PopupDisplayOptions(
+                                builder: (BuildContext context, Marker marker) {
+                                  final item = _filteredItems.firstWhereOrNull(
+                                    (item) => item.position == marker.point,
+                                  );
+                                  if (item == null) {
+                                    return SizedBox.shrink();
+                                  }
+                                  return _buildPopupContent(item);
+                                },
                               ),
-                              child: Stack(
-                                children: [
-                                  Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.vertical(
-                                            top: Radius.circular(8.0)),
-                                        child: Stack(
-                                          children: [
-                                            Image.network(
-                                              item.imageUrl,
-                                              width: 200,
-                                              height: 100,
-                                              fit: BoxFit.cover,
-                                            ),
-                                            Positioned(
-                                              top: 4,
-                                              right: 4,
-                                              child: GestureDetector(
-                                                onTap: () {
-                                                  _popupController
-                                                      .hideAllPopups();
-                                                },
-                                                child: Container(
-                                                  width: 24,
-                                                  height: 24,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Icon(
-                                                    Icons.close,
-                                                    color: Colors.red,
-                                                    size: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              item.title,
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16.0,
-                                              ),
-                                            ),
-                                            SizedBox(height: 4.0),
-                                            Text(
-                                              item.categoryName,
-                                              style: TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 14.0,
-                                              ),
-                                            ),
-                                            SizedBox(height: 8.0),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                IconButton(
-                                                  onPressed: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ItemDetailPage(
-                                                                item: item),
-                                                      ),
-                                                    );
-                                                  },
-                                                  icon: Icon(Icons.info),
-                                                  color: Colors.blue,
-                                                ),
-                                                IconButton(
-                                                  onPressed: () {
-                                                    _openInMaps(item);
-                                                  },
-                                                  icon: Icon(Icons.map),
-                                                  color: Colors.green,
-                                                ),
-                                              ],
-                                            ),
-                                            if (item.averageRating > 0)
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.star,
-                                                    color: Colors.amber,
-                                                    size: 16,
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    item.averageRating
-                                                        .toStringAsFixed(1),
-                                                    style: TextStyle(
-                                                      color: Colors.black,
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 4),
-                                                  Text(
-                                                    '(${item.commentCount})',
-                                                    style: TextStyle(
-                                                      color: Colors.black,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        top: 80,
+                        right: 20,
+                        child: FloatingActionButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(20)),
                               ),
+                              builder: (context) {
+                                return StatefulBuilder(
+                                  builder: (BuildContext context,
+                                      StateSetter setState) {
+                                    return Container(
+                                      padding: EdgeInsets.all(20),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: _categories.map((category) {
+                                          return CheckboxListTile(
+                                            title: Text(category),
+                                            value:
+                                                _selectedCategory == category,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _filterByCategory(category);
+                                              });
+                                              Navigator.pop(context);
+                                            },
+                                          );
+                                        }).toList(),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
                             );
                           },
+                          child: Icon(Icons.filter_list),
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPopupContent(MapItem item) {
+    return Container(
+      width: 200,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8.0)),
+                child: Stack(
+                  children: [
+                    Image.network(
+                      item.imageUrl,
+                      width: 200,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () {
+                          _popupController.hideAllPopups();
+                        },
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.red,
+                            size: 16,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                Positioned(
-                  top: 80,
-                  right: 20,
-                  child: FloatingActionButton(
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                        builder: (context) {
-                          return StatefulBuilder(
-                            builder:
-                                (BuildContext context, StateSetter setState) {
-                              return Container(
-                                padding: EdgeInsets.all(20),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: _categories.map((category) {
-                                    return CheckboxListTile(
-                                      title: Text(category),
-                                      value: _selectedCategory == category,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _filterByCategory(category);
-                                        });
-                                        Navigator.pop(context);
-                                      },
-                                    );
-                                  }).toList(),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16.0,
+                      ),
+                    ),
+                    SizedBox(height: 4.0),
+                    Text(
+                      item.categoryName,
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 14.0,
+                      ),
+                    ),
+                    SizedBox(height: 8.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (item.averageRating > 0)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 16,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                item.averageRating.toStringAsFixed(1),
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              );
-                            },
-                          );
-                        },
-                      );
-                    },
-                    child: Icon(Icons.filter_list),
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                  ),
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                '(${item.commentCount})',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ItemDetailPage(item: item),
+                                  ),
+                                );
+                              },
+                              icon: Icon(Icons.info),
+                              color: Colors.blue,
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                _openInMaps(item);
+                              },
+                              icon: Icon(Icons.map),
+                              color: Colors.green,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
