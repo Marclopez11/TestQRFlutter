@@ -204,8 +204,8 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                 ],
               ),
             ),
-            title: Image.network(
-              'https://citapreviafelanitx.intricom.es/content/images/logoFelanitx.png',
+            title: Image.asset(
+              'assets/images/logo_felanitx.png',
               height: 40,
             ),
             centerTitle: true,

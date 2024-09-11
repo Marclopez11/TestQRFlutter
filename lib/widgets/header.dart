@@ -7,12 +7,11 @@ class Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 60,
-      color: Theme.of(context)
-          .scaffoldBackgroundColor, // Usar el color de fondo de la aplicación
+      color: Theme.of(context).scaffoldBackgroundColor,
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: Center(
-        child: Image.network(
-          'https://citapreviafelanitx.intricom.es/content/images/logoFelanitx.png',
+        child: Image.asset(
+          'assets/images/logo_felanitx.png',
           height: 40,
         ),
       ),
