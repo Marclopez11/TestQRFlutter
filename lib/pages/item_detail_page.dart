@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -22,6 +23,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
   final _commentController = TextEditingController();
   double _rating = 0;
   bool _isSubmitting = false;
+  Timer? _timer;
 
   void _openInMaps() async {
     final url = Platform.isIOS
@@ -120,6 +122,25 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
         ),
       );
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 2), (timer) {
+      // Aquí debes llamar al método que realiza la petición para obtener los detalles del ítem
+      // Por ejemplo: _fetchItemDetails();
+    });
   }
 
   @override

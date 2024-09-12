@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'package:felanitx/pages/item_detail_page.dart';
 import 'package:felanitx/models/map_item.dart';
 import 'package:latlong2/latlong.dart';
@@ -22,11 +23,24 @@ class _HomePageState extends State<HomePage> {
   List<MapItem> featuredItems = [];
   int _currentCarouselIndex = 0;
   bool _isLoading = true;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    fetchItems();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 2), (timer) {
+      fetchItems();
+    });
   }
 
   Future<void> fetchItems() async {

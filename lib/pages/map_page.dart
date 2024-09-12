@@ -13,6 +13,7 @@ import 'package:collection/collection.dart';
 import '../widgets/app_scaffold.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
+import 'dart:async';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -31,13 +32,36 @@ class _MapPageState extends State<MapPage> {
   late MapController _mapController;
   late PopupController _popupController;
   bool _isLoading = true;
+  bool _isInitialLoad = true;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
     _popupController = PopupController();
-    _fetchMapItems();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
+      _fetchMapItems();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInitialLoad || ModalRoute.of(context)?.isCurrent == true) {
+      _fetchMapItems();
+      _isInitialLoad = false;
+    }
   }
 
   Future<void> _fetchMapItems() async {
@@ -105,7 +129,12 @@ class _MapPageState extends State<MapPage> {
           ['All'] + _mapItems.map((item) => item.categoryName).toSet().toList();
 
       _filteredItems = _mapItems;
-      _updateMapView(useAllItems: true);
+      if (_isInitialLoad) {
+        _updateMapView(useAllItems: true);
+        _isInitialLoad = false;
+      } else {
+        _updateMarkers();
+      }
       _isLoading = false;
     });
   }
@@ -333,149 +362,166 @@ class _MapPageState extends State<MapPage> {
   }
 
   Widget _buildPopupContent(MapItem item) {
-    return Container(
-      width: 200,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8.0)),
-                child: Stack(
-                  children: [
-                    Image.network(
-                      item.imageUrl,
-                      width: 200,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: () {
-                          _popupController.hideAllPopups();
-                        },
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.red,
-                            size: 16,
+    return GestureDetector(
+      onTap: () {
+        // Evita que el popup se cierre cuando se toca
+        _popupController.hidePopupsOnlyFor([
+          Marker(
+            point: item.position,
+            width: 40,
+            height: 40,
+            builder: (_) => const Icon(Icons.location_on, size: 40),
+            anchorPos: AnchorPos.align(AnchorAlign.top),
+          )
+        ]);
+      },
+      child: Container(
+        width: 200,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(8.0)),
+                  child: Stack(
+                    children: [
+                      Image.network(
+                        item.imageUrl,
+                        width: 200,
+                        height: 100,
+                        fit: BoxFit.cover,
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () {
+                            _popupController.hideAllPopups();
+                          },
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.close,
+                              color: Colors.red,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16.0,
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16.0,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4.0),
-                    Text(
-                      item.categoryName,
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14.0,
+                      SizedBox(height: 4.0),
+                      Text(
+                        item.categoryName,
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14.0,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 8.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (item.averageRating > 0)
+                      SizedBox(height: 8.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (item.averageRating > 0)
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  item.averageRating.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  '(${item.commentCount})',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
                           Row(
                             children: [
-                              Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 16,
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ItemDetailPage(item: item),
+                                    ),
+                                  );
+                                },
+                                icon: Icon(Icons.info),
+                                color: Colors.blue,
                               ),
-                              SizedBox(width: 4),
-                              Text(
-                                item.averageRating.toStringAsFixed(1),
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                '(${item.commentCount})',
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 14,
-                                ),
+                              IconButton(
+                                onPressed: () {
+                                  _openInMaps(item);
+                                },
+                                icon: Icon(Icons.map),
+                                color: Colors.green,
                               ),
                             ],
                           ),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        ItemDetailPage(item: item),
-                                  ),
-                                );
-                              },
-                              icon: Icon(Icons.info),
-                              color: Colors.blue,
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                _openInMaps(item);
-                              },
-                              icon: Icon(Icons.map),
-                              color: Colors.green,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  void _updateMarkers() {
+    setState(() {
+      // Actualiza los marcadores en el mapa sin cambiar la posición o el zoom
+      _popupController.hideAllPopups();
+    });
   }
 }
