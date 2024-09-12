@@ -170,7 +170,7 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildFeaturedSlider(),
+                  if (featuredItems.isNotEmpty) _buildFeaturedSlider(),
                   SizedBox(height: 20),
                   for (var category in categories.where((c) => c != 'All'))
                     _buildCategorySection(category),
