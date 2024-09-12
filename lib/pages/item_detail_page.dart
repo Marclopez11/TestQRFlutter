@@ -48,7 +48,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
   }
 
   Future<void> _submitComment() async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && _rating > 0) {
       setState(() {
         _isSubmitting = true;
       });
@@ -68,7 +68,12 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
       print('NID: $nid');
 
       try {
-        final response = await http.get(Uri.parse(url));
+        final response = await http.post(
+          Uri.parse(url),
+          headers: <String, String>{
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        );
 
         if (response.statusCode == 200) {
           // Comentario enviado exitosamente
@@ -106,6 +111,14 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           _isSubmitting = false;
         });
       }
+    } else {
+      // Mostrar error si no se ha seleccionado ninguna estrella
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor, valora el lugar con al menos una estrella'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
