@@ -38,7 +38,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(Duration(seconds: 2), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 2), (timer) async {
+      await _fetchDataFromAPI();
       fetchItems();
     });
   }
@@ -46,35 +47,109 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchItems() async {
     final prefs = await SharedPreferences.getInstance();
     final cachedData = prefs.getString('itemsData');
+    final cachedCategoriesData = prefs.getString('categoriesData');
+    final cachedAverageRatings = prefs.getString('averageRatings');
 
-    if (cachedData != null) {
-      final List<dynamic> data = json.decode(cachedData);
-      _processData(data);
-    } else {
-      final response = await http
-          .get(Uri.parse('https://felanitx.drupal.auroracities.com/lloc'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        await prefs.setString('itemsData', response.body);
-        _processData(data);
+    if (cachedData != null &&
+        cachedCategoriesData != null &&
+        cachedAverageRatings != null) {
+      try {
+        final List<dynamic> data = json.decode(cachedData);
+        final List<dynamic> categoriesData = json.decode(cachedCategoriesData);
+        final List<dynamic> averageRatingsData =
+            json.decode(cachedAverageRatings);
+
+        final averageRatings = Map.fromIterable(
+          averageRatingsData,
+          key: (item) => item['nid'].toString(),
+          value: (item) => {
+            'average_rating': item['average_rating'].toDouble(),
+            'comment_count': item['comment_count'],
+          },
+        );
+
+        _processData(data, categoriesData, averageRatings);
+      } catch (e) {
+        print('Error parsing cached data: $e');
       }
+    } else {
+      setState(() {
+        _isLoading = true;
+      });
     }
   }
 
-  void _processData(List<dynamic> data) async {
-    // Fetch categories
-    final categoriesResponse = await http
-        .get(Uri.parse('https://felanitx.drupal.auroracities.com/categories'));
-    final List<dynamic> categoriesData = json.decode(categoriesResponse.body);
+  Future<void> _fetchDataFromAPI() async {
+    try {
+      final itemsResponse = await http
+          .get(Uri.parse('https://felanitx.drupal.auroracities.com/lloc'));
+      final categoriesResponse = await http.get(
+          Uri.parse('https://felanitx.drupal.auroracities.com/categories'));
+      final averageRatingsResponse = await http.get(Uri.parse(
+          'https://v5zl55fl4h.execute-api.eu-central-1.amazonaws.com/comment'));
 
+      if (itemsResponse.statusCode == 200 &&
+          categoriesResponse.statusCode == 200 &&
+          averageRatingsResponse.statusCode == 200) {
+        final List<dynamic> data = json.decode(itemsResponse.body);
+        final List<dynamic> categoriesData =
+            json.decode(categoriesResponse.body);
+        final List<dynamic> averageRatingsData =
+            json.decode(averageRatingsResponse.body);
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('itemsData', itemsResponse.body);
+        await prefs.setString('categoriesData', categoriesResponse.body);
+        await prefs.setString('averageRatings', averageRatingsResponse.body);
+
+        final averageRatings = Map.fromIterable(
+          averageRatingsData,
+          key: (item) => item['nid'].toString(),
+          value: (item) => {
+            'average_rating': item['average_rating'].toDouble(),
+            'comment_count': item['comment_count'],
+          },
+        );
+
+        _processData(data, categoriesData, averageRatings);
+      } else {
+        _showErrorAndUseCachedData();
+      }
+    } catch (e) {
+      print('Error fetching data from API: $e');
+      _showErrorAndUseCachedData();
+    }
+  }
+
+  void _showErrorAndUseCachedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedData = prefs.getString('itemsData');
+    final cachedCategoriesData = prefs.getString('categoriesData');
+    final cachedAverageRatings = prefs.getString('averageRatings');
+
+    if (cachedData != null &&
+        cachedCategoriesData != null &&
+        cachedAverageRatings != null) {
+      final List<dynamic> data = json.decode(cachedData);
+      final List<dynamic> categoriesData = json.decode(cachedCategoriesData);
+      final Map<String, dynamic> averageRatings =
+          json.decode(cachedAverageRatings);
+      _processData(data, categoriesData, averageRatings);
+    } else {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+  }
+
+  void _processData(List<dynamic> data, List<dynamic> categoriesData,
+      Map<String, dynamic> averageRatings) {
     Map<int, String> categoryMap = {};
     for (var category in categoriesData) {
       int tid = category['tid'][0]['value'];
       String name = category['name'][0]['value'];
       categoryMap[tid] = name;
     }
-
-    final averageRatings = await fetchAverageRatings();
 
     setState(() {
       items = data.map((item) {
@@ -143,22 +218,6 @@ class _HomePageState extends State<HomePage> {
       featuredItems = items.where((item) => item.featured).toList();
       _isLoading = false;
     });
-  }
-
-  Future<Map<String, Map<String, dynamic>>> fetchAverageRatings() async {
-    final response = await http.get(Uri.parse(
-        'https://v5zl55fl4h.execute-api.eu-central-1.amazonaws.com/comment'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return Map.fromIterable(data,
-          key: (item) => item['nid'].toString(),
-          value: (item) => {
-                'average_rating': item['average_rating'].toDouble(),
-                'comment_count': item['comment_count'],
-              });
-    } else {
-      throw Exception('Failed to load average ratings');
-    }
   }
 
   @override
