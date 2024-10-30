@@ -4,6 +4,8 @@ import 'package:felanitx/models/map_item.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../widgets/app_scaffold.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:felanitx/pages/agenda_page.dart';
+import 'package:felanitx/pages/points_of_interest_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -289,12 +291,28 @@ class _HomePageState extends State<HomePage> {
         final item = items[index];
         return GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ItemDetailPage(item: item),
-              ),
-            );
+            if (item.title == 'Agenda') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AgendaPage(),
+                ),
+              );
+            } else if (item.title == 'Puntos de interés') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PointsOfInterestPage(),
+                ),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ItemDetailPage(item: item),
+                ),
+              );
+            }
           },
           child: Container(
             decoration: BoxDecoration(
