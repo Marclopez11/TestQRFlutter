@@ -149,7 +149,6 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 250.0,
             floating: false,
             pinned: true,
             snap: false,
@@ -165,84 +164,19 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                 onPressed: _shareContent,
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Positioned(
-                    top: 105,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Image.network(
-                      widget.item.imageUrl,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.item.title,
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (widget.item.averageRating > 0)
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  color: Colors.amber,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  widget.item.averageRating.toStringAsFixed(1),
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  '(${widget.item.commentCount})',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             title: Image.asset(
               'assets/images/logo_felanitx.png',
               height: 40,
             ),
             centerTitle: true,
+          ),
+          SliverToBoxAdapter(
+            child: Image.network(
+              widget.item.imageUrl,
+              height: 250,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
           ),
           SliverList(
             delegate: SliverChildListDelegate([
