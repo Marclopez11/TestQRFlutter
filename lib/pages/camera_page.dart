@@ -5,7 +5,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../widgets/header.dart'; // Add this import statement
-import '../widgets/app_scaffold.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});

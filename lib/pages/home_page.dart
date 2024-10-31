@@ -4,8 +4,12 @@ import 'package:felanitx/models/map_item.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../widgets/app_scaffold.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:felanitx/pages/agenda_page.dart';
-import 'package:felanitx/pages/points_of_interest_page.dart';
+import 'package:felanitx/pages/category/agenda_page.dart';
+import 'package:felanitx/pages/category/points_of_interest_page.dart';
+import 'package:felanitx/pages/category/population_centers_page.dart';
+import 'package:felanitx/pages/category/routes_page.dart';
+import 'package:felanitx/pages/category/accommodation_page.dart';
+import 'package:felanitx/pages/category/restaurants_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -298,11 +302,39 @@ class _HomePageState extends State<HomePage> {
                   builder: (context) => AgendaPage(),
                 ),
               );
+            } else if (item.title == 'Núcleos de población') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PopulationCentersPage(),
+                ),
+              );
             } else if (item.title == 'Puntos de interés') {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => PointsOfInterestPage(),
+                ),
+              );
+            } else if (item.title == 'Ruta a pie y en bicicleta') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RoutesPage(),
+                ),
+              );
+            } else if (item.title == '¿Donde dormir?') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AccommodationPage(),
+                ),
+              );
+            } else if (item.title == '¿Donde comer?') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RestaurantsPage(),
                 ),
               );
             } else {

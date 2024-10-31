@@ -6,88 +6,41 @@ import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class PointsOfInterestPage extends StatefulWidget {
+class AccommodationPage extends StatefulWidget {
   @override
-  _PointsOfInterestPageState createState() => _PointsOfInterestPageState();
+  _AccommodationPageState createState() => _AccommodationPageState();
 }
 
-class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
+class _AccommodationPageState extends State<AccommodationPage> {
   bool isGridView = false;
   String? selectedCategory;
 
   final List<MapItem> pointsOfInterest = [
     MapItem(
       id: '1',
-      title: 'Castell de Santueri',
-      description: 'Castell històric amb vistes panoràmiques',
-      position: LatLng(39.4271, 3.1551),
+      title: 'Hotel Felanitx',
+      description: 'Descripción del Hotel Felanitx',
+      position: LatLng(39.4697, 3.1483),
       imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/galeria.jpg',
+          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/Casconcos01.jpg',
       categoryId: 1,
-      categoryName: 'Monuments',
-      averageRating: 5.0,
-      commentCount: 0,
+      categoryName: 'Apartamentos',
+      averageRating: 4.0,
+      commentCount: 15,
     ),
     MapItem(
       id: '2',
-      title: 'Estació de Tren',
-      description: 'Antiga estació de tren',
-      position: LatLng(39.4704, 3.1474),
+      title: 'Apartamentos S\'Horta',
+      description: 'Descripción de los Apartamentos S\'Horta',
+      position: LatLng(39.4597, 3.1283),
       imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/estacio.jpg',
-      categoryId: 2,
-      categoryName: 'Edificis històrics',
-      averageRating: 4.5,
-      commentCount: 2,
-    ),
-    MapItem(
-      id: '3',
-      title: 'Cementiri Municipal',
-      description: 'Cementiri històric de Felanitx',
-      position: LatLng(39.4704, 3.1474),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/cementiri.jpg',
-      categoryId: 3,
-      categoryName: 'Patrimoni',
-      averageRating: 4.0,
-      commentCount: 1,
-    ),
-    MapItem(
-      id: '4',
-      title: 'Sindicat',
-      description: 'Antic edifici del Sindicat',
-      position: LatLng(39.4704, 3.1474),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/sindicat.jpg',
-      categoryId: 2,
-      categoryName: 'Edificis històrics',
-      averageRating: 4.8,
-      commentCount: 3,
-    ),
-    MapItem(
-      id: '5',
-      title: 'Església de Sant Miquel',
-      description: 'Església principal de Felanitx',
-      position: LatLng(39.4704, 3.1474),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/esglesia.jpg',
+          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/Horta.jpg',
       categoryId: 1,
-      categoryName: 'Monuments',
-      averageRating: 5.0,
-      commentCount: 4,
+      categoryName: 'Apartamentos',
+      averageRating: 4.3,
+      commentCount: 11,
     ),
-    MapItem(
-      id: '6',
-      title: 'Plaça de Felanitx',
-      description: 'Plaça principal del municipi',
-      position: LatLng(39.4704, 3.1474),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/plac%CC%A7a_0.jpg',
-      categoryId: 4,
-      categoryName: 'Places',
-      averageRating: 4.7,
-      commentCount: 5,
-    ),
+    // Agrega más elementos según sea necesario
   ];
 
   List<MapItem> get filteredItems {
@@ -124,28 +77,6 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
       ),
       body: Column(
         children: [
-          Stack(
-            children: [
-              Image.network(
-                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgvT-lRIgddrFNmwjqoshFPVLn7mymV6FJhnu32OqA7OwDaFcy',
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-              Positioned(
-                left: 20,
-                bottom: 20,
-                child: Text(
-                  'Puntos de interés',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
           Padding(
             padding: EdgeInsets.all(16),
             child: Row(
@@ -190,6 +121,35 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
             child: isGridView ? _buildGrid() : _buildList(),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
+        ],
+        onTap: (index) {
+          if (index != 1) {
+            Navigator.of(context).pop();
+          }
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
       ),
     );
   }

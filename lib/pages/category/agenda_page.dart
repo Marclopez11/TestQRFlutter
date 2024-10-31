@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
-import '../models/event.dart';
+import '../../../models/event.dart';
 
 class AgendaPage extends StatelessWidget {
   final List<Event> events = List.generate(
