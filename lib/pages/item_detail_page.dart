@@ -364,79 +364,89 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                         color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TextFormField(
-                              controller: _commentController,
-                              decoration: InputDecoration(
-                                labelText: 'Comentario',
-                                border: OutlineInputBorder(),
-                              ),
-                              maxLines: 3,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Por favor, ingresa tu comentario';
-                                }
-                                return null;
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Lógica para guardar el lugar en el plan de viaje
                               },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text('Guardar a mi plan de viaje'),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.bookmark),
+                                ],
+                              ),
                             ),
-                            SizedBox(height: 10),
-                            Text(
+                          ),
+                          SizedBox(height: 20),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
                               'Valoración',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                for (int i = 1; i <= 5; i++)
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _rating = i.toDouble();
-                                      });
-                                    },
-                                    child: Icon(
-                                      i <= _rating
-                                          ? Icons.star
-                                          : Icons.star_border,
-                                      color: Colors.amber,
-                                      size: 32,
-                                    ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              for (int i = 1; i <= 5; i++)
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _rating = i.toDouble();
+                                    });
+                                  },
+                                  child: Icon(
+                                    i <= _rating
+                                        ? Icons.star
+                                        : Icons.star_border,
+                                    color: Colors.amber,
+                                    size: 32,
                                   ),
-                              ],
-                            ),
-                            SizedBox(height: 20),
-                            Center(
-                              child: _isSubmitting
-                                  ? CircularProgressIndicator()
-                                  : ElevatedButton(
-                                      onPressed:
-                                          _isSubmitting ? null : _submitComment,
-                                      child: Text('Enviar comentario'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            Theme.of(context).primaryColor,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 32,
-                                          vertical: 16,
-                                        ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 20),
+                          Center(
+                            child: _isSubmitting
+                                ? CircularProgressIndicator()
+                                : ElevatedButton(
+                                    onPressed:
+                                        _isSubmitting ? null : _submitComment,
+                                    child: Text('Enviar comentario'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          Theme.of(context).primaryColor,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                        vertical: 16,
                                       ),
                                     ),
-                            ),
-                          ],
-                        ),
+                                  ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
