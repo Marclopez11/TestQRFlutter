@@ -1,19 +1,22 @@
 class Category {
-  final int tid;
-  final String uuid;
-  final String name;
+  final String id;
+  final String title;
+  final String imageUrl;
+  final String page;
 
   Category({
-    required this.tid,
-    required this.uuid,
-    required this.name,
+    required this.id,
+    required this.title,
+    required this.imageUrl,
+    required this.page,
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      tid: json['tid'][0]['value'],
-      uuid: json['uuid'][0]['value'],
-      name: json['name'][0]['value'],
+      id: json['uuid'][0]['value'],
+      title: json['info'][0]['value'],
+      imageUrl: json['field_imatge'][0]['url'],
+      page: json['field_pagina'][0]['value'],
     );
   }
 }

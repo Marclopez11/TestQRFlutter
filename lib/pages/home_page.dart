@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:felanitx/pages/item_detail_page.dart';
-import 'package:felanitx/models/map_item.dart';
+import 'package:felanitx/models/category.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../widgets/app_scaffold.dart';
 import 'package:latlong2/latlong.dart';
@@ -10,9 +10,15 @@ import 'package:felanitx/pages/category/population_centers_page.dart';
 import 'package:felanitx/pages/category/routes_page.dart';
 import 'package:felanitx/pages/category/accommodation_page.dart';
 import 'package:felanitx/pages/category/restaurants_page.dart';
+import 'package:felanitx/services/api_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
+
+  static _HomePageState? of(BuildContext context) {
+    final state = context.findAncestorStateOfType<_HomePageState>();
+    return state;
+  }
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -20,122 +26,26 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentCarouselIndex = 0;
+  List<Category> _apiData = [];
 
-  final List<MapItem> featuredItems = [
-    MapItem(
-      id: '1',
-      title: 'Can Cabestre',
-      description:
-          'Can Cabestre és un edifici històric situat al centre de Felanitx, construït al segle XIX i que destaca per la seva arquitectura tradicional mallorquina',
-      position: LatLng(0, 0),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/Can%20Cabestre.jpg',
-      categoryId: 1,
-      categoryName: 'Llocs d\'interès',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-    MapItem(
-      id: '2',
-      title: 'Mercat de Felanitx',
-      description:
-          'El Mercat de Felanitx és un mercat situat al centre de la ciutat, construït en 1928 i que destaca per la seva arquitectura noucentista. Actualment, acull diverses botigues i serveis locals, convertint-se en un punt de trobada per a la població.',
-      position: LatLng(0, 0),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/mercat.jpg',
-      categoryId: 1,
-      categoryName: 'Llocs d\'interès',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-    MapItem(
-      id: '3',
-      title: 'Església de Sant Miquel',
-      description:
-          'L\'església parroquial de Sant Miquel és un dels edificis més emblemàtics de Felanitx. Construïda al segle XIII i reformada posteriorment als segles XVI i XVII, destaca per la seva arquitectura gòtica i el seu campanar, que domina l\'skyline de la ciutat. A l\'interior es poden admirar diverses obres d\'art religiós i retaules d\'gran valor històric.',
-      position: LatLng(0, 0),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-09/forner.jpg',
-      categoryId: 1,
-      categoryName: 'Llocs d\'interès',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
-  final List<MapItem> items = [
-    MapItem(
-      id: '1',
-      title: 'Agenda',
-      description: 'Descripción de Agenda',
-      position: LatLng(0, 0),
-      imageUrl: 'https://viufelanitx.com/upload/images/07_2019/6121_20074.jpg',
-      categoryId: 1,
-      categoryName: 'Agenda',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-    MapItem(
-      id: '2',
-      title: 'Núcleos de población',
-      description: 'Descripción de Núcleos de población',
-      position: LatLng(0, 0),
-      imageUrl:
-          'https://mallorcatechnews.com/wp-content/uploads/2021/10/The-Balearic-Islands-has-a-new-app-to-manage-regional-taxes.jpg',
-      categoryId: 2,
-      categoryName: 'Núcleos de población',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-    MapItem(
-      id: '3',
-      title: 'Puntos de interés',
-      description: 'Descripción de Puntos de interés',
-      position: LatLng(0, 0),
-      imageUrl:
-          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTgvT-lRIgddrFNmwjqoshFPVLn7mymV6FJhnu32OqA7OwDaFcy',
-      categoryId: 3,
-      categoryName: 'Llocs d\'interès',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-    MapItem(
-      id: '4',
-      title: 'Ruta a pie y en bicicleta',
-      description: 'Descripción de Ruta a pie y en bicicleta',
-      position: LatLng(0, 0),
-      imageUrl:
-          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTjicIRYcdF50zOaUDwG2OwQoJsOV-bp3TjOnysntVNitE97FMv',
-      categoryId: 4,
-      categoryName: 'Ruta a pie y en bicicleta',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-    MapItem(
-      id: '5',
-      title: '¿Donde dormir?',
-      description: 'Descripción de ¿Donde dormir?',
-      position: LatLng(0, 0),
-      imageUrl:
-          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcReL435y3O4mq7XJz79AWnJvR3PNp-eKM-ugaNOIEZrKnAU2p6Y',
-      categoryId: 5,
-      categoryName: '¿Donde dormir?',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-    MapItem(
-      id: '6',
-      title: '¿Donde comer?',
-      description: 'Descripción de ¿Donde comer?',
-      position: LatLng(0, 0),
-      imageUrl:
-          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRqXuNGUOLOsoE2uthWKeL5k6exEp9iMPDqy-v3wkswM3-e-Lxx',
-      categoryId: 6,
-      categoryName: '¿Donde comer?',
-      averageRating: 0.0,
-      commentCount: 0,
-    ),
-  ];
+  Future<void> _loadData() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+    final data = await apiService.loadData('categories', language);
+    setState(() {
+      _apiData = data.map((item) => Category.fromJson(item)).toList();
+    });
+  }
+
+  void reloadData() {
+    _loadData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,23 +79,18 @@ class _HomePageState extends State<HomePage> {
               });
             },
           ),
-          items: featuredItems.map((item) {
+          items: _apiData.map((category) {
             return Builder(
               builder: (BuildContext context) {
                 return GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ItemDetailPage(item: item),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/${category.page}');
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width,
                     decoration: BoxDecoration(
                       image: DecorationImage(
-                        image: NetworkImage(item.imageUrl),
+                        image: NetworkImage(category.imageUrl),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -215,7 +120,7 @@ class _HomePageState extends State<HomePage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        item.title,
+                                        category.title,
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 28,
@@ -232,7 +137,7 @@ class _HomePageState extends State<HomePage> {
                                               BorderRadius.circular(20),
                                         ),
                                         child: Text(
-                                          item.categoryName,
+                                          category.title,
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
@@ -260,7 +165,7 @@ class _HomePageState extends State<HomePage> {
           right: 0,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: featuredItems.asMap().entries.map((entry) {
+            children: _apiData.asMap().entries.map((entry) {
               return Container(
                 width: 10.0,
                 height: 10.0,
@@ -290,61 +195,12 @@ class _HomePageState extends State<HomePage> {
         crossAxisSpacing: 15.0,
         mainAxisSpacing: 15.0,
       ),
-      itemCount: items.length,
+      itemCount: _apiData.length,
       itemBuilder: (context, index) {
-        final item = items[index];
+        final category = _apiData[index];
         return GestureDetector(
           onTap: () {
-            if (item.title == 'Agenda') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AgendaPage(),
-                ),
-              );
-            } else if (item.title == 'Núcleos de población') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PopulationCentersPage(),
-                ),
-              );
-            } else if (item.title == 'Puntos de interés') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PointsOfInterestPage(),
-                ),
-              );
-            } else if (item.title == 'Ruta a pie y en bicicleta') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RoutesPage(),
-                ),
-              );
-            } else if (item.title == '¿Donde dormir?') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AccommodationPage(),
-                ),
-              );
-            } else if (item.title == '¿Donde comer?') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RestaurantsPage(),
-                ),
-              );
-            } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ItemDetailPage(item: item),
-                ),
-              );
-            }
+            Navigator.pushNamed(context, '/${category.page}');
           },
           child: Container(
             decoration: BoxDecoration(
@@ -369,7 +225,7 @@ class _HomePageState extends State<HomePage> {
                       topRight: Radius.circular(10.0),
                     ),
                     child: Image.network(
-                      item.imageUrl,
+                      category.imageUrl,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -380,7 +236,7 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item.title,
+                        category.title,
                         style: TextStyle(
                           fontSize: 14.0,
                           fontWeight: FontWeight.bold,

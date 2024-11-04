@@ -38,4 +38,18 @@ class MapItem {
     this.email,
     required this.commentCount,
   });
+
+  factory MapItem.fromJson(Map<String, dynamic> json) {
+    return MapItem(
+      id: json['uuid'][0]['value'],
+      title: json['info'][0]['value'],
+      description: json['field_pagina'][0]['value'],
+      position: LatLng(0, 0), // Puedes ajustar esto según tus necesidades
+      imageUrl: json['field_imatge'][0]['url'],
+      categoryId: json['field_ordenacio'][0]['value'],
+      categoryName: json['info'][0]['value'],
+      averageRating: 0.0, // Puedes ajustar esto según tus necesidades
+      commentCount: 0, // Puedes ajustar esto según tus necesidades
+    );
+  }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:felanitx/services/api_service.dart';
+import 'package:felanitx/pages/home_page.dart';
 
 class Header extends StatelessWidget {
   final bool showLanguageDropdown;
@@ -19,7 +21,9 @@ class Header extends StatelessWidget {
             height: 40,
           ),
           if (showLanguageDropdown)
-            LanguageDropdown(), // Utiliza el widget LanguageDropdown
+            LanguageDropdown(
+                onLanguageChanged: (language) => _changeLanguage(context,
+                    language)), // Pasa el context y el lenguaje seleccionado
           if (!showLanguageDropdown)
             Spacer(), // Añade un espacio flexible a la derecha si no se muestra el dropdown
         ],
@@ -29,7 +33,10 @@ class Header extends StatelessWidget {
 }
 
 class LanguageDropdown extends StatefulWidget {
-  const LanguageDropdown({Key? key}) : super(key: key);
+  final Function(String) onLanguageChanged;
+
+  const LanguageDropdown({Key? key, required this.onLanguageChanged})
+      : super(key: key);
 
   @override
   _LanguageDropdownState createState() => _LanguageDropdownState();
@@ -46,6 +53,8 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
         setState(() {
           _selectedLanguage = newValue!;
         });
+        widget.onLanguageChanged(newValue!
+            .toLowerCase()); // Llama a la función onLanguageChanged con el lenguaje seleccionado
       },
       items: <String>['ES', 'EN', 'CA', 'DE', 'FR'].map((String value) {
         return DropdownMenuItem<String>(
@@ -57,4 +66,13 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
       icon: Icon(Icons.arrow_drop_down),
     );
   }
+}
+
+void _changeLanguage(BuildContext context, String language) {
+  final apiService = ApiService();
+  apiService.setLanguage(language);
+
+  // Notificar el cambio de idioma a la página de inicio
+  final homePage = HomePage.of(context);
+  homePage?.reloadData();
 }
