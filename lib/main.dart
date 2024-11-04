@@ -33,6 +33,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const MainScreen(),
         '/agenda_page.dart': (context) => AgendaPage(title: ''),
+<<<<<<< HEAD
         '/population_centers_page.dart': (context) =>
             PopulationCentersPage(title: ''),
         '/points_of_interest_page.dart': (context) =>
@@ -40,6 +41,13 @@ class MyApp extends StatelessWidget {
         '/routes_page.dart': (context) => RoutesPage(title: ''),
         '/accommodation_page.dart': (context) => AccommodationPage(title: ''),
         '/restaurants_page.dart': (context) => RestaurantsPage(title: ''),
+=======
+        '/population_centers_page.dart': (context) => PopulationCentersPage(),
+        '/points_of_interest_page.dart': (context) => PointsOfInterestPage(),
+        '/routes_page.dart': (context) => RoutesPage(),
+        '/accommodation_page.dart': (context) => AccommodationPage(),
+        '/restaurants_page.dart': (context) => RestaurantsPage(),
+>>>>>>> 208a886 (agenda terminada)
       },
     );
   }

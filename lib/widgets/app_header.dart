@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/pages/home_page.dart';
+import 'package:felanitx/pages/map_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Header extends StatelessWidget {
+class AppHeader extends StatelessWidget {
   final bool showLanguageDropdown;
 
-  const Header({Key? key, this.showLanguageDropdown = true}) : super(key: key);
+  const AppHeader({Key? key, this.showLanguageDropdown = true})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +23,7 @@ class Header extends StatelessWidget {
             'assets/images/logo_felanitx.png',
             height: 40,
           ),
-          if (showLanguageDropdown)
-            LanguageDropdown(
-                onLanguageChanged: (language) => _changeLanguage(context,
-                    language)), // Pasa el context y el lenguaje seleccionado
+          if (showLanguageDropdown) LanguageDropdown(),
           if (!showLanguageDropdown)
             Spacer(), // Añade un espacio flexible a la derecha si no se muestra el dropdown
         ],
@@ -34,10 +33,7 @@ class Header extends StatelessWidget {
 }
 
 class LanguageDropdown extends StatefulWidget {
-  final Function(String) onLanguageChanged;
-
-  const LanguageDropdown({Key? key, required this.onLanguageChanged})
-      : super(key: key);
+  const LanguageDropdown({Key? key}) : super(key: key);
 
   @override
   _LanguageDropdownState createState() => _LanguageDropdownState();
@@ -60,16 +56,14 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
   }
 
   void _changeLanguage(String language) {
+    final apiService = ApiService();
+    apiService.setLanguage(language);
     setState(() {
       _selectedLanguage = language.toUpperCase();
     });
-    widget.onLanguageChanged(language.toLowerCase());
-    _saveLanguage(language);
-  }
 
-  Future<void> _saveLanguage(String language) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('language', language);
+    // Notificar el cambio de idioma a todas las páginas
+    _notifyLanguageChange(context, language);
   }
 
   @override
@@ -77,7 +71,7 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
     return DropdownButton<String>(
       value: _selectedLanguage,
       onChanged: (String? newValue) {
-        _changeLanguage(newValue!);
+        _changeLanguage(newValue!.toLowerCase());
       },
       items: <String>['ES', 'EN', 'CA', 'DE', 'FR'].map((String value) {
         return DropdownMenuItem<String>(
@@ -91,11 +85,10 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
   }
 }
 
-void _changeLanguage(BuildContext context, String language) {
-  final apiService = ApiService();
-  apiService.setLanguage(language);
-
-  // Notificar el cambio de idioma a la página de inicio
+void _notifyLanguageChange(BuildContext context, String language) {
   final homePage = HomePage.of(context);
   homePage?.reloadData();
+
+  final mapPage = MapPage.of(context);
+  mapPage?.reloadData();
 }

@@ -12,20 +12,48 @@ class ApiService {
       'fr': 'https://felanitx.drupal.auroracities.com/apartats_fr',
       'de': 'https://felanitx.drupal.auroracities.com/apartats_de',
     },
-    /*'otherApi1': {
-      'ca': 'https://example.com/api1_ca',
-      'es': 'https://example.com/api1_es',
-      'en': 'https://example.com/api1_en',
-      'fr': 'https://example.com/api1_fr',
-      'de': 'https://example.com/api1_de',
+    'agenda': {
+      'ca': 'https://felanitx.drupal.auroracities.com/agenda_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/agenda_es',
+      'en': 'https://felanitx.drupal.auroracities.com/agenda_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/agenda_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/agenda_de',
     },
-    'otherApi2': {
-      'ca': 'https://example.com/api2_ca',
-      'es': 'https://example.com/api2_es',
-      'en': 'https://example.com/api2_en',
-      'fr': 'https://example.com/api2_fr',
-      'de': 'https://example.com/api2_de',
-    },*/
+    'population_centers': {
+      'ca': 'https://felanitx.drupal.auroracities.com/nuclis_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/nuclis_es',
+      'en': 'https://felanitx.drupal.auroracities.com/nuclis_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/nuclis_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/nuclis_de',
+    },
+    'points_of_interest': {
+      'ca': 'https://felanitx.drupal.auroracities.com/punts_interes_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/punts_interes_es',
+      'en': 'https://felanitx.drupal.auroracities.com/punts_interes_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/punts_interes_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/punts_interes_de',
+    },
+    'routes': {
+      'ca': 'https://felanitx.drupal.auroracities.com/rutes_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/rutes_es',
+      'en': 'https://felanitx.drupal.auroracities.com/rutes_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/rutes_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/rutes_de',
+    },
+    'accommodation': {
+      'ca': 'https://felanitx.drupal.auroracities.com/allotjament_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/allotjament_es',
+      'en': 'https://felanitx.drupal.auroracities.com/allotjament_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/allotjament_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/allotjament_de',
+    },
+    'restaurants': {
+      'ca': 'https://felanitx.drupal.auroracities.com/restaurants_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/restaurants_es',
+      'en': 'https://felanitx.drupal.auroracities.com/restaurants_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/restaurants_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/restaurants_de',
+    },
   };
 
   static const _updateInterval = Duration(minutes: 1);

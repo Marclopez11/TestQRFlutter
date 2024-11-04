@@ -5,12 +5,17 @@ import 'package:felanitx/pages/item_detail_page.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:felanitx/services/api_service.dart';
 
 class PopulationCentersPage extends StatefulWidget {
+<<<<<<< HEAD
   final String title;
 
   const PopulationCentersPage({Key? key, required this.title})
       : super(key: key);
+=======
+  const PopulationCentersPage({Key? key}) : super(key: key);
+>>>>>>> 208a886 (agenda terminada)
 
   @override
   _PopulationCentersPageState createState() => _PopulationCentersPageState();
@@ -19,6 +24,7 @@ class PopulationCentersPage extends StatefulWidget {
 class _PopulationCentersPageState extends State<PopulationCentersPage> {
   bool isGridView = false;
   String? selectedCategory;
+  String _title = '';
 
   final List<MapItem> pointsOfInterest = [
     MapItem(
@@ -71,12 +77,22 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadTitle();
   }
 
   Future<void> _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       isGridView = prefs.getBool('isGridView') ?? false;
+    });
+  }
+
+  Future<void> _loadTitle() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+    final data = await apiService.loadData('population_centers', language);
+    setState(() {
+      _title = data[0]['info'][0]['value'];
     });
   }
 
@@ -89,7 +105,10 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Image.asset('assets/images/logo_felanitx.png', height: 40),
+        title: Text(
+          _title,
+          style: TextStyle(color: Colors.black),
+        ),
         centerTitle: true,
       ),
       body: Column(
