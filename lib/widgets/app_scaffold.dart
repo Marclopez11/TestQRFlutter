@@ -3,10 +3,12 @@ import 'header.dart';
 
 class AppScaffold extends StatelessWidget {
   final Widget body;
+  final bool showLanguageDropdown;
 
   const AppScaffold({
     Key? key,
     required this.body,
+    this.showLanguageDropdown = true,
   }) : super(key: key);
 
   @override
@@ -16,7 +18,7 @@ class AppScaffold extends StatelessWidget {
         children: [
           SafeArea(
             bottom: false,
-            child: Header(),
+            child: Header(showLanguageDropdown: showLanguageDropdown),
           ),
           Expanded(child: body),
         ],

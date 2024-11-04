@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../widgets/header.dart'; // Add this import statement
+import 'package:felanitx/widgets/app_header.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -145,12 +146,12 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         return true;
       },
       child: Scaffold(
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(60),
+          child: AppHeader(),
+        ),
         body: Column(
           children: [
-            SafeArea(
-              bottom: false,
-              child: Header(),
-            ),
             Expanded(
               child: _cameraPermissionGranted
                   ? _buildQRScanner()

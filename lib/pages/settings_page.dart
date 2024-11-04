@@ -146,6 +146,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
+      showLanguageDropdown: true,
       body: ListView(
         padding: EdgeInsets.all(20),
         children: [

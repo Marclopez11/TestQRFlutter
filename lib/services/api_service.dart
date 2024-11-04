@@ -61,6 +61,9 @@ class ApiService {
   Timer? _timer;
   String _currentLanguage = 'ca';
 
+  final _languageController = StreamController<String>.broadcast();
+  Stream<String> get languageStream => _languageController.stream;
+
   void startService() {
     _loadLanguage();
     _timer = Timer.periodic(_updateInterval, (_) => _fetchData());
@@ -70,10 +73,11 @@ class ApiService {
     _timer?.cancel();
   }
 
-  void setLanguage(String language) {
+  Future<void> setLanguage(String language) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', language);
     _currentLanguage = language;
-    _saveLanguage();
-    _fetchData();
+    _languageController.add(language);
   }
 
   Future<void> _fetchData() async {
@@ -128,6 +132,10 @@ class ApiService {
 
   Future<String> getCurrentLanguage() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('language') ?? 'ca';
+    final language = prefs.getString('language');
+    if (language != null) {
+      _currentLanguage = language;
+    }
+    return _currentLanguage;
   }
 }

@@ -24,14 +24,43 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin<HomePage> {
   int _currentCarouselIndex = 0;
   List<Category> _apiData = [];
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _subscribeToLanguageChanges();
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromLanguageChanges();
+    super.dispose();
+  }
+
+  void _subscribeToLanguageChanges() {
+    ApiService().languageStream.listen((_) {
+      _loadData();
+    });
+  }
+
+  void _unsubscribeFromLanguageChanges() {
+    ApiService().languageStream.drain();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      _loadData();
+    }
   }
 
   Future<void> _loadData() async {

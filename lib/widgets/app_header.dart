@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/pages/home_page.dart';
 import 'package:felanitx/pages/map_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AppHeader extends StatelessWidget {
   final bool showLanguageDropdown;
@@ -49,9 +48,10 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
   }
 
   Future<void> _loadLanguage() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
     setState(() {
-      _selectedLanguage = prefs.getString('language')?.toUpperCase() ?? 'ES';
+      _selectedLanguage = language.toUpperCase();
     });
   }
 
@@ -88,7 +88,4 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
 void _notifyLanguageChange(BuildContext context, String language) {
   final homePage = HomePage.of(context);
   homePage?.reloadData();
-
-  final mapPage = MapPage.of(context);
-  mapPage?.reloadData();
 }
