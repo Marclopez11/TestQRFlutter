@@ -7,6 +7,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PopulationCentersPage extends StatefulWidget {
+  final String title;
+
+  const PopulationCentersPage({Key? key, required this.title})
+      : super(key: key);
+
   @override
   _PopulationCentersPageState createState() => _PopulationCentersPageState();
 }

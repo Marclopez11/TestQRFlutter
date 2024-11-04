@@ -84,7 +84,11 @@ class _HomePageState extends State<HomePage> {
               builder: (BuildContext context) {
                 return GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(context, '/${category.page}');
+                    Navigator.pushNamed(
+                      context,
+                      '/${category.page}',
+                      arguments: category.title,
+                    );
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width,
@@ -200,7 +204,11 @@ class _HomePageState extends State<HomePage> {
         final category = _apiData[index];
         return GestureDetector(
           onTap: () {
-            Navigator.pushNamed(context, '/${category.page}');
+            Navigator.pushNamed(
+              context,
+              '/${category.page}',
+              arguments: category.title,
+            );
           },
           child: Container(
             decoration: BoxDecoration(

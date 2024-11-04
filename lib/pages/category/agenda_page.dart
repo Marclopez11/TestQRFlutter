@@ -3,6 +3,10 @@ import 'package:flutter_html/flutter_html.dart';
 import '../../../models/event.dart';
 
 class AgendaPage extends StatelessWidget {
+  final String title;
+
+  AgendaPage({Key? key, required this.title}) : super(key: key);
+
   final List<Event> events = List.generate(
     3,
     (index) => Event(
@@ -22,9 +26,9 @@ class AgendaPage extends StatelessWidget {
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Image.asset(
-          'assets/images/logo_felanitx.png',
-          height: 40,
+        title: Text(
+          title,
+          style: TextStyle(color: Colors.black),
         ),
         centerTitle: true,
       ),

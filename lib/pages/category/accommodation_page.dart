@@ -7,6 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AccommodationPage extends StatefulWidget {
+  final String title;
+
+  const AccommodationPage({Key? key, required this.title}) : super(key: key);
+
   @override
   _AccommodationPageState createState() => _AccommodationPageState();
 }

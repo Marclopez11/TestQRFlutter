@@ -7,6 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class RoutesPage extends StatefulWidget {
+  final String title;
+
+  const RoutesPage({Key? key, required this.title}) : super(key: key);
+
   @override
   _RoutesPageState createState() => _RoutesPageState();
 }
@@ -83,7 +87,7 @@ class _RoutesPageState extends State<RoutesPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Puntos de interés',
+                  widget.title,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,

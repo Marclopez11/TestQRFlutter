@@ -7,6 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PointsOfInterestPage extends StatefulWidget {
+  final String title;
+
+  const PointsOfInterestPage({Key? key, required this.title}) : super(key: key);
+
   @override
   _PointsOfInterestPageState createState() => _PointsOfInterestPageState();
 }

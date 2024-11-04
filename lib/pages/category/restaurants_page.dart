@@ -7,6 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class RestaurantsPage extends StatefulWidget {
+  final String title;
+
+  const RestaurantsPage({Key? key, required this.title}) : super(key: key);
+
   @override
   _RestaurantsPageState createState() => _RestaurantsPageState();
 }

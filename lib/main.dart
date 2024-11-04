@@ -32,12 +32,14 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const MainScreen(),
-        '/agenda_page.dart': (context) => AgendaPage(),
-        '/population_centers_page.dart': (context) => PopulationCentersPage(),
-        '/points_of_interest_page.dart': (context) => PointsOfInterestPage(),
-        '/routes_page.dart': (context) => RoutesPage(),
-        '/accommodation_page.dart': (context) => AccommodationPage(),
-        '/restaurants_page.dart': (context) => RestaurantsPage(),
+        '/agenda_page.dart': (context) => AgendaPage(title: ''),
+        '/population_centers_page.dart': (context) =>
+            PopulationCentersPage(title: ''),
+        '/points_of_interest_page.dart': (context) =>
+            PointsOfInterestPage(title: ''),
+        '/routes_page.dart': (context) => RoutesPage(title: ''),
+        '/accommodation_page.dart': (context) => AccommodationPage(title: ''),
+        '/restaurants_page.dart': (context) => RestaurantsPage(title: ''),
       },
     );
   }
@@ -52,19 +54,13 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
-  final List<GlobalKey<State<StatefulWidget>>> _pageKeys = [
-    GlobalKey(),
-    GlobalKey(),
-    GlobalKey(),
-    GlobalKey(),
-  ];
 
   List<Widget> _buildWidgetOptions() {
     return <Widget>[
-      HomePage(key: _pageKeys[0]),
-      MapPage(key: _pageKeys[1]),
-      CameraPage(key: _pageKeys[2]),
-      SettingsPage(key: _pageKeys[3]),
+      HomePage(),
+      MapPage(),
+      CameraPage(),
+      SettingsPage(),
     ];
   }
 
@@ -77,10 +73,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _buildWidgetOptions(),
-      ),
+      body: _buildWidgetOptions()[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -103,9 +96,8 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor:
-            Theme.of(context).primaryColor, // Agregamos esta línea
-        unselectedItemColor: Colors.grey, // Agregamos esta línea
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
       ),
     );
   }
