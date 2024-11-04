@@ -9,11 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 class AccommodationPage extends StatefulWidget {
   final String title;
 
-<<<<<<< HEAD
-  const AccommodationPage({Key? key, required this.title}) : super(key: key);
-=======
   const AccommodationPage({Key? key, this.title = ''}) : super(key: key);
->>>>>>> 208a886 (agenda terminada)
 
   @override
   _AccommodationPageState createState() => _AccommodationPageState();

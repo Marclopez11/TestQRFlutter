@@ -9,11 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 class RoutesPage extends StatefulWidget {
   final String title;
 
-<<<<<<< HEAD
-  const RoutesPage({Key? key, required this.title}) : super(key: key);
-=======
   const RoutesPage({Key? key, this.title = ''}) : super(key: key);
->>>>>>> 208a886 (agenda terminada)
 
   @override
   _RoutesPageState createState() => _RoutesPageState();

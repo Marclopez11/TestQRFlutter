@@ -9,11 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 class RestaurantsPage extends StatefulWidget {
   final String title;
 
-<<<<<<< HEAD
-  const RestaurantsPage({Key? key, required this.title}) : super(key: key);
-=======
   const RestaurantsPage({Key? key, this.title = ''}) : super(key: key);
->>>>>>> 208a886 (agenda terminada)
 
   @override
   _RestaurantsPageState createState() => _RestaurantsPageState();

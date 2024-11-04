@@ -6,26 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-<<<<<<< HEAD
-class AgendaPage extends StatelessWidget {
-=======
 class AgendaPage extends StatefulWidget {
->>>>>>> 208a886 (agenda terminada)
   final String title;
 
   AgendaPage({Key? key, required this.title}) : super(key: key);
 
-<<<<<<< HEAD
-  final List<Event> events = List.generate(
-    3,
-    (index) => Event(
-      description:
-          '<b>Feria de San Agustín:</b> Feria nocturna con verbena, al paseo Ramon Llull. La fiesta más popular de Felanitx en honor de San Agustín de Hipona.',
-      date: DateTime(2023, 8, 27),
-      link: 'https://viufelanitx.com/upload/images/07_2019/6121_20074.jpg',
-    ),
-  );
-=======
   @override
   _AgendaPageState createState() => _AgendaPageState();
 }
@@ -69,7 +54,6 @@ class _AgendaPageState extends State<AgendaPage> {
       await _loadEvents();
     }
   }
->>>>>>> 208a886 (agenda terminada)
 
   @override
   Widget build(BuildContext context) {
@@ -81,11 +65,7 @@ class _AgendaPageState extends State<AgendaPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-<<<<<<< HEAD
-          title,
-=======
           widget.title,
->>>>>>> 208a886 (agenda terminada)
           style: TextStyle(color: Colors.black),
         ),
         centerTitle: true,

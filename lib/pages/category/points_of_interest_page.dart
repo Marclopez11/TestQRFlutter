@@ -9,11 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 class PointsOfInterestPage extends StatefulWidget {
   final String title;
 
-<<<<<<< HEAD
-  const PointsOfInterestPage({Key? key, required this.title}) : super(key: key);
-=======
   const PointsOfInterestPage({Key? key, this.title = ''}) : super(key: key);
->>>>>>> 208a886 (agenda terminada)
 
   @override
   _PointsOfInterestPageState createState() => _PointsOfInterestPageState();

@@ -8,14 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:felanitx/services/api_service.dart';
 
 class PopulationCentersPage extends StatefulWidget {
-<<<<<<< HEAD
-  final String title;
-
-  const PopulationCentersPage({Key? key, required this.title})
-      : super(key: key);
-=======
   const PopulationCentersPage({Key? key}) : super(key: key);
->>>>>>> 208a886 (agenda terminada)
 
   @override
   _PopulationCentersPageState createState() => _PopulationCentersPageState();
