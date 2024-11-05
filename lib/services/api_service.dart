@@ -34,11 +34,11 @@ class ApiService {
       'de': 'https://felanitx.drupal.auroracities.com/punts_interes_de',
     },
     'routes': {
-      'ca': 'https://felanitx.drupal.auroracities.com/rutes_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/rutes_es',
-      'en': 'https://felanitx.drupal.auroracities.com/rutes_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/rutes_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/rutes_de',
+      'ca': 'https://felanitx.drupal.auroracities.com/ruta_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/ruta_es',
+      'en': 'https://felanitx.drupal.auroracities.com/ruta_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/ruta_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/ruta_de',
     },
     'accommodation': {
       'ca': 'https://felanitx.drupal.auroracities.com/allotjament_ca',

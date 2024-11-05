@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:felanitx/models/map_item.dart';
+import 'package:felanitx/models/route.dart';
 import 'package:felanitx/pages/item_detail_page.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:felanitx/services/api_service.dart';
+import 'package:felanitx/models/map_item.dart';
 
 class RoutesPage extends StatefulWidget {
-  final String title;
-
-  const RoutesPage({Key? key, this.title = ''}) : super(key: key);
+  const RoutesPage({Key? key}) : super(key: key);
 
   @override
   _RoutesPageState createState() => _RoutesPageState();
@@ -17,47 +17,70 @@ class RoutesPage extends StatefulWidget {
 
 class _RoutesPageState extends State<RoutesPage> {
   bool isGridView = false;
-  String? selectedCategory;
-
-  final List<MapItem> pointsOfInterest = [
-    MapItem(
-      id: '1',
-      title: 'Ruta del Castillo de Santueri',
-      description: 'Descripción de la Ruta del Castillo de Santueri',
-      position: LatLng(39.4697, 3.1483),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/SonMesquida.jpg',
-      categoryId: 1,
-      categoryName: 'Rutas en bicicleta',
-      averageRating: 4.5,
-      commentCount: 12,
-    ),
-    MapItem(
-      id: '2',
-      title: 'Ruta de Son Valls',
-      description: 'Descripción de la Ruta de Son Valls',
-      position: LatLng(39.4797, 3.1383),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/Sonvalls.jpg',
-      categoryId: 1,
-      categoryName: 'Rutas en bicicleta',
-      averageRating: 4.2,
-      commentCount: 9,
-    ),
-    // Agrega más elementos según sea necesario
-  ];
-
-  List<MapItem> get filteredItems {
-    if (selectedCategory == null) return pointsOfInterest;
-    return pointsOfInterest
-        .where((item) => item.categoryName == selectedCategory)
-        .toList();
-  }
+  String? selectedDifficulty;
+  String? selectedCircuitType;
+  String? selectedRouteType;
+  List<RouteModel> routes = [];
+  String pageTitle = 'Rutas';
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadRoutes();
+    _setPageTitle();
+  }
+
+  Future<void> _loadRoutes() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+    final data = await apiService.loadData('routes', language);
+    setState(() {
+      routes = data.map((item) => RouteModel.fromJson(item)).toList();
+    });
+  }
+
+  void _setPageTitle() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+    setState(() {
+      switch (language) {
+        case 'es':
+          pageTitle = 'Rutas';
+          break;
+        case 'en':
+          pageTitle = 'Routes';
+          break;
+        case 'ca':
+          pageTitle = 'Rutes';
+          break;
+        case 'de':
+          pageTitle = 'Routen';
+          break;
+        case 'fr':
+          pageTitle = 'Itinéraires';
+          break;
+        default:
+          pageTitle = 'Rutas';
+      }
+    });
+  }
+
+  List<RouteModel> get filteredItems {
+    return routes.where((route) {
+      if (selectedDifficulty != null &&
+          route.difficulty != selectedDifficulty) {
+        return false;
+      }
+      if (selectedCircuitType != null &&
+          route.circuitType != selectedCircuitType) {
+        return false;
+      }
+      if (selectedRouteType != null && route.routeType != selectedRouteType) {
+        return false;
+      }
+      return true;
+    }).toList();
   }
 
   Future<void> _loadPreferences() async {
@@ -76,7 +99,10 @@ class _RoutesPageState extends State<RoutesPage> {
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Image.asset('assets/images/logo_felanitx.png', height: 40),
+        title: Text(
+          pageTitle,
+          style: TextStyle(color: Colors.black),
+        ),
         centerTitle: true,
       ),
       body: Column(
@@ -87,7 +113,7 @@ class _RoutesPageState extends State<RoutesPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.title,
+                  pageTitle,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -122,7 +148,11 @@ class _RoutesPageState extends State<RoutesPage> {
             ),
           ),
           Expanded(
-            child: isGridView ? _buildGrid() : _buildList(),
+            child: routes.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : isGridView
+                    ? _buildGrid()
+                    : _buildList(),
           ),
         ],
       ),
@@ -187,7 +217,7 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
-  Widget _buildListItem(MapItem item) {
+  Widget _buildListItem(RouteModel route) {
     return Card(
       margin: EdgeInsets.zero,
       child: InkWell(
@@ -195,7 +225,7 @@ class _RoutesPageState extends State<RoutesPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ItemDetailPage(item: item),
+              builder: (context) => ItemDetailPage(route: route),
             ),
           );
         },
@@ -210,7 +240,7 @@ class _RoutesPageState extends State<RoutesPage> {
                   bottomLeft: Radius.circular(4),
                 ),
                 child: Image.network(
-                  item.imageUrl,
+                  route.mainImage ?? '',
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
@@ -228,7 +258,7 @@ class _RoutesPageState extends State<RoutesPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.title,
+                      route.title,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -236,39 +266,55 @@ class _RoutesPageState extends State<RoutesPage> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      item.categoryName,
+                      '${route.distance} km - ${route.hours}h ${route.minutes}min',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
                       ),
                     ),
-                    if (item.averageRating > 0) ...[
-                      SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.star, color: Colors.amber, size: 16),
-                              SizedBox(width: 4),
-                              Text(
-                                '${item.averageRating} (${item.commentCount})',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.trending_up, size: 16, color: Colors.green),
+                        SizedBox(width: 4),
+                        Text(
+                          '${route.positiveElevation}m',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
                           ),
+                        ),
+                        SizedBox(width: 16),
+                        Icon(Icons.trending_down, size: 16, color: Colors.red),
+                        SizedBox(width: 4),
+                        Text(
+                          '${route.negativeElevation}m',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          route.difficulty.toUpperCase(),
+                          style: TextStyle(
+                            color: _getDifficultyColor(route.difficulty),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (route.kmlUrl != null)
                           IconButton(
-                            icon: Icon(Icons.map),
-                            onPressed: () {
-                              _openInMaps(item);
-                            },
+                            icon: Icon(Icons.download),
+                            onPressed: () => _downloadKML(route.kmlUrl!),
                           ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -279,7 +325,26 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
-  Widget _buildGridItem(MapItem item) {
+  Color _getDifficultyColor(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'facil':
+        return Colors.green;
+      case 'moderat':
+        return Colors.orange;
+      case 'dificil':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _downloadKML(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    }
+  }
+
+  Widget _buildGridItem(RouteModel route) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -290,7 +355,7 @@ class _RoutesPageState extends State<RoutesPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ItemDetailPage(item: item),
+              builder: (context) => ItemDetailPage(route: route),
             ),
           );
         },
@@ -299,11 +364,11 @@ class _RoutesPageState extends State<RoutesPage> {
           children: [
             Expanded(
               child: Hero(
-                tag: item.id,
+                tag: route.id,
                 child: ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
                   child: Image.network(
-                    item.imageUrl,
+                    route.mainImage ?? '',
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -315,7 +380,7 @@ class _RoutesPageState extends State<RoutesPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.title,
+                    route.title,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -325,39 +390,55 @@ class _RoutesPageState extends State<RoutesPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    item.categoryName,
+                    '${route.distance} km - ${route.hours}h ${route.minutes}min',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,
                     ),
                   ),
-                  if (item.averageRating > 0) ...[
-                    SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.star, color: Colors.amber, size: 16),
-                            SizedBox(width: 4),
-                            Text(
-                              '${item.averageRating.toStringAsFixed(1)} (${item.commentCount})',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.trending_up, size: 16, color: Colors.green),
+                      SizedBox(width: 4),
+                      Text(
+                        '${route.positiveElevation}m',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
                         ),
+                      ),
+                      SizedBox(width: 16),
+                      Icon(Icons.trending_down, size: 16, color: Colors.red),
+                      SizedBox(width: 4),
+                      Text(
+                        '${route.negativeElevation}m',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        route.difficulty.toUpperCase(),
+                        style: TextStyle(
+                          color: _getDifficultyColor(route.difficulty),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (route.kmlUrl != null)
                         IconButton(
-                          icon: Icon(Icons.map, size: 20),
-                          onPressed: () {
-                            _openInMaps(item);
-                          },
+                          icon: Icon(Icons.download, size: 20),
+                          onPressed: () => _downloadKML(route.kmlUrl!),
                         ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -368,8 +449,11 @@ class _RoutesPageState extends State<RoutesPage> {
   }
 
   void _showFilterBottomSheet() {
-    final categories =
-        pointsOfInterest.map((item) => item.categoryName).toSet().toList();
+    final difficulties =
+        routes.map((route) => route.difficulty).toSet().toList();
+    final circuitTypes =
+        routes.map((route) => route.circuitType).toSet().toList();
+    final routeTypes = routes.map((route) => route.routeType).toSet().toList();
 
     showModalBottomSheet(
       context: context,
@@ -381,64 +465,37 @@ class _RoutesPageState extends State<RoutesPage> {
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
               padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Filtrar por categoría',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      FilterChip(
-                        label: Text('Todas'),
-                        selected: selectedCategory == null,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selectedCategory = null;
-                          });
-                          setState(() {});
-                          Navigator.pop(context);
-                        },
-                        backgroundColor: Colors.grey[200],
-                        selectedColor:
-                            Theme.of(context).primaryColor.withOpacity(0.2),
-                        labelStyle: TextStyle(
-                          color: selectedCategory == null
-                              ? Theme.of(context).primaryColor
-                              : Colors.black,
-                        ),
-                      ),
-                      ...categories.map((category) {
-                        return FilterChip(
-                          label: Text(category),
-                          selected: selectedCategory == category,
-                          onSelected: (selected) {
-                            setModalState(() {
-                              selectedCategory = category;
-                            });
-                            setState(() {});
-                            Navigator.pop(context);
-                          },
-                          backgroundColor: Colors.grey[200],
-                          selectedColor:
-                              Theme.of(context).primaryColor.withOpacity(0.2),
-                          labelStyle: TextStyle(
-                            color: selectedCategory == category
-                                ? Theme.of(context).primaryColor
-                                : Colors.black,
-                          ),
-                        );
-                      }).toList(),
-                    ],
-                  ),
-                ],
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildFilterSection(
+                        'Dificultad', difficulties, selectedDifficulty,
+                        (value) {
+                      setModalState(() {
+                        selectedDifficulty = value as String?;
+                      });
+                      setState(() {});
+                    }),
+                    SizedBox(height: 20),
+                    _buildFilterSection(
+                        'Tipo de circuito', circuitTypes, selectedCircuitType,
+                        (value) {
+                      setModalState(() {
+                        selectedCircuitType = value as String?;
+                      });
+                      setState(() {});
+                    }),
+                    SizedBox(height: 20),
+                    _buildFilterSection(
+                        'Tipo de ruta', routeTypes, selectedRouteType, (value) {
+                      setModalState(() {
+                        selectedRouteType = value as String?;
+                      });
+                      setState(() {});
+                    }),
+                  ],
+                ),
               ),
             );
           },
@@ -447,10 +504,62 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
-  void _openInMaps(MapItem item) async {
+  Widget _buildFilterSection(String title, List<String> options,
+      String? selectedValue, Function(String?) onSelected) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            FilterChip(
+              label: Text('Todos'),
+              selected: selectedValue == null,
+              onSelected: (selected) {
+                onSelected(null);
+              },
+              backgroundColor: Colors.grey[200],
+              selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+              labelStyle: TextStyle(
+                color: selectedValue == null
+                    ? Theme.of(context).primaryColor
+                    : Colors.black,
+              ),
+            ),
+            ...options.map((option) {
+              return FilterChip(
+                label: Text(option),
+                selected: selectedValue == option,
+                onSelected: (selected) {
+                  onSelected(selected ? option : null);
+                },
+                backgroundColor: Colors.grey[200],
+                selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
+                labelStyle: TextStyle(
+                  color: selectedValue == option
+                      ? Theme.of(context).primaryColor
+                      : Colors.black,
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _openInMaps(RouteModel route) async {
     final url = Platform.isIOS
-        ? 'http://maps.apple.com/?daddr=${item.position.latitude},${item.position.longitude}'
-        : 'https://www.google.com/maps/dir/?api=1&destination=${item.position.latitude},${item.position.longitude}';
+        ? 'http://maps.apple.com/?daddr=${route.location.latitude},${route.location.longitude}'
+        : 'https://www.google.com/maps/dir/?api=1&destination=${route.location.latitude},${route.location.longitude}';
 
     if (await canLaunch(url)) {
       await launch(url);

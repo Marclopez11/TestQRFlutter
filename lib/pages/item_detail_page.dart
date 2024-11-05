@@ -4,15 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/map_item.dart';
+import '../models/route.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 
 class ItemDetailPage extends StatefulWidget {
-  final MapItem item;
+  final MapItem? item;
+  final RouteModel? route;
 
-  const ItemDetailPage({Key? key, required this.item}) : super(key: key);
+  const ItemDetailPage({Key? key, this.item, this.route}) : super(key: key);
 
   @override
   _ItemDetailPageState createState() => _ItemDetailPageState();
@@ -27,8 +29,8 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
 
   void _openInMaps() async {
     final url = Platform.isIOS
-        ? 'http://maps.apple.com/?q=${widget.item.position.latitude},${widget.item.position.longitude}'
-        : 'geo:${widget.item.position.latitude},${widget.item.position.longitude}?q=${widget.item.position.latitude},${widget.item.position.longitude}';
+        ? 'http://maps.apple.com/?q=${widget.item?.position.latitude},${widget.item?.position.longitude}'
+        : 'geo:${widget.item?.position.latitude},${widget.item?.position.longitude}?q=${widget.item?.position.latitude},${widget.item?.position.longitude}';
 
     if (await canLaunch(url)) {
       await launch(url);
@@ -44,8 +46,8 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
 
   void _shareContent() {
     Share.share(
-      'Mira este lugar interesante: ${widget.item.title}\n\nhttps://www.google.com/maps/dir/?api=1&destination=${widget.item.position.latitude},${widget.item.position.longitude}',
-      subject: widget.item.title,
+      'Mira este lugar interesante: ${widget.item?.title}\n\nhttps://www.google.com/maps/dir/?api=1&destination=${widget.item?.position.latitude},${widget.item?.position.longitude}',
+      subject: widget.item?.title,
     );
   }
 
@@ -57,7 +59,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
 
       final comment = _commentController.text;
       final rating = _rating.toInt();
-      final nid = widget.item.id;
+      final nid = widget.item?.id;
 
       final url =
           'https://v5zl55fl4h.execute-api.eu-central-1.amazonaws.com/comment?comment=$comment&nid=$nid&rating=$rating';
@@ -145,6 +147,8 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final item = widget.item ?? _convertRouteToMapItem(widget.route!);
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -172,7 +176,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           ),
           SliverToBoxAdapter(
             child: Image.network(
-              widget.item.imageUrl,
+              item.imageUrl,
               height: 250,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -186,7 +190,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.item.categoryName,
+                      item.categoryName,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -195,16 +199,16 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                     ),
                     SizedBox(height: 10),
                     Text(
-                      widget.item.description,
+                      item.description,
                       style: TextStyle(fontSize: 16),
                     ),
                     SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (widget.item.facebookUrl != null)
+                        if (item.facebookUrl != null)
                           GestureDetector(
-                            onTap: () => launch(widget.item.facebookUrl!),
+                            onTap: () => launch(item.facebookUrl!),
                             child: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
@@ -212,9 +216,9 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                                   size: 30, color: Color(0xFF1877F2)),
                             ),
                           ),
-                        if (widget.item.instagramUrl != null)
+                        if (item.instagramUrl != null)
                           GestureDetector(
-                            onTap: () => launch(widget.item.instagramUrl!),
+                            onTap: () => launch(item.instagramUrl!),
                             child: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
@@ -222,9 +226,9 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                                   size: 30, color: Color(0xFFE4405F)),
                             ),
                           ),
-                        if (widget.item.twitterUrl != null)
+                        if (item.twitterUrl != null)
                           GestureDetector(
-                            onTap: () => launch(widget.item.twitterUrl!),
+                            onTap: () => launch(item.twitterUrl!),
                             child: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
@@ -232,9 +236,9 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                                   size: 30, color: Color(0xFF1DA1F2)),
                             ),
                           ),
-                        if (widget.item.websiteUrl != null)
+                        if (item.websiteUrl != null)
                           GestureDetector(
-                            onTap: () => launch(widget.item.websiteUrl!),
+                            onTap: () => launch(item.websiteUrl!),
                             child: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
@@ -242,11 +246,11 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                                   size: 30, color: Colors.blue),
                             ),
                           ),
-                        if (widget.item.whatsappNumber != null)
+                        if (item.whatsappNumber != null)
                           GestureDetector(
                             onTap: () => Share.share(
-                              widget.item.whatsappNumber!,
-                              subject: 'Mensaje de ${widget.item.title}',
+                              item.whatsappNumber!,
+                              subject: 'Mensaje de ${item.title}',
                             ),
                             child: Padding(
                               padding:
@@ -255,10 +259,9 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                                   size: 30, color: Color(0xFF25D366)),
                             ),
                           ),
-                        if (widget.item.phoneNumber != null)
+                        if (item.phoneNumber != null)
                           GestureDetector(
-                            onTap: () =>
-                                launch('tel:${widget.item.phoneNumber}'),
+                            onTap: () => launch('tel:${item.phoneNumber}'),
                             child: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
@@ -266,9 +269,9 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                                   size: 30, color: Colors.green),
                             ),
                           ),
-                        if (widget.item.email != null)
+                        if (item.email != null)
                           GestureDetector(
-                            onTap: () => launch('mailto:${widget.item.email}'),
+                            onTap: () => launch('mailto:${item.email}'),
                             child: Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8.0),
@@ -283,7 +286,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                       height: 200,
                       child: FlutterMap(
                         options: MapOptions(
-                          center: widget.item.position,
+                          center: item.position,
                           zoom: 15.0,
                           interactiveFlags: InteractiveFlag.none,
                         ),
@@ -297,7 +300,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                             options: PopupMarkerLayerOptions(
                               markers: [
                                 Marker(
-                                  point: widget.item.position,
+                                  point: item.position,
                                   width: 40,
                                   height: 40,
                                   builder: (_) => GestureDetector(
@@ -456,6 +459,20 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           ),
         ],
       ),
+    );
+  }
+
+  MapItem _convertRouteToMapItem(RouteModel route) {
+    return MapItem(
+      id: route.id,
+      title: route.title,
+      description: route.description,
+      position: route.location,
+      imageUrl: route.mainImage ?? '',
+      categoryId: 1,
+      categoryName: route.routeType,
+      averageRating: 0,
+      commentCount: 0,
     );
   }
 }
