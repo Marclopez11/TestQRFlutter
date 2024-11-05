@@ -263,14 +263,18 @@ class _RoutesPageState extends State<RoutesPage> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
                     Text(
-                      '${route.distance} km - ${route.hours}h ${route.minutes}min',
+                      '${route.distance.toStringAsFixed(2)} km - ${route.hours}h ${route.minutes}min',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
                     Row(
@@ -278,7 +282,7 @@ class _RoutesPageState extends State<RoutesPage> {
                         Icon(Icons.trending_up, size: 16, color: Colors.green),
                         SizedBox(width: 4),
                         Text(
-                          '${route.positiveElevation}m',
+                          '${route.positiveElevation.toStringAsFixed(0)}m',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 14,
@@ -288,7 +292,7 @@ class _RoutesPageState extends State<RoutesPage> {
                         Icon(Icons.trending_down, size: 16, color: Colors.red),
                         SizedBox(width: 4),
                         Text(
-                          '${route.negativeElevation}m',
+                          '${route.negativeElevation.toStringAsFixed(0)}m',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 14,
@@ -325,25 +329,6 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
-  Color _getDifficultyColor(String difficulty) {
-    switch (difficulty.toLowerCase()) {
-      case 'facil':
-        return Colors.green;
-      case 'moderat':
-        return Colors.orange;
-      case 'dificil':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Future<void> _downloadKML(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    }
-  }
-
   Widget _buildGridItem(RouteModel route) {
     return Card(
       elevation: 4,
@@ -362,7 +347,8 @@ class _RoutesPageState extends State<RoutesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
+            AspectRatio(
+              aspectRatio: 1.5,
               child: Hero(
                 tag: route.id,
                 child: ClipRRect(
@@ -390,35 +376,13 @@ class _RoutesPageState extends State<RoutesPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    '${route.distance} km - ${route.hours}h ${route.minutes}min',
+                    '${route.distance.toStringAsFixed(2)} km - ${route.hours}h ${route.minutes}min',
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 12,
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.trending_up, size: 16, color: Colors.green),
-                      SizedBox(width: 4),
-                      Text(
-                        '${route.positiveElevation}m',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      Icon(Icons.trending_down, size: 16, color: Colors.red),
-                      SizedBox(width: 4),
-                      Text(
-                        '${route.negativeElevation}m',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4),
                   Row(
@@ -448,6 +412,25 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
+  Color _getDifficultyColor(String difficulty) {
+    switch (difficulty.toLowerCase()) {
+      case 'facil':
+        return Colors.green;
+      case 'moderat':
+        return Colors.orange;
+      case 'dificil':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _downloadKML(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    }
+  }
+
   void _showFilterBottomSheet() {
     final difficulties =
         routes.map((route) => route.difficulty).toSet().toList();
@@ -465,94 +448,114 @@ class _RoutesPageState extends State<RoutesPage> {
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
               padding: EdgeInsets.all(20),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildFilterSection(
-                        'Dificultad', difficulties, selectedDifficulty,
-                        (value) {
-                      setModalState(() {
-                        selectedDifficulty = value as String?;
-                      });
-                      setState(() {});
-                    }),
-                    SizedBox(height: 20),
-                    _buildFilterSection(
-                        'Tipo de circuito', circuitTypes, selectedCircuitType,
-                        (value) {
-                      setModalState(() {
-                        selectedCircuitType = value as String?;
-                      });
-                      setState(() {});
-                    }),
-                    SizedBox(height: 20),
-                    _buildFilterSection(
-                        'Tipo de ruta', routeTypes, selectedRouteType, (value) {
-                      setModalState(() {
-                        selectedRouteType = value as String?;
-                      });
-                      setState(() {});
-                    }),
-                  ],
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Dificultad',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: difficulties.map((difficulty) {
+                      return FilterChip(
+                        label: Text(difficulty),
+                        selected: selectedDifficulty == difficulty,
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selectedDifficulty = selected ? difficulty : null;
+                          });
+                          setState(() {});
+                        },
+                        backgroundColor: Colors.grey[200],
+                        selectedColor:
+                            Theme.of(context).primaryColor.withOpacity(0.2),
+                        labelStyle: TextStyle(
+                          color: selectedDifficulty == difficulty
+                              ? Theme.of(context).primaryColor
+                              : Colors.black,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Tipo de circuito',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: circuitTypes.map((circuitType) {
+                      return FilterChip(
+                        label: Text(circuitType),
+                        selected: selectedCircuitType == circuitType,
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selectedCircuitType = selected ? circuitType : null;
+                          });
+                          setState(() {});
+                        },
+                        backgroundColor: Colors.grey[200],
+                        selectedColor:
+                            Theme.of(context).primaryColor.withOpacity(0.2),
+                        labelStyle: TextStyle(
+                          color: selectedCircuitType == circuitType
+                              ? Theme.of(context).primaryColor
+                              : Colors.black,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Tipo de ruta',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: routeTypes.map((routeType) {
+                      return FilterChip(
+                        label: Text(routeType),
+                        selected: selectedRouteType == routeType,
+                        onSelected: (selected) {
+                          setModalState(() {
+                            selectedRouteType = selected ? routeType : null;
+                          });
+                          setState(() {});
+                        },
+                        backgroundColor: Colors.grey[200],
+                        selectedColor:
+                            Theme.of(context).primaryColor.withOpacity(0.2),
+                        labelStyle: TextStyle(
+                          color: selectedRouteType == routeType
+                              ? Theme.of(context).primaryColor
+                              : Colors.black,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
             );
           },
         );
       },
-    );
-  }
-
-  Widget _buildFilterSection(String title, List<String> options,
-      String? selectedValue, Function(String?) onSelected) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            FilterChip(
-              label: Text('Todos'),
-              selected: selectedValue == null,
-              onSelected: (selected) {
-                onSelected(null);
-              },
-              backgroundColor: Colors.grey[200],
-              selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-              labelStyle: TextStyle(
-                color: selectedValue == null
-                    ? Theme.of(context).primaryColor
-                    : Colors.black,
-              ),
-            ),
-            ...options.map((option) {
-              return FilterChip(
-                label: Text(option),
-                selected: selectedValue == option,
-                onSelected: (selected) {
-                  onSelected(selected ? option : null);
-                },
-                backgroundColor: Colors.grey[200],
-                selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                labelStyle: TextStyle(
-                  color: selectedValue == option
-                      ? Theme.of(context).primaryColor
-                      : Colors.black,
-                ),
-              );
-            }).toList(),
-          ],
-        ),
-      ],
     );
   }
 
