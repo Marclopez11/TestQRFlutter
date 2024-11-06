@@ -4,9 +4,9 @@ class RouteModel {
   final String id;
   final String title;
   final String description;
-  final String difficulty;
-  final String circuitType;
-  final String routeType;
+  final int difficultyId;
+  final int circuitTypeId;
+  final int routeTypeId;
   final double distance;
   final int hours;
   final int minutes;
@@ -23,9 +23,9 @@ class RouteModel {
     required this.id,
     required this.title,
     required this.description,
-    required this.difficulty,
-    required this.circuitType,
-    required this.routeType,
+    required this.difficultyId,
+    required this.circuitTypeId,
+    required this.routeTypeId,
     required this.distance,
     required this.hours,
     required this.minutes,
@@ -41,24 +41,31 @@ class RouteModel {
 
   factory RouteModel.fromJson(Map<String, dynamic> json) {
     return RouteModel(
-      id: json['uuid'][0]['value'],
-      title: json['title'][0]['value'],
-      description: json['field_route_description'][0]['value'],
-      difficulty: json['field_route_difficulty'][0]['value'],
-      circuitType: json['field_route_circuit_type'][0]['value'],
-      routeType: json['field_route_type'][0]['value'],
-      distance: double.parse(json['field_route_distance'][0]['value']),
-      hours: json['field_route_hour'][0]['value'],
-      minutes: json['field_route_minutes'][0]['value'],
-      maxAltitude:
-          double.parse(json['field_route_maximum_altitude'][0]['value']),
-      minAltitude:
-          double.parse(json['field_route_minimum_altitude'][0]['value']),
-      positiveElevation:
-          double.parse(json['field_route_positive_elevation'][0]['value']),
-      negativeElevation:
-          double.parse(json['field_route_negative_elevation'][0]['value']),
-      location: _parseLocation(json['field_route_location'][0]['value']),
+      id: json['uuid'][0]['value'] ?? '',
+      title: json['title'][0]['value'] ?? '',
+      description: json['field_route_description'][0]['value'] ?? '',
+      difficultyId: json['field_route_difficulty'][0]['target_id'] ?? 0,
+      circuitTypeId: json['field_route_circuit_type'][0]['target_id'] ?? 0,
+      routeTypeId: json['field_route_type'][0]['target_id'] ?? 0,
+      distance:
+          double.tryParse(json['field_route_distance'][0]['value'] ?? '0') ?? 0,
+      hours: json['field_route_hour'][0]['value'] ?? 0,
+      minutes: json['field_route_minutes'][0]['value'] ?? 0,
+      maxAltitude: double.tryParse(
+              json['field_route_maximum_altitude'][0]['value'] ?? '0') ??
+          0,
+      minAltitude: double.tryParse(
+              json['field_route_minimum_altitude'][0]['value'] ?? '0') ??
+          0,
+      positiveElevation: double.tryParse(
+              json['field_route_positive_elevation'][0]['value'] ?? '0') ??
+          0,
+      negativeElevation: double.tryParse(
+              json['field_route_negative_elevation'][0]['value'] ?? '0') ??
+          0,
+      location: json['field_route_location'][0]['value'] != null
+          ? _parseLocation(json['field_route_location'][0]['value'])
+          : LatLng(0, 0),
       mainImage: json['field_route_main_image']?[0]?['url'],
       imageGallery: json['field_route_image_gallery'] != null
           ? List<String>.from(json['field_route_image_gallery']

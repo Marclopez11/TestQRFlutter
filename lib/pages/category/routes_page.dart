@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/models/map_item.dart';
+import 'package:felanitx/pages/route_detail_page.dart';
+import 'package:flutter_map/flutter_map.dart';
 
 class RoutesPage extends StatefulWidget {
   const RoutesPage({Key? key}) : super(key: key);
@@ -17,9 +19,9 @@ class RoutesPage extends StatefulWidget {
 
 class _RoutesPageState extends State<RoutesPage> {
   bool isGridView = false;
-  String? selectedDifficulty;
-  String? selectedCircuitType;
-  String? selectedRouteType;
+  int? selectedDifficulty;
+  int? selectedCircuitType;
+  int? selectedRouteType;
   List<RouteModel> routes = [];
   String pageTitle = 'Rutas';
 
@@ -69,14 +71,14 @@ class _RoutesPageState extends State<RoutesPage> {
   List<RouteModel> get filteredItems {
     return routes.where((route) {
       if (selectedDifficulty != null &&
-          route.difficulty != selectedDifficulty) {
+          route.difficultyId != selectedDifficulty) {
         return false;
       }
       if (selectedCircuitType != null &&
-          route.circuitType != selectedCircuitType) {
+          route.circuitTypeId != selectedCircuitType) {
         return false;
       }
-      if (selectedRouteType != null && route.routeType != selectedRouteType) {
+      if (selectedRouteType != null && route.routeTypeId != selectedRouteType) {
         return false;
       }
       return true;
@@ -218,41 +220,149 @@ class _RoutesPageState extends State<RoutesPage> {
   }
 
   Widget _buildListItem(RouteModel route) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ItemDetailPage(route: route),
-            ),
-          );
-        },
-        child: Row(
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  bottomLeft: Radius.circular(4),
-                ),
-                child: Image.network(
-                  route.mainImage ?? '',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[300],
-                      child: Icon(Icons.image_not_supported),
-                    );
-                  },
+    return SizedBox(
+      height: 150,
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RouteDetailPage(route: route),
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              AspectRatio(
+                aspectRatio: 1,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(4),
+                    bottomLeft: Radius.circular(4),
+                  ),
+                  child: Image.network(
+                    route.mainImage ?? '',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: Icon(Icons.image_not_supported),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: Padding(
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        route.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '${route.distance.toStringAsFixed(2)} km - ${route.hours}h ${route.minutes}min',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.trending_up,
+                              size: 16, color: Colors.green),
+                          SizedBox(width: 4),
+                          Text(
+                            '${route.positiveElevation.toStringAsFixed(0)}m',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Icon(Icons.trending_down,
+                              size: 16, color: Colors.red),
+                          SizedBox(width: 4),
+                          Text(
+                            '${route.negativeElevation.toStringAsFixed(0)}m',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            route.difficultyId.toString(),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.map),
+                            onPressed: () => _openInMaps(route),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGridItem(RouteModel route) {
+    return SizedBox(
+      height: 200,
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RouteDetailPage(route: route),
+              ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                  child: Image.network(
+                    route.mainImage ?? '',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,7 +373,7 @@ class _RoutesPageState extends State<RoutesPage> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
@@ -271,142 +381,33 @@ class _RoutesPageState extends State<RoutesPage> {
                       '${route.distance.toStringAsFixed(2)} km - ${route.hours}h ${route.minutes}min',
                       style: TextStyle(
                         color: Colors.grey[600],
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
                     Row(
-                      children: [
-                        Icon(Icons.trending_up, size: 16, color: Colors.green),
-                        SizedBox(width: 4),
-                        Text(
-                          '${route.positiveElevation.toStringAsFixed(0)}m',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Icon(Icons.trending_down, size: 16, color: Colors.red),
-                        SizedBox(width: 4),
-                        Text(
-                          '${route.negativeElevation.toStringAsFixed(0)}m',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 4),
-                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          route.difficulty.toUpperCase(),
+                          route.difficultyId.toString(),
                           style: TextStyle(
-                            color: _getDifficultyColor(route.difficulty),
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (route.kmlUrl != null)
-                          IconButton(
-                            icon: Icon(Icons.download),
-                            onPressed: () => _downloadKML(route.kmlUrl!),
-                          ),
+                        IconButton(
+                          icon: Icon(Icons.map, size: 20),
+                          onPressed: () => _openInMaps(route),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGridItem(RouteModel route) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ItemDetailPage(route: route),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AspectRatio(
-              aspectRatio: 1.5,
-              child: Hero(
-                tag: route.id,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                  child: Image.network(
-                    route.mainImage ?? '',
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    route.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '${route.distance.toStringAsFixed(2)} km - ${route.hours}h ${route.minutes}min',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        route.difficulty.toUpperCase(),
-                        style: TextStyle(
-                          color: _getDifficultyColor(route.difficulty),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (route.kmlUrl != null)
-                        IconButton(
-                          icon: Icon(Icons.download, size: 20),
-                          onPressed: () => _downloadKML(route.kmlUrl!),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -425,18 +426,13 @@ class _RoutesPageState extends State<RoutesPage> {
     }
   }
 
-  Future<void> _downloadKML(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    }
-  }
-
   void _showFilterBottomSheet() {
     final difficulties =
-        routes.map((route) => route.difficulty).toSet().toList();
+        routes.map((route) => route.difficultyId).toSet().toList();
     final circuitTypes =
-        routes.map((route) => route.circuitType).toSet().toList();
-    final routeTypes = routes.map((route) => route.routeType).toSet().toList();
+        routes.map((route) => route.circuitTypeId).toSet().toList();
+    final routeTypes =
+        routes.map((route) => route.routeTypeId).toSet().toList();
 
     showModalBottomSheet(
       context: context,
@@ -465,7 +461,7 @@ class _RoutesPageState extends State<RoutesPage> {
                     runSpacing: 10,
                     children: difficulties.map((difficulty) {
                       return FilterChip(
-                        label: Text(difficulty),
+                        label: Text(difficulty.toString()),
                         selected: selectedDifficulty == difficulty,
                         onSelected: (selected) {
                           setModalState(() {
@@ -498,7 +494,7 @@ class _RoutesPageState extends State<RoutesPage> {
                     runSpacing: 10,
                     children: circuitTypes.map((circuitType) {
                       return FilterChip(
-                        label: Text(circuitType),
+                        label: Text(circuitType.toString()),
                         selected: selectedCircuitType == circuitType,
                         onSelected: (selected) {
                           setModalState(() {
@@ -531,7 +527,7 @@ class _RoutesPageState extends State<RoutesPage> {
                     runSpacing: 10,
                     children: routeTypes.map((routeType) {
                       return FilterChip(
-                        label: Text(routeType),
+                        label: Text(routeType.toString()),
                         selected: selectedRouteType == routeType,
                         onSelected: (selected) {
                           setModalState(() {
