@@ -4,8 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import '../widgets/header.dart'; // Add this import statement
-import 'package:felanitx/widgets/app_header.dart';
+import '../widgets/app_scaffold.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -23,6 +22,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   bool _isQRInitialized = false;
   String _lastScannedLink = '';
   String _lastNotifiedLink = '';
+  bool _isCheckingPermission = true;
 
   @override
   void initState() {
@@ -49,6 +49,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     final status = await Permission.camera.status;
     setState(() {
       _cameraPermissionGranted = status.isGranted;
+      _isCheckingPermission = false;
     });
     if (_cameraPermissionGranted) {
       _initializeCamera();
@@ -145,19 +146,27 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
         }
         return true;
       },
-      child: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(60),
-          child: AppHeader(),
-        ),
+      child: AppScaffold(
         body: Column(
           children: [
             Expanded(
-              child: _cameraPermissionGranted
-                  ? _buildQRScanner()
-                  : _buildPermissionRequest(),
+              child: _isCheckingPermission
+                  ? _buildLoadingIndicator()
+                  : _cameraPermissionGranted
+                      ? _buildQRScanner()
+                      : _buildPermissionRequest(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(
+          Theme.of(context).primaryColor,
         ),
       ),
     );

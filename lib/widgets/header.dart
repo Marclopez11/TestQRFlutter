@@ -35,19 +35,21 @@ class LanguageDropdown extends StatefulWidget {
 }
 
 class _LanguageDropdownState extends State<LanguageDropdown> {
-  late String _selectedLanguage;
+  String? _selectedLanguage;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadLanguage();
+    _loadSavedLanguage();
   }
 
-  Future<void> _loadLanguage() async {
+  Future<void> _loadSavedLanguage() async {
     final apiService = ApiService();
     final language = await apiService.getCurrentLanguage();
     setState(() {
       _selectedLanguage = language.toUpperCase();
+      _isLoading = false;
     });
   }
 
@@ -60,19 +62,21 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButton<String>(
-      value: _selectedLanguage,
-      onChanged: (String? newValue) {
-        _changeLanguage(newValue!);
-      },
-      items: <String>['ES', 'EN', 'CA', 'DE', 'FR'].map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      underline: Container(),
-      icon: Icon(Icons.arrow_drop_down),
-    );
+    return _isLoading
+        ? SizedBox(width: 24, height: 24)
+        : DropdownButton<String>(
+            value: _selectedLanguage,
+            onChanged: (String? newValue) {
+              _changeLanguage(newValue!);
+            },
+            items: <String>['ES', 'EN', 'CA', 'DE', 'FR'].map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            underline: Container(),
+            icon: Icon(Icons.arrow_drop_down),
+          );
   }
 }
