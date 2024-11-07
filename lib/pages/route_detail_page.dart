@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/route.dart';
+import 'package:felanitx/services/taxonomy_service.dart';
 
 class RouteDetailPage extends StatefulWidget {
   final RouteModel route;
@@ -15,6 +16,24 @@ class RouteDetailPage extends StatefulWidget {
 }
 
 class _RouteDetailPageState extends State<RouteDetailPage> {
+  Map<String, String> _difficultyTerms = {};
+  Map<String, String> _circuitTypeTerms = {};
+  Map<String, String> _routeTypeTerms = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTaxonomyTerms();
+  }
+
+  Future<void> _loadTaxonomyTerms() async {
+    final taxonomyService = TaxonomyService();
+    _difficultyTerms = await taxonomyService.getTaxonomyTerms('dificultat');
+    _circuitTypeTerms = await taxonomyService.getTaxonomyTerms('tipuscircuit');
+    _routeTypeTerms = await taxonomyService.getTaxonomyTerms('tipusruta');
+    setState(() {}); // Trigger a rebuild after loading the terms
+  }
+
   void _openInMaps() async {
     final url = Platform.isIOS
         ? 'http://maps.apple.com/?daddr=${widget.route.location.latitude},${widget.route.location.longitude}'
@@ -110,13 +129,19 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buildInfoChip(
-                          widget.route.difficultyId.toString(),
+                          _difficultyTerms[
+                                  widget.route.difficultyId.toString()] ??
+                              '',
                         ),
                         _buildInfoChip(
-                          widget.route.circuitTypeId.toString(),
+                          _circuitTypeTerms[
+                                  widget.route.circuitTypeId.toString()] ??
+                              '',
                         ),
                         _buildInfoChip(
-                          widget.route.routeTypeId.toString(),
+                          _routeTypeTerms[
+                                  widget.route.routeTypeId.toString()] ??
+                              '',
                         ),
                       ],
                     ),

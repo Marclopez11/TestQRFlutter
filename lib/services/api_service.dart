@@ -54,6 +54,27 @@ class ApiService {
       'fr': 'https://felanitx.drupal.auroracities.com/restaurants_fr',
       'de': 'https://felanitx.drupal.auroracities.com/restaurants_de',
     },
+    'dificultat': {
+      'ca': 'https://felanitx.drupal.auroracities.com/dificultat_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/dificultat_es',
+      'en': 'https://felanitx.drupal.auroracities.com/dificultat_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/dificultat_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/dificultat_de',
+    },
+    'tipuscircuit': {
+      'ca': 'https://felanitx.drupal.auroracities.com/tipuscircuit_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/tipuscircuit_es',
+      'en': 'https://felanitx.drupal.auroracities.com/tipuscircuit_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/tipuscircuit_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/tipuscircuit_de',
+    },
+    'tipusruta': {
+      'ca': 'https://felanitx.drupal.auroracities.com/tipusruta_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/tipusruta_es',
+      'en': 'https://felanitx.drupal.auroracities.com/tipusruta_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/tipusruta_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/tipusruta_de',
+    },
   };
 
   static const _updateInterval = Duration(minutes: 1);

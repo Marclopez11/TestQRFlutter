@@ -9,6 +9,7 @@ import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/models/map_item.dart';
 import 'package:felanitx/pages/route_detail_page.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:felanitx/services/taxonomy_service.dart';
 
 class RoutesPage extends StatefulWidget {
   const RoutesPage({Key? key}) : super(key: key);
@@ -24,12 +25,16 @@ class _RoutesPageState extends State<RoutesPage> {
   int? selectedRouteType;
   List<RouteModel> routes = [];
   String pageTitle = 'Rutas';
+  Map<String, String> _difficultyTerms = {};
+  Map<String, String> _circuitTypeTerms = {};
+  Map<String, String> _routeTypeTerms = {};
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
     _loadRoutes();
+    _loadTaxonomyTerms();
     _setPageTitle();
   }
 
@@ -90,6 +95,13 @@ class _RoutesPageState extends State<RoutesPage> {
     setState(() {
       isGridView = prefs.getBool('isGridView') ?? false;
     });
+  }
+
+  Future<void> _loadTaxonomyTerms() async {
+    final taxonomyService = TaxonomyService();
+    _difficultyTerms = await taxonomyService.getTaxonomyTerms('dificultat');
+    _circuitTypeTerms = await taxonomyService.getTaxonomyTerms('tipuscircuit');
+    _routeTypeTerms = await taxonomyService.getTaxonomyTerms('tipusruta');
   }
 
   @override
@@ -310,7 +322,8 @@ class _RoutesPageState extends State<RoutesPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            route.difficultyId.toString(),
+                            _difficultyTerms[route.difficultyId.toString()] ??
+                                '',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -391,7 +404,7 @@ class _RoutesPageState extends State<RoutesPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          route.difficultyId.toString(),
+                          _difficultyTerms[route.difficultyId.toString()] ?? '',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -461,7 +474,8 @@ class _RoutesPageState extends State<RoutesPage> {
                     runSpacing: 10,
                     children: difficulties.map((difficulty) {
                       return FilterChip(
-                        label: Text(difficulty.toString()),
+                        label:
+                            Text(_difficultyTerms[difficulty.toString()] ?? ''),
                         selected: selectedDifficulty == difficulty,
                         onSelected: (selected) {
                           setModalState(() {
@@ -494,7 +508,8 @@ class _RoutesPageState extends State<RoutesPage> {
                     runSpacing: 10,
                     children: circuitTypes.map((circuitType) {
                       return FilterChip(
-                        label: Text(circuitType.toString()),
+                        label: Text(
+                            _circuitTypeTerms[circuitType.toString()] ?? ''),
                         selected: selectedCircuitType == circuitType,
                         onSelected: (selected) {
                           setModalState(() {
@@ -527,7 +542,8 @@ class _RoutesPageState extends State<RoutesPage> {
                     runSpacing: 10,
                     children: routeTypes.map((routeType) {
                       return FilterChip(
-                        label: Text(routeType.toString()),
+                        label:
+                            Text(_routeTypeTerms[routeType.toString()] ?? ''),
                         selected: selectedRouteType == routeType,
                         onSelected: (selected) {
                           setModalState(() {
