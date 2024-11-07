@@ -5,6 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import '../widgets/app_scaffold.dart';
+import '../services/api_service.dart';
+import '../widgets/header.dart';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -23,18 +25,46 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   String _lastScannedLink = '';
   String _lastNotifiedLink = '';
   bool _isCheckingPermission = true;
+  String _currentLanguage = 'ca';
+  String _selectedLanguage = 'CA';
+  late StreamSubscription<String> _languageSubscription;
+  late ValueNotifier<String> _languageNotifier;
+  final _openLinkButtonKey = GlobalKey();
+  final _placeQRCodeTextKey = GlobalKey();
+  final _scanQRCodeTextKey = GlobalKey();
+
+  String _openLinkText = '';
+  String _placeQRCodeText = '';
+  String _scanQRCodeText = '';
+
+  Timer? _languageTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkCameraPermission();
+    _loadSavedLanguage();
+    _startLanguageTimer();
+    _updateTexts();
+  }
+
+  Future<void> _loadSavedLanguage() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+    print('Loaded saved language: $language');
+    setState(() {
+      _currentLanguage = language;
+      _selectedLanguage = language.toUpperCase();
+    });
+    _updateTexts();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     controller?.dispose();
+    _languageTimer?.cancel();
     super.dispose();
   }
 
@@ -111,7 +141,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
             Icon(Icons.qr_code, color: Colors.white),
             SizedBox(width: 16),
             Text(
-              '¡Nuevo QR detectado!',
+              _getTranslatedText('new_qr_detected'),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
@@ -129,8 +159,164 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   void _onQRError(QRViewController controller) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('QR inválido o enlace no válido')),
+      SnackBar(content: Text(_getTranslatedText('invalid_qr_or_link'))),
     );
+  }
+
+  String _getTranslatedText(String key) {
+    final translations = {
+      'es': {
+        'wait_camera_initialization': 'Espera a que se inicialice la cámara',
+        'place_qr_code_within_frame': 'Coloca el código QR dentro del marco',
+        'open_link': 'ABRIR ENLACE',
+        'scan_qr_code': 'Escanea un código QR',
+        'camera_permission_required': 'Permiso de cámara requerido',
+        'camera_permission_description':
+            'Para escanear códigos QR, necesitas permitir el acceso a la cámara en los ajustes de la aplicación.',
+        'enable_camera': 'Activar cámara',
+        'permission_denied': 'Permiso denegado',
+        'permission_denied_description':
+            'Sin acceso a la cámara no podrás escanear códigos QR. Por favor, activa el permiso en los ajustes de la aplicación.',
+        'cancel': 'Cancelar',
+        'open_settings': 'Abrir ajustes',
+        'invalid_qr_or_link': 'QR inválido o enlace no válido',
+        'new_qr_detected': '¡Nuevo QR detectado!',
+      },
+      'en': {
+        'wait_camera_initialization': 'Wait for the camera to initialize',
+        'place_qr_code_within_frame': 'Place the QR code within the frame',
+        'open_link': 'OPEN LINK',
+        'scan_qr_code': 'Scan a QR code',
+        'camera_permission_required': 'Camera permission required',
+        'camera_permission_description':
+            'To scan QR codes, you need to allow camera access in the app settings.',
+        'enable_camera': 'Enable camera',
+        'permission_denied': 'Permission denied',
+        'permission_denied_description':
+            'Without camera access, you will not be able to scan QR codes. Please enable the permission in the app settings.',
+        'cancel': 'Cancel',
+        'open_settings': 'Open settings',
+        'invalid_qr_or_link': 'Invalid QR or link',
+        'new_qr_detected': 'New QR detected!',
+      },
+      'ca': {
+        'wait_camera_initialization': 'Espera que s\'inicialitzi la càmera',
+        'place_qr_code_within_frame': 'Col·loca el codi QR dins del marc',
+        'open_link': 'OBRIR ENLLAÇ',
+        'scan_qr_code': 'Escaneja un codi QR',
+        'camera_permission_required': 'Es requereix permís de càmera',
+        'camera_permission_description':
+            'Per escanejar codis QR, has de permetre l\'accés a la càmera a la configuració de l\'aplicació.',
+        'enable_camera': 'Activa la càmera',
+        'permission_denied': 'Permís denegat',
+        'permission_denied_description':
+            'Sense accés a la càmera no podràs escanejar codis QR. Si us plau, activa el permís a la configuració de l\'aplicació.',
+        'cancel': 'Cancel·lar',
+        'open_settings': 'Obrir configuració',
+        'invalid_qr_or_link': 'QR o enllaç no vàlid',
+        'new_qr_detected': 'S\'ha detectat un nou QR!',
+      },
+      'de': {
+        'wait_camera_initialization':
+            'Warten Sie, bis die Kamera initialisiert ist',
+        'place_qr_code_within_frame':
+            'Platzieren Sie den QR-Code innerhalb des Rahmens',
+        'open_link': 'LINK ÖFFNEN',
+        'scan_qr_code': 'QR-Code scannen',
+        'camera_permission_required': 'Kameraerlaubnis erforderlich',
+        'camera_permission_description':
+            'Um QR-Codes zu scannen, müssen Sie den Kamerazugriff in den App-Einstellungen zulassen.',
+        'enable_camera': 'Kamera aktivieren',
+        'permission_denied': 'Erlaubnis verweigert',
+        'permission_denied_description':
+            'Ohne Kamerazugriff können Sie keine QR-Codes scannen. Bitte aktivieren Sie die Berechtigung in den App-Einstellungen.',
+        'cancel': 'Abbrechen',
+        'open_settings': 'Einstellungen öffnen',
+        'invalid_qr_or_link': 'Ungültiger QR-Code oder Link',
+        'new_qr_detected': 'Neuer QR-Code erkannt!',
+      },
+      'fr': {
+        'wait_camera_initialization': 'Attendez que la caméra s\'initialise',
+        'place_qr_code_within_frame': 'Placez le code QR dans le cadre',
+        'open_link': 'OUVRIR LE LIEN',
+        'scan_qr_code': 'Scanner un code QR',
+        'camera_permission_required': 'Permission de caméra requise',
+        'camera_permission_description':
+            'Pour scanner des codes QR, vous devez autoriser l\'accès à la caméra dans les paramètres de l\'application.',
+        'enable_camera': 'Activer la caméra',
+        'permission_denied': 'Permission refusée',
+        'permission_denied_description':
+            'Sans accès à la caméra, vous ne pourrez pas scanner de codes QR. Veuillez activer l\'autorisation dans les paramètres de l\'application.',
+        'cancel': 'Annuler',
+        'open_settings': 'Ouvrir les paramètres',
+        'invalid_qr_or_link': 'QR ou lien invalide',
+        'new_qr_detected': 'Nouveau QR détecté !',
+      },
+    };
+
+    return translations[_currentLanguage]?[key] ?? key;
+  }
+
+  void _subscribeToLanguageChanges() {
+    _languageSubscription = ApiService().languageStream.listen((language) {
+      print('Language changed: $language');
+      setState(() {
+        _currentLanguage = language;
+        _selectedLanguage = language.toUpperCase();
+      });
+      _refreshTexts();
+    });
+  }
+
+  void _updateTexts() {
+    print('Updating texts for language: $_currentLanguage');
+    _openLinkText = _getTranslatedText('open_link');
+    _placeQRCodeText = _getTranslatedText('place_qr_code_within_frame');
+    _scanQRCodeText = _getTranslatedText('scan_qr_code');
+    print('Updated texts:');
+    print('  _openLinkText: $_openLinkText');
+    print('  _placeQRCodeText: $_placeQRCodeText');
+    print('  _scanQRCodeText: $_scanQRCodeText');
+  }
+
+  void _refreshTexts() {
+    print('Refreshing texts');
+    setState(() {
+      _updateTexts();
+    });
+
+    if (_cameraPermissionGranted && _isQRInitialized) {
+      print('Camera initialized and permissions granted, reloading page');
+      _reloadPage();
+    } else {
+      print(
+          'Camera not initialized or permissions not granted, skipping page reload');
+    }
+  }
+
+  void _reloadPage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => CameraPage()),
+    );
+  }
+
+  void _startLanguageTimer() {
+    _languageTimer = Timer.periodic(Duration(seconds: 1), (timer) {
+      _checkLanguage();
+    });
+  }
+
+  Future<void> _checkLanguage() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+    if (language != _currentLanguage) {
+      setState(() {
+        _currentLanguage = language;
+        _selectedLanguage = language.toUpperCase();
+      });
+      _updateTexts();
+    }
   }
 
   @override
@@ -139,8 +325,9 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       onWillPop: () async {
         if (!_isQRInitialized) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Espera a que se inicialice la cámara')),
+            SnackBar(
+                content:
+                    Text(_getTranslatedText('wait_camera_initialization'))),
           );
           return false;
         }
@@ -194,21 +381,25 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
           bottom: 20,
           left: 0,
           right: 0,
-          child: Text(
-            'Coloca el código QR dentro del marco',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(
-                  blurRadius: 4,
-                  color: Colors.black,
-                  offset: Offset(0, 2),
+          child: Builder(
+            builder: (context) {
+              return Text(
+                _placeQRCodeText,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  shadows: [
+                    Shadow(
+                      blurRadius: 4,
+                      color: Colors.black,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
         Positioned(
@@ -231,13 +422,17 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                       ),
                       elevation: 5,
                     ),
-                    child: const Text(
-                      'ABRIR ENLACE',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        return Text(
+                          _openLinkText,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                        );
+                      },
                     ),
                   )
                 : Column(
@@ -249,20 +444,24 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                         color: Colors.white,
                       ),
                       SizedBox(height: 10),
-                      Text(
-                        'Escanea un código QR',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              blurRadius: 4,
-                              color: Colors.black,
-                              offset: Offset(0, 2),
+                      Builder(
+                        builder: (context) {
+                          return Text(
+                            _scanQRCodeText,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  blurRadius: 4,
+                                  color: Colors.black,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -293,7 +492,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Permiso de cámara requerido',
+                  _getTranslatedText('camera_permission_required'),
                   style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -301,7 +500,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Para escanear códigos QR, necesitas permitir el acceso a la cámara en los ajustes de la aplicación.',
+                  _getTranslatedText('camera_permission_description'),
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -320,8 +519,8 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                     ),
                     elevation: 5,
                   ),
-                  child: const Text(
-                    'Activar cámara',
+                  child: Text(
+                    _getTranslatedText('enable_camera'),
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -350,20 +549,19 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('Permiso denegado'),
-        content: const Text(
-            'Sin acceso a la cámara no podrás escanear códigos QR. Por favor, activa el permiso en los ajustes de la aplicación.'),
+        title: Text(_getTranslatedText('permission_denied')),
+        content: Text(_getTranslatedText('permission_denied_description')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(_getTranslatedText('cancel')),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               openAppSettings();
             },
-            child: const Text('Abrir ajustes'),
+            child: Text(_getTranslatedText('open_settings')),
           ),
         ],
       ),

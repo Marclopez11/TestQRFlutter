@@ -37,6 +37,8 @@ class LanguageDropdown extends StatefulWidget {
 class _LanguageDropdownState extends State<LanguageDropdown> {
   String? _selectedLanguage;
   bool _isLoading = true;
+  static final ValueNotifier<String> _languageNotifier =
+      ValueNotifier<String>('es');
 
   @override
   void initState() {
@@ -54,10 +56,14 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
   }
 
   void _changeLanguage(String language) {
+    ApiService().setLanguage(language.toLowerCase());
     setState(() {
       _selectedLanguage = language.toUpperCase();
     });
-    ApiService().setLanguage(language.toLowerCase());
+  }
+
+  static ValueNotifier<String> getLanguageNotifier() {
+    return _languageNotifier;
   }
 
   @override
