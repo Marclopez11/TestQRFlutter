@@ -157,53 +157,71 @@ class _AgendaPageState extends State<AgendaPage> {
         children: [
           Container(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).primaryColor,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.grey.shade200,
-                  width: 1,
-                ),
-              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  DateFormat('MMMM', _currentLanguage)
-                      .format(_focusedDay)
-                      .toUpperCase(),
-                  style: TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                // Mes actual
+                Row(
+                  children: [
+                    Text(
+                      DateFormat('MMMM', _currentLanguage)
+                          .format(_focusedDay)
+                          .toUpperCase(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    if (_selectedDay != null)
+                      IconButton(
+                        icon: Icon(Icons.clear, color: Colors.white, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(),
+                        tooltip: 'Borrar selección',
+                        onPressed: () {
+                          setState(() {
+                            _selectedDay = null;
+                          });
+                        },
+                      ),
+                  ],
                 ),
-                SizedBox(
-                  width: 40,
-                  child: _selectedDay != null
-                      ? IconButton(
-                          icon: Icon(
-                            Icons.clear,
-                            color: Theme.of(context).primaryColor,
-                            size: 20,
-                          ),
-                          padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
-                          tooltip: 'Borrar selección',
-                          onPressed: () {
-                            setState(() {
-                              _selectedDay = null;
-                            });
-                          },
-                        )
-                      : null,
+                // Botones de vista
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildViewToggleButton(
+                        'Semana',
+                        CalendarFormat.week,
+                        leftRadius: true,
+                      ),
+                      Container(
+                        width: 1,
+                        height: 24,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      _buildViewToggleButton(
+                        'Mes',
+                        CalendarFormat.month,
+                        rightRadius: true,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+          // Calendario modificado
           SingleChildScrollView(
             physics: _calendarFormat == CalendarFormat.month
                 ? AlwaysScrollableScrollPhysics()
@@ -234,25 +252,20 @@ class _AgendaPageState extends State<AgendaPage> {
                 outsideDaysVisible: _calendarFormat == CalendarFormat.month,
                 weekendTextStyle: TextStyle(color: Colors.black87),
                 holidayTextStyle: TextStyle(color: Colors.black87),
-                defaultTextStyle: TextStyle(color: Colors.black87),
                 todayDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.15),
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
-                todayTextStyle: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
                 selectedDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.9),
+                  color: Theme.of(context).primaryColor,
                   shape: BoxShape.circle,
                 ),
                 markerDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
+                  color: Colors.red.shade400,
                   shape: BoxShape.circle,
                 ),
                 markersMaxCount: 1,
-                markerSize: 5,
+                markerSize: 6,
                 cellMargin: EdgeInsets.all(6),
                 cellPadding: EdgeInsets.all(0),
               ),
@@ -260,19 +273,19 @@ class _AgendaPageState extends State<AgendaPage> {
               daysOfWeekHeight: 40,
               daysOfWeekStyle: DaysOfWeekStyle(
                 weekdayStyle: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 12,
+                  color: Colors.black87,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                 ),
                 weekendStyle: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 12,
+                  color: Colors.black87,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                 ),
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey.shade100,
+                      color: Colors.grey.withOpacity(0.2),
                       width: 1,
                     ),
                   ),
@@ -280,6 +293,7 @@ class _AgendaPageState extends State<AgendaPage> {
               ),
             ),
           ),
+          // Leyenda del calendario
           Padding(
             padding: EdgeInsets.all(16),
             child: Row(
@@ -288,7 +302,7 @@ class _AgendaPageState extends State<AgendaPage> {
                 _buildLegendItem(
                   'Hoy',
                   BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -296,8 +310,9 @@ class _AgendaPageState extends State<AgendaPage> {
                 _buildLegendItem(
                   'Evento',
                   BoxDecoration(
-                    color: Theme.of(context).primaryColor,
+                    color: Colors.white,
                     shape: BoxShape.circle,
+                    border: Border.all(color: Colors.red.shade400, width: 2),
                   ),
                 ),
               ],
@@ -532,52 +547,23 @@ class _AgendaPageState extends State<AgendaPage> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+              colors: [
+                Colors.transparent,
+                Colors.black.withOpacity(0.7),
+              ],
             ),
           ),
         ),
         Positioned(
           left: 20,
           bottom: 20,
-          right: 20,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Agenda',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildViewToggleButton(
-                      'Semana',
-                      CalendarFormat.week,
-                      leftRadius: true,
-                    ),
-                    Container(
-                      width: 1,
-                      height: 24,
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                    _buildViewToggleButton(
-                      'Mes',
-                      CalendarFormat.month,
-                      rightRadius: true,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          child: Text(
+            'Agenda',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],
