@@ -5,6 +5,8 @@ import 'package:felanitx/pages/item_detail_page.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/plugin_api.dart';
 
 class RestaurantsPage extends StatefulWidget {
   final String title;
@@ -18,6 +20,7 @@ class RestaurantsPage extends StatefulWidget {
 class _RestaurantsPageState extends State<RestaurantsPage> {
   bool isGridView = false;
   String? selectedCategory;
+  int _selectedNavIndex = 1;
 
   final List<MapItem> pointsOfInterest = [
     MapItem(
@@ -76,53 +79,135 @@ class _RestaurantsPageState extends State<RestaurantsPage> {
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Image.asset('assets/images/logo_felanitx.png', height: 40),
+        title: Text(
+          'Restaurantes',
+          style: TextStyle(color: Colors.black),
+        ),
         centerTitle: true,
       ),
-      body: Column(
+      body: _buildNavContent(),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Lista',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+        ],
+        currentIndex: _selectedNavIndex,
+        selectedItemColor: Theme.of(context).primaryColor,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil('/', (route) => false);
+          } else {
+            setState(() {
+              _selectedNavIndex = index;
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildNavContent() {
+    switch (_selectedNavIndex) {
+      case 0:
+        return Container();
+      case 1:
+        return Column(
+          children: [
+            _buildFiltersAndViewToggle(),
+            Expanded(
+              child: isGridView ? _buildGrid() : _buildList(),
+            ),
+          ],
+        );
+      case 2:
+        return _buildMapView();
+      default:
+        return Column(
+          children: [
+            _buildFiltersAndViewToggle(),
+            Expanded(
+              child: isGridView ? _buildGrid() : _buildList(),
+            ),
+          ],
+        );
+    }
+  }
+
+  Widget _buildMapView() {
+    return FlutterMap(
+      options: MapOptions(
+        center: LatLng(39.4699, 3.1150), // Felanitx coordinates
+        zoom: 13.0,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: ['a', 'b', 'c'],
+        ),
+        MarkerLayer(
+          markers: filteredItems.map((item) {
+            return Marker(
+              point: item.position,
+              builder: (ctx) => Icon(
+                Icons.location_on,
+                color: Theme.of(context).primaryColor,
+                size: 30,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFiltersAndViewToggle() {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Puntos de interés',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        isGridView ? Icons.view_list : Icons.grid_view,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      onPressed: () async {
-                        setState(() {
-                          isGridView = !isGridView;
-                        });
-                        SharedPreferences prefs =
-                            await SharedPreferences.getInstance();
-                        prefs.setBool('isGridView', isGridView);
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.filter_list,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      onPressed: _showFilterBottomSheet,
-                    ),
-                  ],
-                ),
-              ],
+          Text(
+            'Restaurantes',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          Expanded(
-            child: isGridView ? _buildGrid() : _buildList(),
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  isGridView ? Icons.view_list : Icons.grid_view,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: () async {
+                  setState(() {
+                    isGridView = !isGridView;
+                  });
+                  SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+                  prefs.setBool('isGridView', isGridView);
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.filter_list,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: _showFilterBottomSheet,
+              ),
+            ],
           ),
         ],
       ),

@@ -28,6 +28,7 @@ class _RoutesPageState extends State<RoutesPage> {
   Map<String, String> _difficultyTerms = {};
   Map<String, String> _circuitTypeTerms = {};
   Map<String, String> _routeTypeTerms = {};
+  int _selectedNavIndex = 1;
 
   @override
   void initState() {
@@ -104,6 +105,118 @@ class _RoutesPageState extends State<RoutesPage> {
     _routeTypeTerms = await taxonomyService.getTaxonomyTerms('tipusruta');
   }
 
+  Widget _buildNavContent() {
+    switch (_selectedNavIndex) {
+      case 0:
+        return Container();
+      case 1:
+        return Column(
+          children: [
+            _buildFiltersAndViewToggle(),
+            Expanded(
+              child: routes.isEmpty
+                  ? Center(child: CircularProgressIndicator())
+                  : isGridView
+                      ? _buildGrid()
+                      : _buildList(),
+            ),
+          ],
+        );
+      case 2:
+        return _buildMapView();
+      default:
+        return Column(
+          children: [
+            _buildFiltersAndViewToggle(),
+            Expanded(
+              child: routes.isEmpty
+                  ? Center(child: CircularProgressIndicator())
+                  : isGridView
+                      ? _buildGrid()
+                      : _buildList(),
+            ),
+          ],
+        );
+    }
+  }
+
+  Widget _buildFiltersAndViewToggle() {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            pageTitle,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  isGridView ? Icons.view_list : Icons.grid_view,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: () async {
+                  setState(() {
+                    isGridView = !isGridView;
+                  });
+                  SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+                  prefs.setBool('isGridView', isGridView);
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.filter_list,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: _showFilterBottomSheet,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapView() {
+    return FlutterMap(
+      options: MapOptions(
+        center: _calculateMapCenter(),
+        zoom: 13.0,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: ['a', 'b', 'c'],
+        ),
+        MarkerLayer(
+          markers: filteredItems.map((route) {
+            return Marker(
+              point: route.location,
+              builder: (ctx) => Icon(
+                Icons.location_on,
+                color: Theme.of(context).primaryColor,
+                size: 30,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFavorites() {
+    // Implement favorites view here
+    return Center(
+      child: Text('Favorites coming soon'),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,56 +232,34 @@ class _RoutesPageState extends State<RoutesPage> {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  pageTitle,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        isGridView ? Icons.view_list : Icons.grid_view,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      onPressed: () async {
-                        setState(() {
-                          isGridView = !isGridView;
-                        });
-                        SharedPreferences prefs =
-                            await SharedPreferences.getInstance();
-                        prefs.setBool('isGridView', isGridView);
-                      },
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.filter_list,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                      onPressed: _showFilterBottomSheet,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+      body: _buildNavContent(),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
           ),
-          Expanded(
-            child: routes.isEmpty
-                ? Center(child: CircularProgressIndicator())
-                : isGridView
-                    ? _buildGrid()
-                    : _buildList(),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Lista',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
           ),
         ],
+        currentIndex: _selectedNavIndex,
+        selectedItemColor: Theme.of(context).primaryColor,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil('/', (route) => false);
+          } else {
+            setState(() {
+              _selectedNavIndex = index;
+            });
+          }
+        },
       ),
     );
   }
@@ -552,5 +643,22 @@ class _RoutesPageState extends State<RoutesPage> {
     } else {
       print('Could not launch $url');
     }
+  }
+
+  LatLng _calculateMapCenter() {
+    if (filteredItems.isEmpty) {
+      return LatLng(39.4699, 3.1150); // Felanitx default coordinates
+    }
+
+    double sumLat = 0;
+    double sumLng = 0;
+    int count = filteredItems.length;
+
+    for (var route in filteredItems) {
+      sumLat += route.location.latitude;
+      sumLng += route.location.longitude;
+    }
+
+    return LatLng(sumLat / count, sumLng / count);
   }
 }
