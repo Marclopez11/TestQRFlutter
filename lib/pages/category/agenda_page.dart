@@ -115,10 +115,6 @@ class _AgendaPageState extends State<AgendaPage> {
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(30),
-              topRight: Radius.circular(30),
-            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -143,7 +139,6 @@ class _AgendaPageState extends State<AgendaPage> {
       margin: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -160,7 +155,6 @@ class _AgendaPageState extends State<AgendaPage> {
             height: 48,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               border: Border(
                 bottom: BorderSide(
                   color: Colors.grey.shade200,
