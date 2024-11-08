@@ -104,6 +104,22 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
         .toList();
   }
 
+  LatLng get _centerPosition {
+    if (filteredItems.isEmpty) {
+      return LatLng(39.4699, 3.1150); // Default Felanitx coordinates
+    }
+
+    double sumLat = 0;
+    double sumLng = 0;
+
+    for (var item in filteredItems) {
+      sumLat += item.position.latitude;
+      sumLng += item.position.longitude;
+    }
+
+    return LatLng(sumLat / filteredItems.length, sumLng / filteredItems.length);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -495,7 +511,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
   Widget _buildMapView() {
     return FlutterMap(
       options: MapOptions(
-        center: LatLng(39.4699, 3.1150), // Felanitx coordinates
+        center: _centerPosition,
         zoom: 13.0,
       ),
       children: [
