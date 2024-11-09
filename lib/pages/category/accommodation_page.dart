@@ -165,25 +165,159 @@ class _AccommodationPageState extends State<AccommodationPage> {
       options: MapOptions(
         center: centerMapPosition,
         zoom: 13.0,
+        minZoom: 3.0,
+        maxZoom: 18.0,
+        keepAlive: true,
+        interactiveFlags: InteractiveFlag.all,
       ),
       children: [
         TileLayer(
           urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: ['a', 'b', 'c'],
+          maxZoom: 19,
+          userAgentPackageName: 'com.felanitx.app',
+          tileProvider: NetworkTileProvider(),
         ),
         MarkerLayer(
           markers: filteredItems.map((item) {
             return Marker(
               point: item.position,
-              builder: (ctx) => Icon(
-                Icons.location_on,
-                color: Theme.of(context).primaryColor,
-                size: 30,
+              width: 40,
+              height: 40,
+              builder: (ctx) => GestureDetector(
+                onTap: () {
+                  _showMarkerPreview(context, item);
+                },
+                child: Icon(
+                  Icons.location_on,
+                  color: Theme.of(context).primaryColor,
+                  size: 40,
+                ),
               ),
             );
           }).toList(),
         ),
       ],
+    );
+  }
+
+  void _showMarkerPreview(BuildContext context, MapItem item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          margin: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                child: Image.network(
+                  item.imageUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 200,
+                      color: Colors.grey[300],
+                      child: Icon(Icons.image_not_supported),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      item.description,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (item.averageRating > 0) ...[
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            '${item.averageRating} (${item.commentCount})',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ItemDetailPage(item: item),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.info_outline),
+                          label: Text('Ver detalles'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _openInMaps(item);
+                          },
+                          icon: Icon(Icons.map_outlined),
+                          label: Text('Cómo llegar'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Theme.of(context).primaryColor,
+                            side: BorderSide(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

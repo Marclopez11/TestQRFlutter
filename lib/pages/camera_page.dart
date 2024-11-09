@@ -280,25 +280,36 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   }
 
   void _refreshTexts() {
-    print('Refreshing texts');
-    setState(() {
-      _updateTexts();
-    });
+    if (!mounted) return;
 
-    if (_cameraPermissionGranted && _isQRInitialized) {
-      print('Camera initialized and permissions granted, reloading page');
-      _reloadPage();
-    } else {
-      print(
-          'Camera not initialized or permissions not granted, skipping page reload');
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _updateTexts();
+        });
+
+        if (_cameraPermissionGranted && _isQRInitialized) {
+          _reloadPage();
+        }
+      }
+    });
   }
 
   void _reloadPage() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => CameraPage()),
-    );
+    if (!mounted) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation1, animation2) => CameraPage(),
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+          ),
+        );
+      }
+    });
   }
 
   void _startLanguageTimer() {

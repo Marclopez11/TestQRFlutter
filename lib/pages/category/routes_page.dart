@@ -10,6 +10,8 @@ import 'package:felanitx/models/map_item.dart';
 import 'package:felanitx/pages/route_detail_page.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:felanitx/services/taxonomy_service.dart';
+import 'package:felanitx/pages/map_page.dart';
+import 'package:felanitx/main.dart';
 
 class RoutesPage extends StatefulWidget {
   const RoutesPage({Key? key}) : super(key: key);
@@ -28,7 +30,6 @@ class _RoutesPageState extends State<RoutesPage> {
   Map<String, String> _difficultyTerms = {};
   Map<String, String> _circuitTypeTerms = {};
   Map<String, String> _routeTypeTerms = {};
-  int _selectedNavIndex = 1;
 
   @override
   void initState() {
@@ -106,38 +107,14 @@ class _RoutesPageState extends State<RoutesPage> {
   }
 
   Widget _buildNavContent() {
-    switch (_selectedNavIndex) {
-      case 0:
-        return Container();
-      case 1:
-        return Column(
-          children: [
-            _buildFiltersAndViewToggle(),
-            Expanded(
-              child: routes.isEmpty
-                  ? Center(child: CircularProgressIndicator())
-                  : isGridView
-                      ? _buildGrid()
-                      : _buildList(),
-            ),
-          ],
-        );
-      case 2:
-        return _buildMapView();
-      default:
-        return Column(
-          children: [
-            _buildFiltersAndViewToggle(),
-            Expanded(
-              child: routes.isEmpty
-                  ? Center(child: CircularProgressIndicator())
-                  : isGridView
-                      ? _buildGrid()
-                      : _buildList(),
-            ),
-          ],
-        );
-    }
+    return Column(
+      children: [
+        _buildFiltersAndViewToggle(),
+        Expanded(
+          child: isGridView ? _buildGrid() : _buildList(),
+        ),
+      ],
+    );
   }
 
   Widget _buildFiltersAndViewToggle() {
@@ -155,6 +132,15 @@ class _RoutesPageState extends State<RoutesPage> {
           ),
           Row(
             children: [
+              IconButton(
+                icon: Icon(
+                  Icons.map_outlined,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: () {
+                  _showMapModal(context);
+                },
+              ),
               IconButton(
                 icon: Icon(
                   isGridView ? Icons.view_list : Icons.grid_view,
@@ -185,28 +171,196 @@ class _RoutesPageState extends State<RoutesPage> {
 
   Widget _buildMapView() {
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(
         center: _calculateMapCenter(),
         zoom: 13.0,
+        minZoom: 3.0,
+        maxZoom: 18.0,
+        keepAlive: true,
+        interactiveFlags: InteractiveFlag.all,
       ),
       children: [
         TileLayer(
           urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: ['a', 'b', 'c'],
+          maxZoom: 19,
+          userAgentPackageName: 'com.felanitx.app',
+          tileProvider: NetworkTileProvider(),
         ),
         MarkerLayer(
           markers: filteredItems.map((route) {
             return Marker(
               point: route.location,
-              builder: (ctx) => Icon(
-                Icons.location_on,
-                color: Theme.of(context).primaryColor,
-                size: 30,
+              width: 40,
+              height: 40,
+              builder: (ctx) => GestureDetector(
+                onTap: () {
+                  _showMarkerPreview(ctx, route);
+                },
+                child: Icon(
+                  Icons.location_on,
+                  color: Theme.of(context).primaryColor,
+                  size: 40,
+                ),
               ),
             );
           }).toList(),
         ),
       ],
+    );
+  }
+
+  void _showMarkerPreview(BuildContext context, RouteModel route) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          margin: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                child: Image.network(
+                  route.mainImage ?? '',
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 200,
+                      color: Colors.grey[300],
+                      child: Icon(Icons.image_not_supported),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      route.title,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.directions_walk,
+                            size: 16, color: Colors.grey[600]),
+                        SizedBox(width: 4),
+                        Text(
+                          '${route.distance.toStringAsFixed(2)} km',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Icon(Icons.timer, size: 16, color: Colors.grey[600]),
+                        SizedBox(width: 4),
+                        Text(
+                          '${route.hours}h ${route.minutes}min',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.trending_up, size: 16, color: Colors.green),
+                        SizedBox(width: 4),
+                        Text(
+                          '${route.positiveElevation.toStringAsFixed(0)}m',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Icon(Icons.trending_down, size: 16, color: Colors.red),
+                        SizedBox(width: 4),
+                        Text(
+                          '${route.negativeElevation.toStringAsFixed(0)}m',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      _difficultyTerms[route.difficultyId.toString()] ?? '',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    RouteDetailPage(route: route),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.info_outline),
+                          label: Text('Ver detalles'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _openInMaps(route);
+                          },
+                          icon: Icon(Icons.map_outlined),
+                          label: Text('Cómo llegar'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Theme.of(context).primaryColor,
+                            side: BorderSide(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -240,27 +394,182 @@ class _RoutesPageState extends State<RoutesPage> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Lista',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.map),
             label: 'Mapa',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
         ],
-        currentIndex: _selectedNavIndex,
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
         onTap: (index) {
           if (index == 0) {
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/', (route) => false);
+            // Usar el mismo efecto que el botón de atrás
+            Navigator.of(context).pop();
           } else {
-            setState(() {
-              _selectedNavIndex = index;
+            // Para los demás botones, mantener el comportamiento actual
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                      MainScreen(initialIndex: index),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
             });
           }
         },
       ),
+    );
+  }
+
+  MapController _mapController = MapController();
+
+  void _showMapModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Mapa
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                child: _buildMapView(),
+              ),
+
+              // Barra superior con efecto de cristal
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.6),
+                        Colors.transparent,
+                      ],
+                      stops: [0.0, 1.0],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.map_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Mapa de Rutas',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Spacer(),
+                          // Botón de cerrar con efecto de cristal
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(50),
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(50),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Indicador de arrastre mejorado
+              Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Botón flotante para centrar el mapa
+              Positioned(
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom + 16,
+                child: FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: () {
+                    // Centrar el mapa en la posición calculada
+                    _mapController.move(_calculateMapCenter(), 13.0);
+                  },
+                  child: Icon(
+                    Icons.my_location,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

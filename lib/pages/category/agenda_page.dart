@@ -139,14 +139,33 @@ class _AgendaPageState extends State<AgendaPage> {
       margin: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.blue.shade50.withOpacity(0.3),
+          ],
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: Offset(0, 2),
+            color: Colors.blue.withOpacity(0.1),
+            blurRadius: 15,
+            spreadRadius: 0,
+            offset: Offset(0, 5),
+          ),
+          BoxShadow(
+            color: Colors.white,
+            blurRadius: 15,
+            spreadRadius: -5,
+            offset: Offset(0, 0),
           ),
         ],
+        border: Border.all(
+          color: Colors.blue.shade100.withOpacity(0.5),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
@@ -154,10 +173,14 @@ class _AgendaPageState extends State<AgendaPage> {
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(15),
+                topRight: Radius.circular(15),
+              ),
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.grey.shade200,
+                  color: Colors.blue.shade100.withOpacity(0.5),
                   width: 1,
                 ),
               ),
@@ -198,77 +221,118 @@ class _AgendaPageState extends State<AgendaPage> {
               ],
             ),
           ),
-          SingleChildScrollView(
-            physics: _calendarFormat == CalendarFormat.month
-                ? AlwaysScrollableScrollPhysics()
-                : NeverScrollableScrollPhysics(),
-            child: TableCalendar(
-              firstDay: DateTime.now().subtract(Duration(days: 365)),
-              lastDay: DateTime.now().add(Duration(days: 365)),
-              focusedDay: _focusedDay,
-              calendarFormat: _calendarFormat,
-              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-              eventLoader: (day) {
-                return _events
-                    .where((event) => isSameDay(event.date, day))
-                    .toList();
-              },
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
-                  _focusedDay = focusedDay;
-                });
-              },
-              onPageChanged: (focusedDay) {
-                setState(() {
-                  _focusedDay = focusedDay;
-                });
-              },
-              calendarStyle: CalendarStyle(
-                outsideDaysVisible: _calendarFormat == CalendarFormat.month,
-                weekendTextStyle: TextStyle(color: Colors.black87),
-                holidayTextStyle: TextStyle(color: Colors.black87),
-                defaultTextStyle: TextStyle(color: Colors.black87),
-                todayDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.15),
-                  shape: BoxShape.circle,
+          TableCalendar(
+            firstDay: DateTime.now().subtract(Duration(days: 365)),
+            lastDay: DateTime.now().add(Duration(days: 365)),
+            focusedDay: _focusedDay,
+            calendarFormat: _calendarFormat,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            eventLoader: (day) {
+              return _events
+                  .where((event) => isSameDay(event.date, day))
+                  .toList();
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            },
+            onPageChanged: (focusedDay) {
+              setState(() {
+                _focusedDay = focusedDay;
+              });
+            },
+            calendarStyle: CalendarStyle(
+              outsideDaysVisible: _calendarFormat == CalendarFormat.month,
+              weekendTextStyle: TextStyle(color: Colors.black87),
+              holidayTextStyle: TextStyle(color: Colors.black87),
+              defaultTextStyle: TextStyle(color: Colors.black87),
+              todayDecoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.blue[400]!,
+                    Colors.blue[300]!,
+                  ],
                 ),
-                todayTextStyle: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-                selectedDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.9),
-                  shape: BoxShape.circle,
-                ),
-                markerDecoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                markersMaxCount: 1,
-                markerSize: 5,
-                cellMargin: EdgeInsets.all(6),
-                cellPadding: EdgeInsets.all(0),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
-              headerVisible: false,
-              daysOfWeekHeight: 40,
-              daysOfWeekStyle: DaysOfWeekStyle(
-                weekdayStyle: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+              todayTextStyle: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              selectedDecoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Colors.blue[600]!,
+                  ],
                 ),
-                weekendStyle: TextStyle(
-                  color: Theme.of(context).primaryColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).primaryColor.withOpacity(0.4),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              selectedTextStyle: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              markerDecoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.blue[300]!,
+                    Colors.blue[400]!,
+                  ],
                 ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Colors.grey.shade100,
-                      width: 1,
-                    ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue[300]!.withOpacity(0.3),
+                    blurRadius: 2,
+                    offset: Offset(0, 1),
+                  ),
+                ],
+              ),
+              markersMaxCount: 1,
+              markerSize: 7,
+              cellMargin: EdgeInsets.all(6),
+              cellPadding: EdgeInsets.all(0),
+            ),
+            headerVisible: false,
+            daysOfWeekHeight: 40,
+            daysOfWeekStyle: DaysOfWeekStyle(
+              weekdayStyle: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+              weekendStyle: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.blue[100]!,
+                    width: 2,
                   ),
                 ),
               ),
@@ -282,7 +346,7 @@ class _AgendaPageState extends State<AgendaPage> {
                 _buildLegendItem(
                   'Hoy',
                   BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: Theme.of(context).primaryColor.withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -290,8 +354,12 @@ class _AgendaPageState extends State<AgendaPage> {
                 _buildLegendItem(
                   'Evento',
                   BoxDecoration(
-                    color: Theme.of(context).primaryColor,
+                    color: Colors.white,
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.blue[300]!,
+                      width: 2,
+                    ),
                   ),
                 ),
               ],
