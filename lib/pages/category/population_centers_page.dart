@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:felanitx/models/map_item.dart';
-import 'package:felanitx/pages/item_detail_page.dart';
+import 'package:felanitx/models/population.dart';
+import 'package:felanitx/pages/population_detail_page.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,79 +19,56 @@ class PopulationCentersPage extends StatefulWidget {
 
 class _PopulationCentersPageState extends State<PopulationCentersPage> {
   bool isGridView = false;
-  String? selectedCategory;
   String _title = '';
   int _selectedNavIndex = 1;
   MapController _mapController = MapController();
-
-  final List<MapItem> pointsOfInterest = [
-    MapItem(
-      id: '1',
-      title: 'Felanitx',
-      description: 'Descripción de Felanitx',
-      position: LatLng(39.4697, 3.1483),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/escarritxo.png',
-      categoryId: 1,
-      categoryName: 'Núcleos de población',
-      averageRating: 4.2,
-      commentCount: 8,
-    ),
-    MapItem(
-      id: '2',
-      title: 'Son Proenç',
-      description: 'Descripción de Son Proenç',
-      position: LatLng(39.4897, 3.1283),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/SonProenc_0.jpg',
-      categoryId: 1,
-      categoryName: 'Núcleos de población',
-      averageRating: 4.5,
-      commentCount: 12,
-    ),
-    MapItem(
-      id: '3',
-      title: 'Son Negre',
-      description: 'Descripción de Son Negre',
-      position: LatLng(39.4597, 3.1383),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/SonNegre_0.jpg',
-      categoryId: 1,
-      categoryName: 'Núcleos de población',
-      averageRating: 4.0,
-      commentCount: 6,
-    ),
-    // Agrega más elementos según sea necesario
-  ];
-
-  List<MapItem> get filteredItems {
-    if (selectedCategory == null) return pointsOfInterest;
-    return pointsOfInterest
-        .where((item) => item.categoryName == selectedCategory)
-        .toList();
-  }
-
-  LatLng get centerMapPosition {
-    if (filteredItems.isEmpty) {
-      return LatLng(39.4699, 3.1150); // Default Felanitx coordinates
-    }
-
-    double sumLat = 0;
-    double sumLng = 0;
-
-    for (var item in filteredItems) {
-      sumLat += item.position.latitude;
-      sumLng += item.position.longitude;
-    }
-
-    return LatLng(sumLat / filteredItems.length, sumLng / filteredItems.length);
-  }
+  List<Population> populations = [];
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
     _loadTitle();
+    _loadPopulations();
+    _checkLanguageChange();
+  }
+
+  Future<void> _loadPopulations() async {
+    try {
+      final apiService = ApiService();
+      final language = await apiService.getCurrentLanguage();
+      final data = await apiService.loadData('poblacio', language);
+
+      if (data != null && data.isNotEmpty) {
+        setState(() {
+          populations = data
+              .map<Population>((item) => Population.fromJson(item))
+              .toList();
+          // Ordenar alfabéticamente por título
+          populations.sort((a, b) => a.title.compareTo(b.title));
+        });
+      } else {
+        print('No data found for populations');
+      }
+    } catch (e) {
+      print('Error loading populations: $e');
+    }
+  }
+
+  LatLng get centerMapPosition {
+    if (populations.isEmpty) {
+      return LatLng(39.4699, 3.1150); // Default Felanitx coordinates
+    }
+
+    double sumLat = 0;
+    double sumLng = 0;
+
+    for (var item in populations) {
+      sumLat += item.location.latitude;
+      sumLng += item.location.longitude;
+    }
+
+    return LatLng(sumLat / populations.length, sumLng / populations.length);
   }
 
   Future<void> _loadPreferences() async {
@@ -105,23 +82,32 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
     try {
       final apiService = ApiService();
       final language = await apiService.getCurrentLanguage();
-      final data = await apiService.loadData('population_centers', language);
 
-      if (data.isNotEmpty &&
-          data[0]['info'] != null &&
-          data[0]['info'].isNotEmpty) {
-        setState(() {
-          _title = data[0]['info'][0]['value'];
-        });
-      } else {
-        setState(() {
-          _title = 'Núcleos de población'; // Valor por defecto
-        });
-      }
+      setState(() {
+        switch (language) {
+          case 'ca':
+            _title = 'Nuclis de població';
+            break;
+          case 'es':
+            _title = 'Núcleos de población';
+            break;
+          case 'en':
+            _title = 'Population centers';
+            break;
+          case 'fr':
+            _title = 'Centres de population';
+            break;
+          case 'de':
+            _title = 'Bevölkerungszentren';
+            break;
+          default:
+            _title = 'Núcleos de población';
+        }
+      });
     } catch (e) {
       print('Error loading title: $e');
       setState(() {
-        _title = 'Núcleos de población'; // Valor por defecto en caso de error
+        _title = 'Núcleos de población';
       });
     }
   }
@@ -187,30 +173,18 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
   }
 
   Widget _buildNavContent() {
-    switch (_selectedNavIndex) {
-      case 0:
-        return Container();
-      case 1:
-        return Column(
-          children: [
-            _buildFiltersAndViewToggle(),
-            Expanded(
-              child: isGridView ? _buildGrid() : _buildList(),
-            ),
-          ],
-        );
-      case 2:
-        return _buildMapView();
-      default:
-        return Column(
-          children: [
-            _buildFiltersAndViewToggle(),
-            Expanded(
-              child: isGridView ? _buildGrid() : _buildList(),
-            ),
-          ],
-        );
-    }
+    return Column(
+      children: [
+        _buildFiltersAndViewToggle(),
+        Expanded(
+          child: populations.isEmpty
+              ? Center(child: CircularProgressIndicator())
+              : isGridView
+                  ? _buildGrid()
+                  : _buildList(),
+        ),
+      ],
+    );
   }
 
   Widget _buildMapView() {
@@ -233,9 +207,9 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
           tileProvider: NetworkTileProvider(),
         ),
         MarkerLayer(
-          markers: filteredItems.map((item) {
+          markers: populations.map((item) {
             return Marker(
-              point: item.position,
+              point: item.location,
               width: 40,
               height: 40,
               builder: (ctx) => GestureDetector(
@@ -255,7 +229,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
     );
   }
 
-  void _showMarkerPreview(BuildContext context, MapItem item) {
+  void _showMarkerPreview(BuildContext context, Population item) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -272,7 +246,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
               ClipRRect(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 child: Image.network(
-                  item.imageUrl,
+                  item.mainImage,
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -297,14 +271,16 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      item.description,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
+                    if (item.description1 != null) ...[
+                      SizedBox(height: 8),
+                      Text(
+                        item.description1!,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
+                    ],
                     SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -316,7 +292,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    ItemDetailPage(item: item),
+                                    PopulationDetailPage(population: item),
                               ),
                             );
                           },
@@ -411,18 +387,6 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                   },
                 ),
               ),
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    Icons.filter_list,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  onPressed: _showFilterBottomSheet,
-                ),
-              ),
             ],
           ),
         ],
@@ -433,10 +397,10 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
   Widget _buildList() {
     return ListView.separated(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      itemCount: filteredItems.length,
+      itemCount: populations.length,
       separatorBuilder: (context, index) => SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final item = filteredItems[index];
+        final item = populations[index];
         return _buildListItem(item);
       },
     );
@@ -447,19 +411,19 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
       padding: EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.8,
+        childAspectRatio: 0.85,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
-      itemCount: filteredItems.length,
+      itemCount: populations.length,
       itemBuilder: (context, index) {
-        final item = filteredItems[index];
+        final item = populations[index];
         return _buildGridItem(item);
       },
     );
   }
 
-  Widget _buildListItem(MapItem item) {
+  Widget _buildListItem(Population item) {
     return Card(
       margin: EdgeInsets.zero,
       child: InkWell(
@@ -467,7 +431,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ItemDetailPage(item: item),
+              builder: (context) => PopulationDetailPage(population: item),
             ),
           );
         },
@@ -483,7 +447,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                   bottomLeft: Radius.circular(4),
                 ),
                 child: Image.network(
-                  item.imageUrl,
+                  item.mainImage,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
@@ -511,47 +475,39 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          item.categoryName,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
+                        if (item.description1 != null) ...[
+                          SizedBox(height: 4),
+                          Text(
+                            item.description1!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: Icon(Icons.map, size: 20),
+                            onPressed: () {
+                              _openInMaps(item);
+                            },
                           ),
                         ),
                       ],
                     ),
-                    if (item.averageRating > 0)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.star, color: Colors.amber, size: 16),
-                              SizedBox(width: 4),
-                              Text(
-                                '${item.averageRating} (${item.commentCount})',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: Icon(Icons.map, size: 20),
-                              onPressed: () {
-                                _openInMaps(item);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
                   ],
                 ),
               ),
@@ -562,7 +518,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
     );
   }
 
-  Widget _buildGridItem(MapItem item) {
+  Widget _buildGridItem(Population item) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -573,75 +529,88 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ItemDetailPage(item: item),
+              builder: (context) => PopulationDetailPage(population: item),
             ),
           );
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
+            AspectRatio(
+              aspectRatio: 16 / 9,
               child: Hero(
                 tag: item.id,
                 child: ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
                   child: Image.network(
-                    item.imageUrl,
+                    item.mainImage,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: Icon(Icons.image_not_supported),
+                      );
+                    },
                   ),
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    item.categoryName,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                  if (item.averageRating > 0) ...[
-                    SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Icon(Icons.star, color: Colors.amber, size: 16),
-                            SizedBox(width: 4),
-                            Text(
-                              '${item.averageRating.toStringAsFixed(1)} (${item.commentCount})',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
+                        Text(
+                          item.title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (item.description1 != null) ...[
+                          SizedBox(height: 2),
+                          Text(
+                            item.description1!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
                             ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.map, size: 20),
-                          onPressed: () {
-                            _openInMaps(item);
-                          },
-                        ),
+                          ),
+                        ],
                       ],
                     ),
+                    Container(
+                      margin: EdgeInsets.only(top: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: BoxConstraints(),
+                              iconSize: 20,
+                              icon: Icon(Icons.map),
+                              onPressed: () {
+                                _openInMaps(item);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
-                ],
+                ),
               ),
             ),
           ],
@@ -650,90 +619,10 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
     );
   }
 
-  void _showFilterBottomSheet() {
-    final categories =
-        pointsOfInterest.map((item) => item.categoryName).toSet().toList();
-
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Filtrar por categoría',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      FilterChip(
-                        label: Text('Todas'),
-                        selected: selectedCategory == null,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selectedCategory = null;
-                          });
-                          setState(() {});
-                          Navigator.pop(context);
-                        },
-                        backgroundColor: Colors.grey[200],
-                        selectedColor:
-                            Theme.of(context).primaryColor.withOpacity(0.2),
-                        labelStyle: TextStyle(
-                          color: selectedCategory == null
-                              ? Theme.of(context).primaryColor
-                              : Colors.black,
-                        ),
-                      ),
-                      ...categories.map((category) {
-                        return FilterChip(
-                          label: Text(category),
-                          selected: selectedCategory == category,
-                          onSelected: (selected) {
-                            setModalState(() {
-                              selectedCategory = category;
-                            });
-                            setState(() {});
-                            Navigator.pop(context);
-                          },
-                          backgroundColor: Colors.grey[200],
-                          selectedColor:
-                              Theme.of(context).primaryColor.withOpacity(0.2),
-                          labelStyle: TextStyle(
-                            color: selectedCategory == category
-                                ? Theme.of(context).primaryColor
-                                : Colors.black,
-                          ),
-                        );
-                      }).toList(),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  void _openInMaps(MapItem item) async {
+  void _openInMaps(Population item) async {
     final url = Platform.isIOS
-        ? 'http://maps.apple.com/?daddr=${item.position.latitude},${item.position.longitude}'
-        : 'https://www.google.com/maps/dir/?api=1&destination=${item.position.latitude},${item.position.longitude}';
+        ? 'http://maps.apple.com/?daddr=${item.location.latitude},${item.location.longitude}'
+        : 'https://www.google.com/maps/dir/?api=1&destination=${item.location.latitude},${item.location.longitude}';
 
     if (await canLaunch(url)) {
       await launch(url);
@@ -869,5 +758,24 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
         );
       },
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkLanguageChange();
+  }
+
+  void _checkLanguageChange() async {
+    final apiService = ApiService();
+    final newLanguage = await apiService.getCurrentLanguage();
+    final prefs = await SharedPreferences.getInstance();
+    final currentLanguage = prefs.getString('currentLanguage');
+
+    if (newLanguage != currentLanguage) {
+      await prefs.setString('currentLanguage', newLanguage);
+      _loadTitle();
+      _loadPopulations();
+    }
   }
 }

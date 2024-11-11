@@ -75,6 +75,20 @@ class ApiService {
       'fr': 'https://felanitx.drupal.auroracities.com/tipusruta_fr',
       'de': 'https://felanitx.drupal.auroracities.com/tipusruta_de',
     },
+    'poblacio': {
+      'ca': 'https://felanitx.drupal.auroracities.com/poblacio_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/poblacio_es',
+      'en': 'https://felanitx.drupal.auroracities.com/poblacio_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/poblacio_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/poblacio_de',
+    },
+    'nuclis': {
+      'ca': 'https://felanitx.drupal.auroracities.com/nuclis_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/nuclis_es',
+      'en': 'https://felanitx.drupal.auroracities.com/nuclis_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/nuclis_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/nuclis_de',
+    },
   };
 
   static const _updateInterval = Duration(minutes: 1);
