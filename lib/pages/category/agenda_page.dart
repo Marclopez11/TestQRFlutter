@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:felanitx/main.dart';
 
 class AgendaPage extends StatefulWidget {
   final String title;
@@ -83,19 +84,36 @@ class _AgendaPageState extends State<AgendaPage> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: 'Eventos',
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
           ),
         ],
-        currentIndex: _selectedNavIndex > 1 ? 1 : _selectedNavIndex,
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
         onTap: (index) {
           if (index == 0) {
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/', (route) => false);
+            Navigator.of(context).pop();
           } else {
-            setState(() {
-              _selectedNavIndex = index;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                      MainScreen(initialIndex: index),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
             });
           }
         },
