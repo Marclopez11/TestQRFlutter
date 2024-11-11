@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:felanitx/main.dart';
 
 class PopulationCentersPage extends StatefulWidget {
   const PopulationCentersPage({Key? key}) : super(key: key);
@@ -21,6 +22,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
   String? selectedCategory;
   String _title = '';
   int _selectedNavIndex = 1;
+  MapController _mapController = MapController();
 
   final List<MapItem> pointsOfInterest = [
     MapItem(
@@ -134,7 +136,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Núcleos de población',
+          _title,
           style: TextStyle(color: Colors.black),
         ),
         centerTitle: true,
@@ -147,23 +149,36 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Lista',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.map),
             label: 'Mapa',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
         ],
-        currentIndex: _selectedNavIndex,
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
         onTap: (index) {
           if (index == 0) {
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/', (route) => false);
+            Navigator.of(context).pop();
           } else {
-            setState(() {
-              _selectedNavIndex = index;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                      MainScreen(initialIndex: index),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
             });
           }
         },
@@ -200,6 +215,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
 
   Widget _buildMapView() {
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(
         center: centerMapPosition,
         zoom: 13.0,
@@ -345,39 +361,67 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
 
   Widget _buildFiltersAndViewToggle() {
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Núcleos de población',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Text(
+              _title,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                icon: Icon(
-                  isGridView ? Icons.view_list : Icons.grid_view,
-                  color: Theme.of(context).primaryColor,
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    Icons.map_outlined,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: () {
+                    _showMapModal(context);
+                  },
                 ),
-                onPressed: () async {
-                  setState(() {
-                    isGridView = !isGridView;
-                  });
-                  SharedPreferences prefs =
-                      await SharedPreferences.getInstance();
-                  prefs.setBool('isGridView', isGridView);
-                },
               ),
-              IconButton(
-                icon: Icon(
-                  Icons.filter_list,
-                  color: Theme.of(context).primaryColor,
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    isGridView ? Icons.view_list : Icons.grid_view,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: () async {
+                    setState(() {
+                      isGridView = !isGridView;
+                    });
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    prefs.setBool('isGridView', isGridView);
+                  },
                 ),
-                onPressed: _showFilterBottomSheet,
+              ),
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    Icons.filter_list,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: _showFilterBottomSheet,
+                ),
               ),
             ],
           ),
@@ -428,6 +472,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
           );
         },
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               width: 120,
@@ -450,28 +495,34 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
               ),
             ),
             Expanded(
-              child: Padding(
+              child: Container(
+                height: 120,
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      item.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          item.categoryName,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      item.categoryName,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                    if (item.averageRating > 0) ...[
-                      SizedBox(height: 4),
+                    if (item.averageRating > 0)
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -488,15 +539,19 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                               ),
                             ],
                           ),
-                          IconButton(
-                            icon: Icon(Icons.map),
-                            onPressed: () {
-                              _openInMaps(item);
-                            },
+                          SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              icon: Icon(Icons.map, size: 20),
+                              onPressed: () {
+                                _openInMaps(item);
+                              },
+                            ),
                           ),
                         ],
                       ),
-                    ],
                   ],
                 ),
               ),
@@ -685,5 +740,134 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
     } else {
       print('Could not launch $url');
     }
+  }
+
+  void _showMapModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                child: _buildMapView(),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.6),
+                        Colors.transparent,
+                      ],
+                      stops: [0.0, 1.0],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.map_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Mapa de Núcleos',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Spacer(),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(50),
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(50),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom + 16,
+                child: FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: () {
+                    _mapController.move(centerMapPosition, 13.0);
+                  },
+                  child: Icon(
+                    Icons.my_location,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
