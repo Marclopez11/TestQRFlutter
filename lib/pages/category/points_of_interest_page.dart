@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
+import 'package:felanitx/main.dart';
 
 class PointsOfInterestPage extends StatefulWidget {
   final String title;
@@ -21,6 +22,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
   bool isGridView = false;
   String? selectedCategory;
   int _selectedNavIndex = 1;
+  MapController _mapController = MapController();
 
   final List<MapItem> pointsOfInterest = [
     MapItem(
@@ -156,23 +158,36 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Lista',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(Icons.map),
             label: 'Mapa',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
         ],
-        currentIndex: _selectedNavIndex,
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
         onTap: (index) {
           if (index == 0) {
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/', (route) => false);
+            Navigator.of(context).pop();
           } else {
-            setState(() {
-              _selectedNavIndex = index;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                      MainScreen(initialIndex: index),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
             });
           }
         },
@@ -510,6 +525,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
 
   Widget _buildMapView() {
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(
         center: _centerPosition,
         zoom: 13.0,
@@ -671,44 +687,201 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
 
   Widget _buildFiltersAndViewToggle() {
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            'Puntos de interés',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            child: Text(
+              'Puntos de interés',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                icon: Icon(
-                  isGridView ? Icons.view_list : Icons.grid_view,
-                  color: Theme.of(context).primaryColor,
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    Icons.map_outlined,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: () {
+                    _showMapModal(context);
+                  },
                 ),
-                onPressed: () async {
-                  setState(() {
-                    isGridView = !isGridView;
-                  });
-                  SharedPreferences prefs =
-                      await SharedPreferences.getInstance();
-                  prefs.setBool('isGridView', isGridView);
-                },
               ),
-              IconButton(
-                icon: Icon(
-                  Icons.filter_list,
-                  color: Theme.of(context).primaryColor,
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    isGridView ? Icons.view_list : Icons.grid_view,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: () async {
+                    setState(() {
+                      isGridView = !isGridView;
+                    });
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    prefs.setBool('isGridView', isGridView);
+                  },
                 ),
-                onPressed: _showFilterBottomSheet,
+              ),
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    Icons.filter_list,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: _showFilterBottomSheet,
+                ),
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  void _showMapModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                child: _buildMapView(),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.6),
+                        Colors.transparent,
+                      ],
+                      stops: [0.0, 1.0],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.map_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Mapa de Puntos de Interés',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Spacer(),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(50),
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(50),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom + 16,
+                child: FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: () {
+                    _mapController.move(_centerPosition, 13.0);
+                  },
+                  child: Icon(
+                    Icons.my_location,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
