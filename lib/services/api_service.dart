@@ -12,6 +12,13 @@ class ApiService {
       'fr': 'https://felanitx.drupal.auroracities.com/apartats_fr',
       'de': 'https://felanitx.drupal.auroracities.com/apartats_de',
     },
+    'points_of_interest': {
+      'ca': 'https://felanitx.drupal.auroracities.com/lloc_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/lloc_es',
+      'en': 'https://felanitx.drupal.auroracities.com/lloc_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/lloc_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/lloc_de',
+    },
     'agenda': {
       'ca': 'https://felanitx.drupal.auroracities.com/agenda_ca',
       'es': 'https://felanitx.drupal.auroracities.com/agenda_es',
@@ -25,13 +32,6 @@ class ApiService {
       'en': 'https://felanitx.drupal.auroracities.com/nuclis_en',
       'fr': 'https://felanitx.drupal.auroracities.com/nuclis_fr',
       'de': 'https://felanitx.drupal.auroracities.com/nuclis_de',
-    },
-    'points_of_interest': {
-      'ca': 'https://felanitx.drupal.auroracities.com/punts_interes_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/punts_interes_es',
-      'en': 'https://felanitx.drupal.auroracities.com/punts_interes_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/punts_interes_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/punts_interes_de',
     },
     'routes': {
       'ca': 'https://felanitx.drupal.auroracities.com/ruta_ca',
