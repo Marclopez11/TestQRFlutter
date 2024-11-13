@@ -4,76 +4,25 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const _apiUrls = {
-    'categories': {
-      'ca': 'https://felanitx.drupal.auroracities.com/apartats_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/apartats_es',
-      'en': 'https://felanitx.drupal.auroracities.com/apartats_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/apartats_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/apartats_de',
-    },
-    'points_of_interest': {
-      'ca': 'https://felanitx.drupal.auroracities.com/lloc_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/lloc_es',
-      'en': 'https://felanitx.drupal.auroracities.com/lloc_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/lloc_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/lloc_de',
-    },
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+  ApiService._internal();
+
+  static const _updateInterval = Duration(minutes: 1);
+
+  Timer? _timer;
+  String _currentLanguage = 'es';
+
+  final _languageController = StreamController<String>.broadcast();
+  Stream<String> get languageStream => _languageController.stream;
+
+  final Map<String, Map<String, String>> _apiUrls = {
     'agenda': {
       'ca': 'https://felanitx.drupal.auroracities.com/agenda_ca',
       'es': 'https://felanitx.drupal.auroracities.com/agenda_es',
       'en': 'https://felanitx.drupal.auroracities.com/agenda_en',
       'fr': 'https://felanitx.drupal.auroracities.com/agenda_fr',
       'de': 'https://felanitx.drupal.auroracities.com/agenda_de',
-    },
-    'population_centers': {
-      'ca': 'https://felanitx.drupal.auroracities.com/nuclis_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/nuclis_es',
-      'en': 'https://felanitx.drupal.auroracities.com/nuclis_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/nuclis_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/nuclis_de',
-    },
-    'routes': {
-      'ca': 'https://felanitx.drupal.auroracities.com/ruta_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/ruta_es',
-      'en': 'https://felanitx.drupal.auroracities.com/ruta_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/ruta_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/ruta_de',
-    },
-    'accommodation': {
-      'ca': 'https://felanitx.drupal.auroracities.com/allotjament_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/allotjament_es',
-      'en': 'https://felanitx.drupal.auroracities.com/allotjament_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/allotjament_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/allotjament_de',
-    },
-    'restaurants': {
-      'ca': 'https://felanitx.drupal.auroracities.com/restaurants_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/restaurants_es',
-      'en': 'https://felanitx.drupal.auroracities.com/restaurants_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/restaurants_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/restaurants_de',
-    },
-    'dificultat': {
-      'ca': 'https://felanitx.drupal.auroracities.com/dificultat_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/dificultat_es',
-      'en': 'https://felanitx.drupal.auroracities.com/dificultat_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/dificultat_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/dificultat_de',
-    },
-    'tipuscircuit': {
-      'ca': 'https://felanitx.drupal.auroracities.com/tipuscircuit_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/tipuscircuit_es',
-      'en': 'https://felanitx.drupal.auroracities.com/tipuscircuit_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/tipuscircuit_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/tipuscircuit_de',
-    },
-    'tipusruta': {
-      'ca': 'https://felanitx.drupal.auroracities.com/tipusruta_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/tipusruta_es',
-      'en': 'https://felanitx.drupal.auroracities.com/tipusruta_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/tipusruta_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/tipusruta_de',
     },
     'poblacio': {
       'ca': 'https://felanitx.drupal.auroracities.com/poblacio_ca',
@@ -82,22 +31,35 @@ class ApiService {
       'fr': 'https://felanitx.drupal.auroracities.com/poblacio_fr',
       'de': 'https://felanitx.drupal.auroracities.com/poblacio_de',
     },
-    'nuclis': {
-      'ca': 'https://felanitx.drupal.auroracities.com/nuclis_ca',
-      'es': 'https://felanitx.drupal.auroracities.com/nuclis_es',
-      'en': 'https://felanitx.drupal.auroracities.com/nuclis_en',
-      'fr': 'https://felanitx.drupal.auroracities.com/nuclis_fr',
-      'de': 'https://felanitx.drupal.auroracities.com/nuclis_de',
+    'rutes': {
+      'ca': 'https://felanitx.drupal.auroracities.com/ruta_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/ruta_es',
+      'en': 'https://felanitx.drupal.auroracities.com/ruta_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/ruta_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/ruta_de',
+    },
+    'hotel': {
+      'ca': 'https://felanitx.drupal.auroracities.com/hotel_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/hotel_es',
+      'en': 'https://felanitx.drupal.auroracities.com/hotel_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/hotel_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/hotel_de',
+    },
+    'tipushotel': {
+      'ca': 'https://felanitx.drupal.auroracities.com/tipushotel_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/tipushotel_es',
+      'en': 'https://felanitx.drupal.auroracities.com/tipushotel_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/tipushotel_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/tipushotel_de',
+    },
+    'serveishotel': {
+      'ca': 'https://felanitx.drupal.auroracities.com/serveishotel_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/serveishotel_es',
+      'en': 'https://felanitx.drupal.auroracities.com/serveishotel_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/serveishotel_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/serveishotel_de',
     },
   };
-
-  static const _updateInterval = Duration(minutes: 1);
-
-  Timer? _timer;
-  String _currentLanguage = 'ca';
-
-  final _languageController = StreamController<String>.broadcast();
-  Stream<String> get languageStream => _languageController.stream;
 
   void startService() {
     _loadLanguage();

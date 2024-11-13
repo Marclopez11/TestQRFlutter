@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:felanitx/models/map_item.dart';
-import 'package:felanitx/pages/item_detail_page.dart';
+import 'package:felanitx/models/accommodation.dart';
+import 'package:felanitx/pages/accommodation_detail_page.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:felanitx/main.dart';
+import 'package:felanitx/services/api_service.dart';
 
 class AccommodationPage extends StatefulWidget {
   final String title;
@@ -19,67 +20,54 @@ class AccommodationPage extends StatefulWidget {
 }
 
 class _AccommodationPageState extends State<AccommodationPage> {
+  final ApiService _apiService = ApiService();
   bool isGridView = false;
-  String? selectedCategory;
+  List<String> selectedCategories = [];
   int _selectedNavIndex = 1;
   MapController _mapController = MapController();
-  List<String> selectedCategories = [];
-
-  final List<MapItem> pointsOfInterest = [
-    MapItem(
-      id: '1',
-      title: 'Hotel Felanitx',
-      description: 'Descripción del Hotel Felanitx',
-      position: LatLng(39.4697, 3.1483),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/Casconcos01.jpg',
-      categoryId: 1,
-      categoryName: 'Apartamentos',
-      averageRating: 4.0,
-      commentCount: 15,
-    ),
-    MapItem(
-      id: '2',
-      title: 'Apartamentos S\'Horta',
-      description: 'Descripción de los Apartamentos S\'Horta',
-      position: LatLng(39.4597, 3.1283),
-      imageUrl:
-          'https://felanitx.drupal.auroracities.com/sites/default/files/2024-10/Horta.jpg',
-      categoryId: 1,
-      categoryName: 'Apartamentos',
-      averageRating: 4.3,
-      commentCount: 11,
-    ),
-    // Agrega más elementos según sea necesario
-  ];
-
-  List<MapItem> get filteredItems {
-    if (selectedCategory == null) return pointsOfInterest;
-    return pointsOfInterest
-        .where((item) => item.categoryName == selectedCategory)
-        .toList();
-  }
-
-  LatLng get centerMapPosition {
-    if (filteredItems.isEmpty) {
-      return LatLng(39.4699, 3.1150); // Default Felanitx coordinates
-    }
-
-    double sumLat = 0;
-    double sumLng = 0;
-
-    for (var item in filteredItems) {
-      sumLat += item.position.latitude;
-      sumLng += item.position.longitude;
-    }
-
-    return LatLng(sumLat / filteredItems.length, sumLng / filteredItems.length);
-  }
+  List<Accommodation> _accommodations = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadAccommodations();
+  }
+
+  Future<void> _loadAccommodations() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      final data = await _apiService.loadData('hotel', language);
+
+      print('Datos recibidos de la API: $data');
+
+      if (data != null && data is List) {
+        setState(() {
+          _accommodations =
+              data.map((item) => Accommodation.fromJson(item)).toList();
+          _isLoading = false;
+        });
+
+        print('Número de alojamientos cargados: ${_accommodations.length}');
+      } else {
+        print('Error: Los datos recibidos no son una lista válida');
+        setState(() {
+          _accommodations = [];
+          _isLoading = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      print('Error loading accommodations: $e');
+      print('Stack trace: $stackTrace');
+      setState(() {
+        _accommodations = [];
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -87,6 +75,14 @@ class _AccommodationPageState extends State<AccommodationPage> {
     setState(() {
       isGridView = prefs.getBool('isGridView') ?? false;
     });
+  }
+
+  List<Accommodation> get filteredItems {
+    if (selectedCategories.isEmpty) return _accommodations;
+    return _accommodations
+        .where(
+            (item) => selectedCategories.contains(item.categoryId.toString()))
+        .toList();
   }
 
   @override
@@ -104,7 +100,9 @@ class _AccommodationPageState extends State<AccommodationPage> {
         ),
         centerTitle: true,
       ),
-      body: _buildNavContent(),
+      body: SafeArea(
+        child: _buildNavContent(),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -132,17 +130,15 @@ class _AccommodationPageState extends State<AccommodationPage> {
           if (index == 0) {
             Navigator.of(context).pop();
           } else {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) =>
-                      MainScreen(initialIndex: index),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            });
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) =>
+                    MainScreen(initialIndex: index),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
           }
         },
       ),
@@ -150,9 +146,12 @@ class _AccommodationPageState extends State<AccommodationPage> {
   }
 
   Widget _buildNavContent() {
+    if (_isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
     switch (_selectedNavIndex) {
       case 0:
-        return Container(); // Este caso nunca se dará porque navegamos al inicio
+        return Container();
       case 1:
         return Column(
           children: [
@@ -176,6 +175,459 @@ class _AccommodationPageState extends State<AccommodationPage> {
     }
   }
 
+  Widget _buildFiltersAndViewToggle() {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Alojamientos',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        Icons.map_outlined,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: () {
+                        _showMapModal(context);
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        isGridView ? Icons.view_list : Icons.grid_view,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: () async {
+                        setState(() {
+                          isGridView = !isGridView;
+                        });
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        prefs.setBool('isGridView', isGridView);
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        Icons.filter_list,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      onPressed: _showFilterBottomSheet,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (selectedCategories.isNotEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: selectedCategories
+                  .map(
+                    (category) => Chip(
+                      label: Text(category),
+                      onDeleted: () {
+                        setState(() {
+                          selectedCategories.remove(category);
+                        });
+                      },
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildList() {
+    return ListView.separated(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).padding.bottom +
+            kBottomNavigationBarHeight +
+            16,
+      ),
+      itemCount: filteredItems.length,
+      separatorBuilder: (context, index) => SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final item = filteredItems[index];
+        return _buildListItem(item);
+      },
+    );
+  }
+
+  Widget _buildListItem(Accommodation item) {
+    return SizedBox(
+      height: 120,
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    AccommodationDetailPage(accommodation: item),
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  child: Image.network(
+                    item.mainImage,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: Icon(Icons.image_not_supported),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        item.description,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Categoría ${item.categoryId}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: BoxConstraints(),
+                            icon: Icon(Icons.map, size: 20),
+                            onPressed: () => _openInMaps(item),
+                            color: Colors.grey[600],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGrid() {
+    return GridView.builder(
+      padding: EdgeInsets.all(16),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+      ),
+      itemCount: filteredItems.length,
+      itemBuilder: (context, index) {
+        final item = filteredItems[index];
+        return _buildGridItem(item);
+      },
+    );
+  }
+
+  Widget _buildGridItem(Accommodation item) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  AccommodationDetailPage(accommodation: item),
+            ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+                child: Image.network(
+                  item.mainImage,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[300],
+                      child: Icon(Icons.image_not_supported),
+                    );
+                  },
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      item.description,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Spacer(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                          icon: Icon(Icons.map, size: 20),
+                          onPressed: () => _openInMaps(item),
+                          color: Colors.grey[600],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMapModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 20,
+                offset: Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+                child: _buildMapView(),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.6),
+                        Colors.transparent,
+                      ],
+                      stops: [0.0, 1.0],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.map_outlined,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            'Alojamientos',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Spacer(),
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(50),
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(50),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom + 16,
+                child: FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: () {
+                    _mapController.move(centerMapPosition, 13.0);
+                  },
+                  child: Icon(
+                    Icons.my_location,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openInMaps(Accommodation item) async {
+    final url = Platform.isIOS
+        ? 'http://maps.apple.com/?daddr=${item.location.latitude},${item.location.longitude}'
+        : 'https://www.google.com/maps/dir/?api=1&destination=${item.location.latitude},${item.location.longitude}';
+
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      print('Could not launch $url');
+    }
+  }
+
+  LatLng get centerMapPosition {
+    if (_accommodations.isEmpty) {
+      return LatLng(39.4699, 3.1150); // Coordenadas por defecto de Felanitx
+    }
+
+    double sumLat = 0;
+    double sumLng = 0;
+    int count = _accommodations.length;
+
+    for (var item in _accommodations) {
+      sumLat += item.location.latitude;
+      sumLng += item.location.longitude;
+    }
+
+    return LatLng(sumLat / count, sumLng / count);
+  }
+
   Widget _buildMapView() {
     return FlutterMap(
       mapController: _mapController,
@@ -193,17 +645,16 @@ class _AccommodationPageState extends State<AccommodationPage> {
           subdomains: ['a', 'b', 'c'],
           maxZoom: 19,
           userAgentPackageName: 'com.felanitx.app',
-          tileProvider: NetworkTileProvider(),
         ),
         MarkerLayer(
-          markers: filteredItems.map((item) {
+          markers: _accommodations.map((item) {
             return Marker(
-              point: item.position,
+              point: item.location,
               width: 40,
               height: 40,
               builder: (ctx) => GestureDetector(
                 onTap: () {
-                  _showMarkerPreview(ctx, item);
+                  _showMarkerPreview(context, item);
                 },
                 child: Icon(
                   Icons.location_on,
@@ -218,7 +669,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
     );
   }
 
-  void _showMarkerPreview(BuildContext context, MapItem item) {
+  void _showMarkerPreview(BuildContext context, Accommodation item) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -235,7 +686,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
               ClipRRect(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 child: Image.network(
-                  item.imageUrl,
+                  item.mainImage,
                   height: 200,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -263,27 +714,13 @@ class _AccommodationPageState extends State<AccommodationPage> {
                     SizedBox(height: 8),
                     Text(
                       item.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
                       ),
                     ),
-                    if (item.averageRating > 0) ...[
-                      SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 16),
-                          SizedBox(width: 4),
-                          Text(
-                            '${item.averageRating} (${item.commentCount})',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                     SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -294,8 +731,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    ItemDetailPage(item: item),
+                                builder: (context) => AccommodationDetailPage(
+                                    accommodation: item),
                               ),
                             );
                           },
@@ -338,228 +775,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
     );
   }
 
-  Widget _buildList() {
-    return ListView.separated(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      itemCount: filteredItems.length,
-      separatorBuilder: (context, index) => SizedBox(height: 16),
-      itemBuilder: (context, index) {
-        final item = filteredItems[index];
-        return _buildListItem(item);
-      },
-    );
-  }
-
-  Widget _buildGrid() {
-    return GridView.builder(
-      padding: EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: filteredItems.length,
-      itemBuilder: (context, index) {
-        final item = filteredItems[index];
-        return _buildGridItem(item);
-      },
-    );
-  }
-
-  Widget _buildListItem(MapItem item) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ItemDetailPage(item: item),
-            ),
-          );
-        },
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  bottomLeft: Radius.circular(4),
-                ),
-                child: Image.network(
-                  item.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[300],
-                      child: Icon(Icons.image_not_supported),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                height: 120,
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          item.categoryName,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (item.averageRating > 0)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.star, color: Colors.amber, size: 16),
-                              SizedBox(width: 4),
-                              Text(
-                                '${item.averageRating} (${item.commentCount})',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: Icon(Icons.map, size: 20),
-                              onPressed: () {
-                                _openInMaps(item);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGridItem(MapItem item) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ItemDetailPage(item: item),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: Hero(
-                tag: item.id,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                  child: Image.network(
-                    item.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    item.categoryName,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                  if (item.averageRating > 0) ...[
-                    SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.star, color: Colors.amber, size: 16),
-                            SizedBox(width: 4),
-                            Text(
-                              '${item.averageRating.toStringAsFixed(1)} (${item.commentCount})',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.map, size: 20),
-                          onPressed: () {
-                            _openInMaps(item);
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showFilterBottomSheet() {
-    final List<String> categories = pointsOfInterest
+    final List<String> categories = _accommodations
         .map((e) => e.categoryId.toString())
         .toSet()
         .toList()
@@ -644,226 +861,6 @@ class _AccommodationPageState extends State<AccommodationPage> {
               ),
             );
           },
-        );
-      },
-    );
-  }
-
-  List<MapItem> get filteredAccommodations {
-    if (selectedCategories.isEmpty) return pointsOfInterest;
-    return pointsOfInterest
-        .where(
-            (item) => selectedCategories.contains(item.categoryId.toString()))
-        .toList();
-  }
-
-  void _openInMaps(MapItem item) async {
-    final url = Platform.isIOS
-        ? 'http://maps.apple.com/?daddr=${item.position.latitude},${item.position.longitude}'
-        : 'https://www.google.com/maps/dir/?api=1&destination=${item.position.latitude},${item.position.longitude}';
-
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      print('Could not launch $url');
-    }
-  }
-
-  Widget _buildFiltersAndViewToggle() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              'Alojamientos',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    Icons.map_outlined,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  onPressed: () {
-                    _showMapModal(context);
-                  },
-                ),
-              ),
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    isGridView ? Icons.view_list : Icons.grid_view,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  onPressed: () async {
-                    setState(() {
-                      isGridView = !isGridView;
-                    });
-                    SharedPreferences prefs =
-                        await SharedPreferences.getInstance();
-                    prefs.setBool('isGridView', isGridView);
-                  },
-                ),
-              ),
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    Icons.filter_list,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  onPressed: _showFilterBottomSheet,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showMapModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.9,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                offset: Offset(0, -5),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-                child: _buildMapView(),
-              ),
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.6),
-                        Colors.transparent,
-                      ],
-                      stops: [0.0, 1.0],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.map_outlined,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          SizedBox(width: 12),
-                          Text(
-                            'Mapa de Alojamientos',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          Spacer(),
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => Navigator.pop(context),
-                              borderRadius: BorderRadius.circular(50),
-                              child: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(50),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 16,
-                bottom: MediaQuery.of(context).padding.bottom + 16,
-                child: FloatingActionButton(
-                  mini: true,
-                  backgroundColor: Colors.white,
-                  onPressed: () {
-                    _mapController.move(centerMapPosition, 13.0);
-                  },
-                  child: Icon(
-                    Icons.my_location,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
         );
       },
     );

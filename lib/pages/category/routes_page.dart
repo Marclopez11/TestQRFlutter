@@ -41,12 +41,70 @@ class _RoutesPageState extends State<RoutesPage> {
   }
 
   Future<void> _loadRoutes() async {
-    final apiService = ApiService();
-    final language = await apiService.getCurrentLanguage();
-    final data = await apiService.loadData('routes', language);
-    setState(() {
-      routes = data.map((item) => RouteModel.fromJson(item)).toList();
-    });
+    try {
+      final apiService = ApiService();
+      final language = await apiService.getCurrentLanguage();
+      final data = await apiService.loadData('rutes', language);
+
+      print('Datos recibidos de la API: $data'); // Log completo de datos
+      print('Tipo de datos recibidos: ${data.runtimeType}'); // Tipo de datos
+
+      if (data != null && data is List) {
+        final List<RouteModel> loadedRoutes = [];
+
+        for (var item in data) {
+          try {
+            print('\nProcesando ruta:');
+            print('ID: ${item['nid']?[0]?['value']}');
+            print('Título: ${item['title']?[0]?['value']}');
+            print(
+                'Descripción: ${item['field_route_description']?[0]?['value']}');
+            print('Imagen: ${item['field_route_main_image']?[0]?['url']}');
+            print(
+                'Ubicación: lat=${item['field_route_location']?[0]?['lat']}, lng=${item['field_route_location']?[0]?['lng']}');
+            print('Distancia: ${item['field_route_distance']?[0]?['value']}');
+            print('Horas: ${item['field_route_hours']?[0]?['value']}');
+            print('Minutos: ${item['field_route_minutes']?[0]?['value']}');
+            print(
+                'Elevación positiva: ${item['field_route_positive_elevation']?[0]?['value']}');
+            print(
+                'Elevación negativa: ${item['field_route_negative_elevation']?[0]?['value']}');
+            print(
+                'Dificultad ID: ${item['field_route_difficulty']?[0]?['target_id']}');
+            print(
+                'Tipo de circuito ID: ${item['field_route_circuit_type']?[0]?['target_id']}');
+            print(
+                'Tipo de ruta ID: ${item['field_route_type']?[0]?['target_id']}');
+            print('GPX URL: ${item['field_route_gpx']?[0]?['url']}');
+            print('KML URL: ${item['field_route_kml']?[0]?['url']}');
+
+            final route = RouteModel.fromJson(item);
+            loadedRoutes.add(route);
+            print('Ruta procesada exitosamente\n');
+          } catch (e) {
+            print('Error procesando ruta: $e');
+            continue;
+          }
+        }
+
+        setState(() {
+          routes = loadedRoutes;
+        });
+
+        print('Total de rutas cargadas: ${routes.length}');
+      } else {
+        print('Error: Los datos recibidos no son una lista válida');
+        setState(() {
+          routes = [];
+        });
+      }
+    } catch (e, stackTrace) {
+      print('Error loading routes: $e');
+      print('Stack trace: $stackTrace');
+      setState(() {
+        routes = [];
+      });
+    }
   }
 
   void _setPageTitle() async {
@@ -811,14 +869,12 @@ class _RoutesPageState extends State<RoutesPage> {
   }
 
   void _showFilterBottomSheet() {
-    final List<String> circuitTypes =
-        routes.map((e) => e.circuitTypeId.toString()).toSet().toList()..sort();
-
-    final List<String> routeTypes =
-        routes.map((e) => e.routeTypeId.toString()).toSet().toList()..sort();
-
     final List<String> difficulties =
         routes.map((e) => e.difficultyId.toString()).toSet().toList()..sort();
+    final List<String> circuitTypes =
+        routes.map((e) => e.circuitTypeId.toString()).toSet().toList()..sort();
+    final List<String> routeTypes =
+        routes.map((e) => e.routeTypeId.toString()).toSet().toList()..sort();
 
     showModalBottomSheet(
       context: context,
@@ -840,136 +896,191 @@ class _RoutesPageState extends State<RoutesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Filtros',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Dificultad',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: difficulties.map((difficulty) {
-                      final isSelected =
-                          selectedDifficulty == int.parse(difficulty);
-                      return FilterChip(
-                        label: Text(_difficultyTerms[difficulty] ?? ''),
-                        selected: isSelected,
-                        selectedColor:
-                            Theme.of(context).primaryColor.withOpacity(0.2),
-                        checkmarkColor: Theme.of(context).primaryColor,
-                        onSelected: (selected) {
-                          setState(() {
-                            selectedDifficulty =
-                                selected ? int.parse(difficulty) : null;
-                          });
-                          this.setState(() {});
-                        },
-                        backgroundColor: Colors.grey[200],
-                        shape: StadiumBorder(),
-                      );
-                    }).toList(),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Tipo de circuito',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: circuitTypes.map((circuitType) {
-                      final isSelected =
-                          selectedCircuitType == int.parse(circuitType);
-                      return FilterChip(
-                        label: Text(_circuitTypeTerms[circuitType] ?? ''),
-                        selected: isSelected,
-                        selectedColor:
-                            Theme.of(context).primaryColor.withOpacity(0.2),
-                        checkmarkColor: Theme.of(context).primaryColor,
-                        onSelected: (selected) {
-                          setState(() {
-                            selectedCircuitType =
-                                selected ? int.parse(circuitType) : null;
-                          });
-                          this.setState(() {});
-                        },
-                        backgroundColor: Colors.grey[200],
-                        shape: StadiumBorder(),
-                      );
-                    }).toList(),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Tipo de ruta',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: routeTypes.map((routeType) {
-                      final isSelected =
-                          selectedRouteType == int.parse(routeType);
-                      return FilterChip(
-                        label: Text(_routeTypeTerms[routeType] ?? ''),
-                        selected: isSelected,
-                        selectedColor:
-                            Theme.of(context).primaryColor.withOpacity(0.2),
-                        checkmarkColor: Theme.of(context).primaryColor,
-                        onSelected: (selected) {
-                          setState(() {
-                            selectedRouteType =
-                                selected ? int.parse(routeType) : null;
-                          });
-                          this.setState(() {});
-                        },
-                        backgroundColor: Colors.grey[200],
-                        shape: StadiumBorder(),
-                      );
-                    }).toList(),
-                  ),
-                  Spacer(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            selectedDifficulty = null;
-                            selectedCircuitType = null;
-                            selectedRouteType = null;
-                          });
-                          this.setState(() {});
-                        },
-                        child: Text('Limpiar filtros'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Aplicar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          shape: StadiumBorder(),
+                      Text(
+                        'Filtros',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
+                      IconButton(
+                        icon: Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     ],
+                  ),
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (difficulties.isNotEmpty) ...[
+                            Text(
+                              'Dificultad',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: difficulties.map((difficulty) {
+                                final isSelected =
+                                    selectedDifficulty == int.parse(difficulty);
+                                return FilterChip(
+                                  label:
+                                      Text(_difficultyTerms[difficulty] ?? ''),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      selectedDifficulty = selected
+                                          ? int.parse(difficulty)
+                                          : null;
+                                    });
+                                    this.setState(() {});
+                                  },
+                                  backgroundColor: Colors.grey[200],
+                                  selectedColor: Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.2),
+                                  checkmarkColor:
+                                      Theme.of(context).primaryColor,
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? Theme.of(context).primaryColor
+                                        : Colors.black87,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            SizedBox(height: 24),
+                          ],
+                          if (circuitTypes.isNotEmpty) ...[
+                            Text(
+                              'Tipo de circuito',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: circuitTypes.map((type) {
+                                final isSelected =
+                                    selectedCircuitType == int.parse(type);
+                                return FilterChip(
+                                  label: Text(_circuitTypeTerms[type] ?? ''),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      selectedCircuitType =
+                                          selected ? int.parse(type) : null;
+                                    });
+                                    this.setState(() {});
+                                  },
+                                  backgroundColor: Colors.grey[200],
+                                  selectedColor: Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.2),
+                                  checkmarkColor:
+                                      Theme.of(context).primaryColor,
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? Theme.of(context).primaryColor
+                                        : Colors.black87,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            SizedBox(height: 24),
+                          ],
+                          if (routeTypes.isNotEmpty) ...[
+                            Text(
+                              'Tipo de ruta',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: routeTypes.map((type) {
+                                final isSelected =
+                                    selectedRouteType == int.parse(type);
+                                return FilterChip(
+                                  label: Text(_routeTypeTerms[type] ?? ''),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      selectedRouteType =
+                                          selected ? int.parse(type) : null;
+                                    });
+                                    this.setState(() {});
+                                  },
+                                  backgroundColor: Colors.grey[200],
+                                  selectedColor: Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.2),
+                                  checkmarkColor:
+                                      Theme.of(context).primaryColor,
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? Theme.of(context).primaryColor
+                                        : Colors.black87,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedDifficulty = null;
+                              selectedCircuitType = null;
+                              selectedRouteType = null;
+                            });
+                            this.setState(() {});
+                          },
+                          child: Text('Limpiar filtros'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                          ),
+                          child: Text('Aplicar'),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -977,9 +1088,7 @@ class _RoutesPageState extends State<RoutesPage> {
           },
         );
       },
-    ).then((_) {
-      setState(() {});
-    });
+    );
   }
 
   void _openInMaps(RouteModel route) async {
