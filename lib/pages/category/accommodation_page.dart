@@ -585,72 +585,68 @@ class _AccommodationPageState extends State<AccommodationPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Filtrar por categoría',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: categories.map((category) {
-                      final isSelected = selectedCategories.contains(category);
-                      return FilterChip(
-                        label: Text('Categoría $category'),
-                        selected: isSelected,
-                        selectedColor:
-                            Theme.of(context).primaryColor.withOpacity(0.2),
-                        checkmarkColor: Theme.of(context).primaryColor,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              selectedCategories.add(category);
-                            } else {
-                              selectedCategories.remove(category);
-                            }
-                          });
-                          this.setState(() {});
-                        },
-                        backgroundColor: Colors.grey[200],
-                        shape: StadiumBorder(),
-                      );
-                    }).toList(),
-                  ),
-                  Spacer(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextButton(
+                      Text(
+                        'Filtrar por categoría',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: ListView(
+                      children: categories.map((category) {
+                        final isSelected =
+                            selectedCategories.contains(category);
+                        return ListTile(
+                          title: Text('Categoría $category'),
+                          trailing: isSelected
+                              ? Icon(Icons.check,
+                                  color: Theme.of(context).primaryColor)
+                              : null,
+                          onTap: () {
+                            setState(() {
+                              if (isSelected) {
+                                selectedCategories.remove(category);
+                              } else {
+                                selectedCategories.add(category);
+                              }
+                            });
+                            this.setState(() {});
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  if (selectedCategories.isNotEmpty)
+                    Center(
+                      child: TextButton(
                         onPressed: () {
                           setState(() {
                             selectedCategories.clear();
                           });
                           this.setState(() {});
                         },
-                        child: Text('Limpiar filtros'),
+                        child: Text('Borrar filtros'),
                       ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Aplicar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          shape: StadiumBorder(),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
                 ],
               ),
             );
           },
         );
       },
-    ).then((_) {
-      setState(() {});
-    });
+    );
   }
 
   List<MapItem> get filteredAccommodations {
