@@ -811,31 +811,47 @@ class _RoutesPageState extends State<RoutesPage> {
   }
 
   void _showFilterBottomSheet() {
-    final difficulties =
-        routes.map((route) => route.difficultyId).toSet().toList();
-    final circuitTypes =
-        routes.map((route) => route.circuitTypeId).toSet().toList();
-    final routeTypes =
-        routes.map((route) => route.routeTypeId).toSet().toList();
+    final List<String> circuitTypes =
+        routes.map((e) => e.circuitTypeId.toString()).toSet().toList()..sort();
+
+    final List<String> routeTypes =
+        routes.map((e) => e.routeTypeId.toString()).toSet().toList()..sort();
+
+    final List<String> difficulties =
+        routes.map((e) => e.difficultyId.toString()).toSet().toList()..sort();
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
+          builder: (BuildContext context, StateSetter setState) {
             return Container(
+              height: MediaQuery.of(context).size.height * 0.8,
               padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
+                    'Filtros',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
                     'Dificultad',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -844,24 +860,23 @@ class _RoutesPageState extends State<RoutesPage> {
                     spacing: 10,
                     runSpacing: 10,
                     children: difficulties.map((difficulty) {
+                      final isSelected =
+                          selectedDifficulty == int.parse(difficulty);
                       return FilterChip(
-                        label:
-                            Text(_difficultyTerms[difficulty.toString()] ?? ''),
-                        selected: selectedDifficulty == difficulty,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selectedDifficulty = selected ? difficulty : null;
-                          });
-                          setState(() {});
-                        },
-                        backgroundColor: Colors.grey[200],
+                        label: Text(_difficultyTerms[difficulty] ?? ''),
+                        selected: isSelected,
                         selectedColor:
                             Theme.of(context).primaryColor.withOpacity(0.2),
-                        labelStyle: TextStyle(
-                          color: selectedDifficulty == difficulty
-                              ? Theme.of(context).primaryColor
-                              : Colors.black,
-                        ),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                        onSelected: (selected) {
+                          setState(() {
+                            selectedDifficulty =
+                                selected ? int.parse(difficulty) : null;
+                          });
+                          this.setState(() {});
+                        },
+                        backgroundColor: Colors.grey[200],
+                        shape: StadiumBorder(),
                       );
                     }).toList(),
                   ),
@@ -869,7 +884,7 @@ class _RoutesPageState extends State<RoutesPage> {
                   Text(
                     'Tipo de circuito',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -878,24 +893,23 @@ class _RoutesPageState extends State<RoutesPage> {
                     spacing: 10,
                     runSpacing: 10,
                     children: circuitTypes.map((circuitType) {
+                      final isSelected =
+                          selectedCircuitType == int.parse(circuitType);
                       return FilterChip(
-                        label: Text(
-                            _circuitTypeTerms[circuitType.toString()] ?? ''),
-                        selected: selectedCircuitType == circuitType,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selectedCircuitType = selected ? circuitType : null;
-                          });
-                          setState(() {});
-                        },
-                        backgroundColor: Colors.grey[200],
+                        label: Text(_circuitTypeTerms[circuitType] ?? ''),
+                        selected: isSelected,
                         selectedColor:
                             Theme.of(context).primaryColor.withOpacity(0.2),
-                        labelStyle: TextStyle(
-                          color: selectedCircuitType == circuitType
-                              ? Theme.of(context).primaryColor
-                              : Colors.black,
-                        ),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                        onSelected: (selected) {
+                          setState(() {
+                            selectedCircuitType =
+                                selected ? int.parse(circuitType) : null;
+                          });
+                          this.setState(() {});
+                        },
+                        backgroundColor: Colors.grey[200],
+                        shape: StadiumBorder(),
                       );
                     }).toList(),
                   ),
@@ -903,7 +917,7 @@ class _RoutesPageState extends State<RoutesPage> {
                   Text(
                     'Tipo de ruta',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -912,26 +926,50 @@ class _RoutesPageState extends State<RoutesPage> {
                     spacing: 10,
                     runSpacing: 10,
                     children: routeTypes.map((routeType) {
+                      final isSelected =
+                          selectedRouteType == int.parse(routeType);
                       return FilterChip(
-                        label:
-                            Text(_routeTypeTerms[routeType.toString()] ?? ''),
-                        selected: selectedRouteType == routeType,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selectedRouteType = selected ? routeType : null;
-                          });
-                          setState(() {});
-                        },
-                        backgroundColor: Colors.grey[200],
+                        label: Text(_routeTypeTerms[routeType] ?? ''),
+                        selected: isSelected,
                         selectedColor:
                             Theme.of(context).primaryColor.withOpacity(0.2),
-                        labelStyle: TextStyle(
-                          color: selectedRouteType == routeType
-                              ? Theme.of(context).primaryColor
-                              : Colors.black,
-                        ),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                        onSelected: (selected) {
+                          setState(() {
+                            selectedRouteType =
+                                selected ? int.parse(routeType) : null;
+                          });
+                          this.setState(() {});
+                        },
+                        backgroundColor: Colors.grey[200],
+                        shape: StadiumBorder(),
                       );
                     }).toList(),
+                  ),
+                  Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedDifficulty = null;
+                            selectedCircuitType = null;
+                            selectedRouteType = null;
+                          });
+                          this.setState(() {});
+                        },
+                        child: Text('Limpiar filtros'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Aplicar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          shape: StadiumBorder(),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -939,7 +977,9 @@ class _RoutesPageState extends State<RoutesPage> {
           },
         );
       },
-    );
+    ).then((_) {
+      setState(() {});
+    });
   }
 
   void _openInMaps(RouteModel route) async {

@@ -23,6 +23,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
   String? selectedCategory;
   int _selectedNavIndex = 1;
   MapController _mapController = MapController();
+  List<String> selectedCategories = [];
 
   final List<MapItem> pointsOfInterest = [
     MapItem(
@@ -558,21 +559,31 @@ class _AccommodationPageState extends State<AccommodationPage> {
   }
 
   void _showFilterBottomSheet() {
-    final categories =
-        pointsOfInterest.map((item) => item.categoryName).toSet().toList();
+    final List<String> categories = pointsOfInterest
+        .map((e) => e.categoryId.toString())
+        .toSet()
+        .toList()
+      ..sort();
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
+          builder: (BuildContext context, StateSetter setState) {
             return Container(
+              height: MediaQuery.of(context).size.height * 0.8,
               padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Filtrar por categoría',
@@ -585,47 +596,50 @@ class _AccommodationPageState extends State<AccommodationPage> {
                   Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: [
-                      FilterChip(
-                        label: Text('Todas'),
-                        selected: selectedCategory == null,
-                        onSelected: (selected) {
-                          setModalState(() {
-                            selectedCategory = null;
-                          });
-                          setState(() {});
-                          Navigator.pop(context);
-                        },
-                        backgroundColor: Colors.grey[200],
+                    children: categories.map((category) {
+                      final isSelected = selectedCategories.contains(category);
+                      return FilterChip(
+                        label: Text('Categoría $category'),
+                        selected: isSelected,
                         selectedColor:
                             Theme.of(context).primaryColor.withOpacity(0.2),
-                        labelStyle: TextStyle(
-                          color: selectedCategory == null
-                              ? Theme.of(context).primaryColor
-                              : Colors.black,
+                        checkmarkColor: Theme.of(context).primaryColor,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              selectedCategories.add(category);
+                            } else {
+                              selectedCategories.remove(category);
+                            }
+                          });
+                          this.setState(() {});
+                        },
+                        backgroundColor: Colors.grey[200],
+                        shape: StadiumBorder(),
+                      );
+                    }).toList(),
+                  ),
+                  Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedCategories.clear();
+                          });
+                          this.setState(() {});
+                        },
+                        child: Text('Limpiar filtros'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Aplicar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          shape: StadiumBorder(),
                         ),
                       ),
-                      ...categories.map((category) {
-                        return FilterChip(
-                          label: Text(category),
-                          selected: selectedCategory == category,
-                          onSelected: (selected) {
-                            setModalState(() {
-                              selectedCategory = category;
-                            });
-                            setState(() {});
-                            Navigator.pop(context);
-                          },
-                          backgroundColor: Colors.grey[200],
-                          selectedColor:
-                              Theme.of(context).primaryColor.withOpacity(0.2),
-                          labelStyle: TextStyle(
-                            color: selectedCategory == category
-                                ? Theme.of(context).primaryColor
-                                : Colors.black,
-                          ),
-                        );
-                      }).toList(),
                     ],
                   ),
                 ],
@@ -634,7 +648,17 @@ class _AccommodationPageState extends State<AccommodationPage> {
           },
         );
       },
-    );
+    ).then((_) {
+      setState(() {});
+    });
+  }
+
+  List<MapItem> get filteredAccommodations {
+    if (selectedCategories.isEmpty) return pointsOfInterest;
+    return pointsOfInterest
+        .where(
+            (item) => selectedCategories.contains(item.categoryId.toString()))
+        .toList();
   }
 
   void _openInMaps(MapItem item) async {

@@ -775,60 +775,46 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  margin: EdgeInsets.only(top: 8),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.8,
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Filtrar por categoría',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Filtrar por categoría',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (selectedCategories.isNotEmpty)
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              selectedCategories.clear();
-                            });
-                            this.setState(() {});
-                            Navigator.pop(context);
-                          },
-                          child: Text('Limpiar filtros'),
-                        ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
+                  SizedBox(height: 20),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: categories.map((category) {
-                      return CheckboxListTile(
-                        title: Text('Categoría $category'),
-                        value: selectedCategories.contains(category),
-                        onChanged: (selected) {
+                      final isSelected = selectedCategories.contains(category);
+                      return FilterChip(
+                        label: Text('Categoría $category'),
+                        selected: isSelected,
+                        selectedColor:
+                            Theme.of(context).primaryColor.withOpacity(0.2),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                        onSelected: (selected) {
                           setState(() {
-                            if (selected!) {
+                            if (selected) {
                               selectedCategories.add(category);
                             } else {
                               selectedCategories.remove(category);
@@ -836,31 +822,36 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                           });
                           this.setState(() {});
                         },
+                        backgroundColor: Colors.grey[200],
+                        shape: StadiumBorder(),
                       );
                     }).toList(),
                   ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text('Aplicar filtros'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            selectedCategories.clear();
+                          });
+                          this.setState(() {});
+                        },
+                        child: Text('Limpiar filtros'),
                       ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Aplicar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          shape: StadiumBorder(),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         );
