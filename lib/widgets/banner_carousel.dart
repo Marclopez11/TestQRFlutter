@@ -68,125 +68,134 @@ class _BannerCarouselState extends State<BannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final allBanners = widget.banners;
-    final activeBanners = widget.banners.where((banner) {
-      final isActive = banner.isActive;
-      print('Banner "${banner.title}":');
-      print('- Type: ${banner.type}');
-      print('- Is Published: ${banner.isPublished}');
-      print('- Is Expired: ${banner.isExpired}');
-      print('- Publication Date: ${banner.publicationDate}');
-      print('- Expiration Date: ${banner.expirationDate}');
-      print('- Is Active: $isActive');
-      print('---');
-      return isActive;
-    }).toList();
+    final activeBanners =
+        widget.banners.where((banner) => banner.isActive).toList();
 
-    print('BannerCarousel - Total banners: ${allBanners.length}');
-    print('BannerCarousel - Active banners: ${activeBanners.length}');
-    print(
-        'BannerCarousel - Inactive banners: ${allBanners.length - activeBanners.length}');
+    if (activeBanners.isEmpty) return SizedBox.shrink();
 
-    if (activeBanners.isEmpty) {
-      print('BannerCarousel - No active banners to display');
-      return SizedBox.shrink();
-    }
-
-    return Column(
-      children: [
-        CarouselSlider(
-          options: CarouselOptions(
-            height: 200,
-            viewportFraction: 1.0,
-            enlargeCenterPage: false,
-            autoPlay: true,
-            autoPlayInterval: Duration(seconds: 5),
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 2),
           ),
-          items: activeBanners.map((banner) {
-            return Builder(
-              builder: (BuildContext context) {
-                return GestureDetector(
+        ],
+      ),
+      child: CarouselSlider(
+        options: CarouselOptions(
+          height: 250,
+          viewportFraction: 1.0,
+          enlargeCenterPage: false,
+          autoPlay: true,
+          autoPlayInterval: Duration(seconds: 5),
+          autoPlayAnimationDuration: Duration(milliseconds: 800),
+          autoPlayCurve: Curves.fastOutSlowIn,
+          onPageChanged: (index, reason) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+        ),
+        items: activeBanners.map((banner) {
+          return Builder(
+            builder: (BuildContext context) {
+              return Container(
+                width: MediaQuery.of(context).size.width,
+                child: GestureDetector(
                   onTap: () => _handleBannerTap(context, banner),
                   child: Stack(
+                    fit: StackFit.expand,
                     children: [
                       Image.network(
                         banner.imageUrl,
-                        width: MediaQuery.of(context).size.width,
-                        height: 200,
                         fit: BoxFit.cover,
+                        width: double.infinity,
                         errorBuilder: (context, error, stackTrace) {
-                          print('Error loading banner image: $error');
                           return Container(
                             color: Colors.grey[300],
                             child: Icon(Icons.image_not_supported),
                           );
                         },
                       ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
+                            stops: [0.6, 1.0],
+                          ),
+                        ),
+                      ),
                       Positioned(
                         bottom: 0,
                         left: 0,
                         right: 0,
                         child: Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.7),
-                              ],
-                            ),
-                          ),
-                          padding: EdgeInsets.all(16),
-                          child: Text(
-                            banner.title,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              shadows: [
-                                Shadow(
-                                  offset: Offset(0, 1),
-                                  blurRadius: 3.0,
-                                  color: Colors.black.withOpacity(0.5),
+                          padding: EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                banner.title,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(0, 1),
+                                      blurRadius: 3.0,
+                                      color: Colors.black.withOpacity(0.5),
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (banner.type != 'banner') ...[
+                                SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      banner.type == 'event'
+                                          ? Icons.event
+                                          : Icons.place,
+                                      color: Colors.white70,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      banner.type == 'event'
+                                          ? 'Evento'
+                                          : 'Punto de interés',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                );
-              },
-            );
-          }).toList(),
-        ),
-        if (activeBanners.length > 1)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: activeBanners.asMap().entries.map((entry) {
-              return Container(
-                width: 8.0,
-                height: 8.0,
-                margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Theme.of(context)
-                      .primaryColor
-                      .withOpacity(_currentIndex == entry.key ? 0.9 : 0.4),
                 ),
               );
-            }).toList(),
-          ),
-      ],
+            },
+          );
+        }).toList(),
+      ),
     );
   }
 }
