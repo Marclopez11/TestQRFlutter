@@ -17,6 +17,13 @@ class ApiService {
   Stream<String> get languageStream => _languageController.stream;
 
   final Map<String, Map<String, String>> _apiUrls = {
+    'banner': {
+      'ca': 'https://felanitx.drupal.auroracities.com/banner_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/banner_es',
+      'en': 'https://felanitx.drupal.auroracities.com/banner_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/banner_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/banner_de',
+    },
     'categories': {
       'ca': 'https://felanitx.drupal.auroracities.com/apartats_ca',
       'es': 'https://felanitx.drupal.auroracities.com/apartats_es',
@@ -66,6 +73,13 @@ class ApiService {
       'fr': 'https://felanitx.drupal.auroracities.com/serveishotel_fr',
       'de': 'https://felanitx.drupal.auroracities.com/serveishotel_de',
     },
+    'points_of_interest': {
+      'ca': 'https://felanitx.drupal.auroracities.com/lloc_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/lloc_es',
+      'en': 'https://felanitx.drupal.auroracities.com/lloc_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/lloc_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/lloc_de',
+    },
   };
 
   void startService() {
@@ -82,6 +96,10 @@ class ApiService {
     await prefs.setString('language', language);
     _currentLanguage = language;
     _languageController.add(language);
+
+    // Opcional: Limpiar la caché de datos al cambiar el idioma
+    final bannersKey = 'banner_$language';
+    await prefs.remove(bannersKey);
   }
 
   Future<void> _fetchData() async {
@@ -114,11 +132,41 @@ class ApiService {
 
   Future<List<dynamic>> loadData(String apiName, String language) async {
     final prefs = await SharedPreferences.getInstance();
-    final dataString = prefs.getString('${apiName}_$language');
-    if (dataString != null) {
-      return json.decode(dataString);
+    final cacheKey = '${apiName}_$language';
+
+    try {
+      final url = _apiUrls[apiName]?[language];
+      if (url == null) {
+        print('URL not found for $apiName in language $language');
+        return [];
+      }
+
+      print('Fetching data from: $url');
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Guardar en caché
+        await prefs.setString(cacheKey, json.encode(data));
+        return data;
+      } else {
+        print('Error fetching data: ${response.statusCode}');
+        // Intentar usar datos en caché si hay error
+        final cachedData = prefs.getString(cacheKey);
+        if (cachedData != null) {
+          return json.decode(cachedData);
+        }
+        return [];
+      }
+    } catch (e) {
+      print('Error in loadData: $e');
+      // Intentar usar datos en caché si hay error
+      final cachedData = prefs.getString(cacheKey);
+      if (cachedData != null) {
+        return json.decode(cachedData);
+      }
+      return [];
     }
-    return [];
   }
 
   Future<void> _saveLanguage() async {

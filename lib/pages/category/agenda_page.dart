@@ -29,14 +29,31 @@ class _AgendaPageState extends State<AgendaPage> {
   @override
   void initState() {
     super.initState();
+    _initializeLocale();
+  }
+
+  Future<void> _initializeLocale() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+
+    // Mapear los códigos de idioma a los locales de Intl
+    final localeMap = {
+      'es': 'es_ES',
+      'ca': 'ca_ES',
+      'en': 'en_US',
+      'fr': 'fr_FR',
+      'de': 'de_DE',
+    };
+
+    await initializeDateFormatting(localeMap[language] ?? 'es_ES');
     _loadEvents();
   }
 
   Future<void> _loadEvents() async {
-    await initializeDateFormatting();
     final apiService = ApiService();
     final language = await apiService.getCurrentLanguage();
     final data = await apiService.loadData('agenda', language);
+
     setState(() {
       _events = data.map((item) => CalendarEvent.fromJson(item)).toList();
       _events.sort((a, b) => a.date.compareTo(b.date));
@@ -58,7 +75,7 @@ class _AgendaPageState extends State<AgendaPage> {
     final apiService = ApiService();
     final newLanguage = await apiService.getCurrentLanguage();
     if (newLanguage != _currentLanguage) {
-      await _loadEvents();
+      await _initializeLocale(); // Reinicializar el locale al cambiar el idioma
     }
   }
 
@@ -439,6 +456,18 @@ class _AgendaPageState extends State<AgendaPage> {
     );
   }
 
+  String _getLocale() {
+    // Mapear los códigos de idioma a los locales de Intl
+    final localeMap = {
+      'es': 'es_ES',
+      'ca': 'ca_ES',
+      'en': 'en_US',
+      'fr': 'fr_FR',
+      'de': 'de_DE',
+    };
+    return localeMap[_currentLanguage] ?? 'es_ES';
+  }
+
   Widget _buildEventsList() {
     List<CalendarEvent> selectedEvents;
     if (_selectedDay != null) {
@@ -451,6 +480,8 @@ class _AgendaPageState extends State<AgendaPage> {
       selectedEvents = _events;
     }
 
+    final locale = _getLocale();
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -460,7 +491,7 @@ class _AgendaPageState extends State<AgendaPage> {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Text(
               _selectedDay != null
-                  ? 'Eventos a partir del ${DateFormat('d MMMM', _currentLanguage).format(_selectedDay!)}'
+                  ? 'Eventos a partir del ${DateFormat('d MMMM', locale).format(_selectedDay!)}'
                   : 'Próximos eventos',
               style: TextStyle(
                 fontSize: 20,

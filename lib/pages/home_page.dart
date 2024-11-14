@@ -11,6 +11,8 @@ import 'package:felanitx/pages/category/routes_page.dart';
 import 'package:felanitx/pages/category/accommodation_page.dart';
 import 'package:felanitx/pages/category/restaurants_page.dart';
 import 'package:felanitx/services/api_service.dart';
+import 'package:felanitx/models/banner.dart';
+import 'package:felanitx/widgets/banner_carousel.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -28,6 +30,7 @@ class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin<HomePage> {
   int _currentCarouselIndex = 0;
   List<Category> _apiData = [];
+  List<BannerModel> _banners = [];
 
   @override
   bool get wantKeepAlive => true;
@@ -37,6 +40,7 @@ class _HomePageState extends State<HomePage>
     super.initState();
     _loadData();
     _subscribeToLanguageChanges();
+    _loadBanners();
   }
 
   @override
@@ -48,6 +52,7 @@ class _HomePageState extends State<HomePage>
   void _subscribeToLanguageChanges() {
     ApiService().languageStream.listen((_) {
       _loadData();
+      _loadBanners();
     });
   }
 
@@ -72,6 +77,70 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  Future<void> _loadBanners() async {
+    try {
+      final apiService = ApiService();
+      final language = await apiService.getCurrentLanguage();
+      print('Loading banners for language: $language');
+
+      final data = await apiService.loadData('banner', language);
+      print('Banner data received: $data');
+
+      if (data != null && data is List) {
+        final loadedBanners = data
+            .map((item) {
+              try {
+                return BannerModel.fromJson(item);
+              } catch (e) {
+                print('Error parsing banner item: $e');
+                print('Problematic banner data: $item');
+                return null;
+              }
+            })
+            .whereType<BannerModel>()
+            .where((banner) {
+              final isCorrectLanguage = banner.langcode == language;
+              final isNotExpired = !banner.isExpired;
+              final isPublished = banner.isPublished;
+
+              print(
+                  'Banner ${banner.id} - Language: ${banner.langcode}, Current: $language');
+              print(
+                  'Banner ${banner.id} - Expired: ${banner.isExpired}, Published: ${banner.isPublished}');
+
+              return isCorrectLanguage && isNotExpired && isPublished;
+            })
+            .toList();
+
+        print('Number of banners loaded: ${loadedBanners.length}');
+        print(
+            'Active banners: ${loadedBanners.where((b) => b.isActive).length}');
+
+        loadedBanners.forEach((banner) {
+          print('Banner ID: ${banner.id}');
+          print('Banner Title: ${banner.title}');
+          print('Banner Language: ${banner.langcode}');
+          print('Banner Image URL: ${banner.imageUrl}');
+          print('Banner Web Link: ${banner.webLink}');
+          print('Banner Expiration: ${banner.expirationDate}');
+          print('Banner Publication: ${banner.publicationDate}');
+          print('Banner is Active: ${banner.isActive}');
+          print('---');
+        });
+
+        setState(() {
+          _banners = loadedBanners;
+        });
+      } else {
+        print('Error: Banner data is not a List or is null');
+        print('Received data type: ${data.runtimeType}');
+      }
+    } catch (e, stackTrace) {
+      print('Error loading banners: $e');
+      print('Stack trace: $stackTrace');
+    }
+  }
+
   void reloadData() {
     _loadData();
   }
@@ -83,137 +152,13 @@ class _HomePageState extends State<HomePage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildFeaturedSlider(),
+            BannerCarousel(banners: _banners),
             SizedBox(height: 30),
             _buildItemsGrid(),
             SizedBox(height: 20),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildFeaturedSlider() {
-    return Stack(
-      children: [
-        CarouselSlider(
-          options: CarouselOptions(
-            height: 350.0,
-            autoPlay: true,
-            enlargeCenterPage: false,
-            viewportFraction: 1.0,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentCarouselIndex = index;
-              });
-            },
-          ),
-          items: _apiData.map((category) {
-            return Builder(
-              builder: (BuildContext context) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/${category.page}',
-                      arguments: category.title,
-                    );
-                  },
-                  child: Container(
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: NetworkImage(category.imageUrl),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.8)
-                          ],
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        category.title,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      SizedBox(height: 10),
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 5),
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).primaryColor,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          category.title,
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          }).toList(),
-        ),
-        Positioned(
-          bottom: 20,
-          left: 0,
-          right: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: _apiData.asMap().entries.map((entry) {
-              return Container(
-                width: 10.0,
-                height: 10.0,
-                margin: EdgeInsets.symmetric(horizontal: 5.0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Theme.of(context).primaryColor.withOpacity(
-                        _currentCarouselIndex == entry.key ? 0.9 : 0.4,
-                      ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
     );
   }
 
