@@ -8,7 +8,7 @@ class ApiService {
   factory ApiService() => _instance;
   ApiService._internal();
 
-  static const _updateInterval = Duration(minutes: 1);
+  static const _updateInterval = Duration(seconds: 5);
 
   Timer? _timer;
   String _currentLanguage = 'es';
@@ -17,6 +17,13 @@ class ApiService {
   Stream<String> get languageStream => _languageController.stream;
 
   final Map<String, Map<String, String>> _apiUrls = {
+    'categories': {
+      'ca': 'https://felanitx.drupal.auroracities.com/apartats_ca',
+      'es': 'https://felanitx.drupal.auroracities.com/apartats_es',
+      'en': 'https://felanitx.drupal.auroracities.com/apartats_en',
+      'fr': 'https://felanitx.drupal.auroracities.com/apartats_fr',
+      'de': 'https://felanitx.drupal.auroracities.com/apartats_de',
+    },
     'agenda': {
       'ca': 'https://felanitx.drupal.auroracities.com/agenda_ca',
       'es': 'https://felanitx.drupal.auroracities.com/agenda_es',

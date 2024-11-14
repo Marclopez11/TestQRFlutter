@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:felanitx/main.dart';
+import 'package:felanitx/pages/calendar_detail_page.dart';
 
 class AgendaPage extends StatefulWidget {
   final String title;
@@ -492,13 +493,23 @@ class _AgendaPageState extends State<AgendaPage> {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: event.link.isNotEmpty
-                          ? () async {
-                              if (await canLaunch(event.link)) {
-                                await launch(event.link);
-                              }
+                      onTap: event.longDescription.isNotEmpty
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      CalendarDetailPage(event: event),
+                                ),
+                              );
                             }
-                          : null,
+                          : event.link.isNotEmpty
+                              ? () async {
+                                  if (await canLaunch(event.link)) {
+                                    await launch(event.link);
+                                  }
+                                }
+                              : null,
                       child: Padding(
                         padding: EdgeInsets.all(16),
                         child: Row(
