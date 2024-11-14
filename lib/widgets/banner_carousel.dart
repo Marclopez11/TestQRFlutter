@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:felanitx/models/banner.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:felanitx/pages/item_detail_page.dart';
+import 'package:felanitx/pages/calendar_detail_page.dart';
+import 'package:felanitx/pages/interest_detail_page.dart';
+import 'package:felanitx/models/map_item.dart';
 
 class BannerCarousel extends StatefulWidget {
   final List<BannerModel> banners;
@@ -15,13 +19,73 @@ class BannerCarousel extends StatefulWidget {
 class _BannerCarouselState extends State<BannerCarousel> {
   int _currentIndex = 0;
 
+  void _handleBannerTap(BuildContext context, BannerModel banner) async {
+    print('Banner tapped - Type: ${banner.type}');
+
+    switch (banner.type) {
+      case 'banner':
+        if (banner.webLink != null) {
+          print('Opening banner link: ${banner.webLink}');
+          if (await canLaunch(banner.webLink!)) {
+            await launch(banner.webLink!);
+          }
+        }
+        break;
+
+      case 'interest':
+        print('Opening interest detail');
+        if (banner.originalInterest != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => InterestDetailPage(
+                interest: banner.originalInterest!,
+              ),
+            ),
+          );
+        }
+        break;
+
+      case 'event':
+        print('Opening calendar detail');
+        if (banner.originalEvent != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CalendarDetailPage(
+                event: banner.originalEvent!,
+              ),
+            ),
+          );
+        }
+        break;
+
+      default:
+        print('Unknown banner type: ${banner.type}');
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final activeBanners =
-        widget.banners.where((banner) => banner.isActive).toList();
+    final allBanners = widget.banners;
+    final activeBanners = widget.banners.where((banner) {
+      final isActive = banner.isActive;
+      print('Banner "${banner.title}":');
+      print('- Type: ${banner.type}');
+      print('- Is Published: ${banner.isPublished}');
+      print('- Is Expired: ${banner.isExpired}');
+      print('- Publication Date: ${banner.publicationDate}');
+      print('- Expiration Date: ${banner.expirationDate}');
+      print('- Is Active: $isActive');
+      print('---');
+      return isActive;
+    }).toList();
 
-    print('BannerCarousel - Total banners: ${widget.banners.length}');
+    print('BannerCarousel - Total banners: ${allBanners.length}');
     print('BannerCarousel - Active banners: ${activeBanners.length}');
+    print(
+        'BannerCarousel - Inactive banners: ${allBanners.length - activeBanners.length}');
 
     if (activeBanners.isEmpty) {
       print('BannerCarousel - No active banners to display');
@@ -44,21 +108,10 @@ class _BannerCarouselState extends State<BannerCarousel> {
             },
           ),
           items: activeBanners.map((banner) {
-            print('Building banner: ${banner.title} - ${banner.imageUrl}');
             return Builder(
               builder: (BuildContext context) {
                 return GestureDetector(
-                  onTap: () async {
-                    if (banner.webLink != null) {
-                      print(
-                          'Banner tapped - attempting to open: ${banner.webLink}');
-                      if (await canLaunch(banner.webLink!)) {
-                        await launch(banner.webLink!);
-                      } else {
-                        print('Could not launch URL: ${banner.webLink}');
-                      }
-                    }
-                  },
+                  onTap: () => _handleBannerTap(context, banner),
                   child: Stack(
                     children: [
                       Image.network(
@@ -68,8 +121,6 @@ class _BannerCarouselState extends State<BannerCarousel> {
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           print('Error loading banner image: $error');
-                          print('Image URL: ${banner.imageUrl}');
-                          print('Stack trace: $stackTrace');
                           return Container(
                             color: Colors.grey[300],
                             child: Icon(Icons.image_not_supported),

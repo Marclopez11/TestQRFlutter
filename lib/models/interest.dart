@@ -17,6 +17,7 @@ class Interest {
   final String? phoneNumber;
   final String? videoUrl;
   final String mainImage;
+  final String langcode;
 
   Interest({
     required this.id,
@@ -35,6 +36,7 @@ class Interest {
     this.phoneNumber,
     this.videoUrl,
     required this.mainImage,
+    required this.langcode,
   });
 
   factory Interest.fromJson(Map<String, dynamic> json) {
@@ -76,6 +78,7 @@ class Interest {
           ? json['field_place_video'][0]['url']
           : null,
       mainImage: json['field_place_main_image'][0]['url'],
+      langcode: json['langcode'][0]['value'],
     );
   }
 }

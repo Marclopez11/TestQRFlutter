@@ -13,6 +13,8 @@ import 'package:felanitx/pages/category/restaurants_page.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/models/banner.dart';
 import 'package:felanitx/widgets/banner_carousel.dart';
+import 'package:felanitx/models/calendar_event.dart';
+import 'package:felanitx/models/interest.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -83,61 +85,63 @@ class _HomePageState extends State<HomePage>
       final language = await apiService.getCurrentLanguage();
       print('Loading banners for language: $language');
 
-      final data = await apiService.loadData('banner', language);
-      print('Banner data received: $data');
+      List<BannerModel> allBanners = [];
 
-      if (data != null && data is List) {
-        final loadedBanners = data
-            .map((item) {
-              try {
-                return BannerModel.fromJson(item);
-              } catch (e) {
-                print('Error parsing banner item: $e');
-                print('Problematic banner data: $item');
-                return null;
-              }
-            })
-            .whereType<BannerModel>()
-            .where((banner) {
-              final isCorrectLanguage = banner.langcode == language;
-              final isNotExpired = !banner.isExpired;
-              final isPublished = banner.isPublished;
+      // Cargar eventos destacados primero
+      final eventData = await apiService.loadData('agenda', language);
+      if (eventData is List) {
+        print('Events loaded: ${eventData.length}');
+        for (var item in eventData) {
+          try {
+            final event = CalendarEvent.fromJson(item);
+            print('Event: ${event.title}');
+            print(
+                'Featured value in JSON: ${item['field_calendar_featured']?[0]?['value']}');
+            print('Featured parsed: ${event.featured}');
+            print('Has main image: ${event.mainImage != null}');
 
-              print(
-                  'Banner ${banner.id} - Language: ${banner.langcode}, Current: $language');
-              print(
-                  'Banner ${banner.id} - Expired: ${banner.isExpired}, Published: ${banner.isPublished}');
-
-              return isCorrectLanguage && isNotExpired && isPublished;
-            })
-            .toList();
-
-        print('Number of banners loaded: ${loadedBanners.length}');
-        print(
-            'Active banners: ${loadedBanners.where((b) => b.isActive).length}');
-
-        loadedBanners.forEach((banner) {
-          print('Banner ID: ${banner.id}');
-          print('Banner Title: ${banner.title}');
-          print('Banner Language: ${banner.langcode}');
-          print('Banner Image URL: ${banner.imageUrl}');
-          print('Banner Web Link: ${banner.webLink}');
-          print('Banner Expiration: ${banner.expirationDate}');
-          print('Banner Publication: ${banner.publicationDate}');
-          print('Banner is Active: ${banner.isActive}');
-          print('---');
-        });
-
-        setState(() {
-          _banners = loadedBanners;
-        });
-      } else {
-        print('Error: Banner data is not a List or is null');
-        print('Received data type: ${data.runtimeType}');
+            if (event.featured && !event.isExpired && event.mainImage != null) {
+              print('Adding featured event to banner: ${event.title}');
+              allBanners.add(BannerModel.fromEvent(event));
+            }
+          } catch (e) {
+            print('Error processing event: $e');
+          }
+        }
+        print('Featured events added: ${allBanners.length}');
       }
-    } catch (e, stackTrace) {
+
+      // Cargar banners regulares
+      final bannerData = await apiService.loadData('banner', language);
+      if (bannerData is List) {
+        print('Regular banners loaded: ${bannerData.length}');
+        allBanners.addAll(
+          bannerData.map((item) => BannerModel.fromJson(item)).where(
+              (banner) => banner.isActive && banner.langcode == language),
+        );
+      }
+
+      // Cargar puntos de interés destacados
+      final interestData =
+          await apiService.loadData('points_of_interest', language);
+      if (interestData is List) {
+        print('Points of interest loaded: ${interestData.length}');
+        final interests = interestData
+            .map((item) => Interest.fromJson(item))
+            .where((interest) {
+          print('Interest ${interest.title} - Featured: ${interest.featured}');
+          return interest.featured;
+        }).map((interest) => BannerModel.fromInterest(interest));
+
+        allBanners.addAll(interests);
+      }
+
+      print('Total banners to display: ${allBanners.length}');
+      setState(() {
+        _banners = allBanners;
+      });
+    } catch (e) {
       print('Error loading banners: $e');
-      print('Stack trace: $stackTrace');
     }
   }
 

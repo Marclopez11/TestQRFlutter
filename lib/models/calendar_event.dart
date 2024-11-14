@@ -11,6 +11,7 @@ class CalendarEvent {
   final List<String> imageGallery;
   final String? mainImage;
   final LatLng? location;
+  final DateTime? expirationDate;
 
   CalendarEvent({
     required this.title,
@@ -23,9 +24,22 @@ class CalendarEvent {
     required this.imageGallery,
     this.mainImage,
     this.location,
+    this.expirationDate,
   });
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) {
+    print('Parsing calendar event: ${json['title']?[0]?['value']}');
+    print(
+        'Featured raw value: ${json['field_calendar_featured']?[0]?['value']}');
+
+    final featuredValue = json['field_calendar_featured']?[0]?['value'];
+    final isFeatured = featuredValue == true ||
+        featuredValue == 1 ||
+        featuredValue == '1' ||
+        featuredValue == 'true';
+
+    print('Featured parsed value: $isFeatured');
+
     return CalendarEvent(
       title: json['title']?[0]?['value'] ?? '',
       langcode: json['langcode']?[0]?['value'] ?? '',
@@ -36,7 +50,7 @@ class CalendarEvent {
           json['field_calendar_short_description']?[0]?['value'] ?? '',
       longDescription:
           json['field_calendar_long_description']?[0]?['value'] ?? '',
-      featured: json['field_calendar_featured']?[0]?['value'] == '1',
+      featured: isFeatured,
       link: json['field_calendar_link']?.isNotEmpty == true
           ? json['field_calendar_link'][0]['value']
           : '',
@@ -49,6 +63,10 @@ class CalendarEvent {
           : null,
       location: json['field_calendar_location']?.isNotEmpty == true
           ? _parseLocation(json['field_calendar_location'][0]['value'])
+          : null,
+      expirationDate: json['field_calendar_date']?[0]?['value'] != null
+          ? DateTime.parse(json['field_calendar_date'][0]['value'])
+              .add(Duration(days: 1))
           : null,
     );
   }
@@ -64,4 +82,11 @@ class CalendarEvent {
     }
     return null;
   }
+
+  bool get isExpired {
+    if (expirationDate == null) return false;
+    return DateTime.now().isAfter(expirationDate!);
+  }
+
+  bool get isActive => featured && !isExpired;
 }

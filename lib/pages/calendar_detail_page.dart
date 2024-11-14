@@ -4,6 +4,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,6 +21,25 @@ class CalendarDetailPage extends StatefulWidget {
 class _CalendarDetailPageState extends State<CalendarDetailPage> {
   int _currentImageIndex = 0;
   bool _isDescriptionExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocale();
+  }
+
+  Future<void> _initializeLocale() async {
+    final localeMap = {
+      'es': 'es_ES',
+      'ca': 'ca_ES',
+      'en': 'en_US',
+      'fr': 'fr_FR',
+      'de': 'de_DE',
+    };
+
+    await initializeDateFormatting(localeMap[widget.event.langcode] ?? 'es_ES');
+    if (mounted) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
