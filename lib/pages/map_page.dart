@@ -2,18 +2,25 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
 import '../models/map_item.dart';
+import '../models/interest.dart';
+import '../models/route.dart';
+import '../models/accommodation.dart';
 import 'item_detail_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:collection/collection.dart';
 import '../widgets/app_scaffold.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
-import 'dart:async';
+import '../services/api_service.dart';
+import '../models/population.dart';
+import '../services/taxonomy_service.dart';
+import 'interest_detail_page.dart';
+import 'route_detail_page.dart';
+import 'population_detail_page.dart';
+import 'accommodation_detail_page.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);
@@ -23,177 +30,236 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  final ApiService _apiService = ApiService();
   List<MapItem> _mapItems = [];
   List<MapItem> _filteredItems = [];
-  List<String> _categories = ['All'];
-  String? _selectedCategory;
-  LatLng _centerPosition = LatLng(39.4697, 3.1483); // Coordenadas de Felanitx
-  double _zoomLevel = 14.0; // Nivel de zoom fijo
+  LatLng _centerPosition = LatLng(39.4697, 3.1483);
+  double _zoomLevel = 15.0;
   late MapController _mapController;
   late PopupController _popupController;
   bool _isLoading = true;
-  bool _isInitialLoad = true;
-  Timer? _timer;
+  Map<String, bool> _activeFilters = {};
+  String _currentLanguage = '';
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
     _popupController = PopupController();
-    _startTimer();
+    _loadAllItems();
+    _setupLanguageListener();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _startTimer() {
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) {
-      _fetchMapItems();
+  void _setupLanguageListener() {
+    _apiService.languageStream.listen((String newLanguage) {
+      if (_currentLanguage != newLanguage) {
+        _currentLanguage = newLanguage;
+        _reloadItemsPreservingFilters();
+      }
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_isInitialLoad || ModalRoute.of(context)?.isCurrent == true) {
-      _fetchMapItems();
-      _isInitialLoad = false;
-    }
-  }
+  Future<void> _reloadItemsPreservingFilters() async {
+    // Guardar el estado actual de los filtros
+    final currentFilters = Map<String, bool>.from(_activeFilters);
 
-  Future<void> _fetchMapItems() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cachedData = prefs.getString('mapItemsData');
+    // Recargar items
+    await _loadAllItems();
 
-    if (cachedData != null) {
-      final List<dynamic> data = json.decode(cachedData);
-      _processData(data);
-    } else {
-      final response = await http
-          .get(Uri.parse('https://felanitx.drupal.auroracities.com/lloc'));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        await prefs.setString('mapItemsData', response.body);
-        _processData(data);
-      }
-    }
-  }
-
-  void _processData(List<dynamic> data) async {
-    // Fetch categories
-    final categoriesResponse = await http
-        .get(Uri.parse('https://felanitx.drupal.auroracities.com/categories'));
-    final List<dynamic> categoriesData = json.decode(categoriesResponse.body);
-
-    Map<int, String> categoryMap = {};
-    for (var category in categoriesData) {
-      int tid = category['tid'][0]['value'];
-      String name = category['name'][0]['value'];
-      categoryMap[tid] = name;
-    }
-
-    final averageRatings = await _fetchAverageRatings();
-
+    // Restaurar filtros previos que aún existan
     setState(() {
-      _mapItems = data.map((item) {
-        final location = item['field_place_location'][0];
-        final image = item['field_place_main_image'][0];
-        final categoryId = item['field_place_categoria'][0]['target_id'];
-        final averageRating = averageRatings[item['nid'][0]['value'].toString()]
-                ?['average_rating'] ??
-            0.0;
-        final commentCount = averageRatings[item['nid'][0]['value'].toString()]
-                ?['comment_count'] ??
-            0;
-        return MapItem(
-          id: item['nid'][0]['value'].toString(),
-          title: item['title'][0]['value'],
-          description: item['field_place_description'][0]['value'],
-          position: LatLng(
-            double.parse(location['lat'].toString()),
-            double.parse(location['lng'].toString()),
-          ),
-          imageUrl: image['url'],
-          categoryId: categoryId,
-          categoryName: categoryMap[categoryId] ?? 'Unknown',
-          averageRating: averageRating,
-          commentCount: commentCount,
-        );
+      currentFilters.forEach((key, value) {
+        if (_activeFilters.containsKey(key)) {
+          _activeFilters[key] = value;
+        }
+      });
+      _updateFilteredItems();
+    });
+  }
+
+  Future<void> _loadAllItems() async {
+    setState(() => _isLoading = true);
+    try {
+      _currentLanguage = await _apiService.getCurrentLanguage();
+
+      // Cargar puntos de interés
+      final interestsData =
+          await _apiService.loadData('points_of_interest', _currentLanguage);
+      print('Loaded interests data: ${interestsData.length}'); // Debug
+      final interests = interestsData
+          .map((json) {
+            try {
+              return Interest.fromJson(json);
+            } catch (e) {
+              print('Error parsing interest: $e');
+              print('JSON: $json');
+              return null;
+            }
+          })
+          .whereType<Interest>()
+          .toList();
+
+      final interestItems =
+          interests.map((i) => MapItem.fromInterest(i)).toList();
+      print('Converted interest items: ${interestItems.length}'); // Debug
+
+      // Cargar rutas a pie con taxonomía
+      final walkingRoutesData =
+          await _apiService.loadData('rutes', _currentLanguage);
+      final walkingRoutes = walkingRoutesData
+          .map((json) {
+            try {
+              return RouteModel.fromJson(json);
+            } catch (e) {
+              print('Error parsing walking route: $e');
+              return null;
+            }
+          })
+          .whereType<RouteModel>()
+          .toList();
+
+      final walkingItems = await Future.wait(
+          walkingRoutes.map((r) => MapItem.fromRouteWithTaxonomy(r, false)));
+
+      // Cargar rutas en bici con taxonomía
+      final bikeRoutesData =
+          await _apiService.loadData('rutes_bici', _currentLanguage);
+      final bikeRoutes = bikeRoutesData
+          .map((json) {
+            try {
+              return RouteModel.fromJson(json);
+            } catch (e) {
+              print('Error parsing bike route: $e');
+              return null;
+            }
+          })
+          .whereType<RouteModel>()
+          .toList();
+
+      final bikeItems = await Future.wait(
+          bikeRoutes.map((r) => MapItem.fromRouteWithTaxonomy(r, true)));
+
+      // Cargar hoteles
+      final accommodationsData =
+          await _apiService.loadData('hotel', _currentLanguage);
+      print(
+          'Loaded accommodations data: ${accommodationsData.length}'); // Debug
+      final accommodations = accommodationsData
+          .map((json) {
+            try {
+              return Accommodation.fromJson(json);
+            } catch (e) {
+              print('Error parsing accommodation: $e');
+              print('JSON: $json');
+              return null;
+            }
+          })
+          .whereType<Accommodation>()
+          .toList();
+
+      final hotelItems =
+          accommodations.map((a) => MapItem.fromAccommodation(a)).toList();
+      print('Converted hotel items: ${hotelItems.length}'); // Debug
+
+      // Cargar poblaciones
+      final populationsData =
+          await _apiService.loadData('poblacio', _currentLanguage);
+      print('Loaded populations data: ${populationsData.length}'); // Debug
+      final populations = populationsData
+          .map((json) {
+            try {
+              return Population.fromJson(json);
+            } catch (e) {
+              print('Error parsing population: $e');
+              print('JSON: $json');
+              return null;
+            }
+          })
+          .whereType<Population>()
+          .toList();
+
+      final populationItems =
+          populations.map((p) => MapItem.fromPopulation(p)).toList();
+      print('Converted population items: ${populationItems.length}'); // Debug
+
+      setState(() {
+        _mapItems = [
+          ...interestItems,
+          ...walkingItems,
+          ...bikeItems,
+          ...hotelItems,
+          ...populationItems,
+        ];
+        print('Total map items: ${_mapItems.length}'); // Debug
+        _updateFilteredItems();
+        if (_mapItems.isNotEmpty) {
+          _updateMapView(useAllItems: true);
+        } else {
+          print('No items loaded!'); // Debug
+        }
+      });
+
+      // Obtener nombres únicos de filtros de todos los items
+      final filterNames = _mapItems.map((item) => item.filterName).toSet();
+
+      // Inicializar filtros
+      setState(() {
+        _activeFilters =
+            Map.fromEntries(filterNames.map((name) => MapEntry(name, true)));
+        _updateFilteredItems();
+      });
+    } catch (e) {
+      print('Error loading items: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _updateFilteredItems() {
+    setState(() {
+      _filteredItems = _mapItems.where((item) {
+        return _activeFilters[item.filterName] ?? false;
       }).toList();
 
-      // Obtener las categorías únicas de los ítems
-      _categories =
-          ['All'] + _mapItems.map((item) => item.categoryName).toSet().toList();
-
-      _filteredItems = _mapItems;
-      if (_isInitialLoad) {
-        _updateMapView(useAllItems: true);
-        _isInitialLoad = false;
-      } else {
-        _updateMarkers();
+      if (_filteredItems.isNotEmpty) {
+        _updateMapView();
       }
-      _isLoading = false;
-    });
-  }
-
-  Future<Map<String, Map<String, dynamic>>> _fetchAverageRatings() async {
-    final response = await http.get(Uri.parse(
-        'https://v5zl55fl4h.execute-api.eu-central-1.amazonaws.com/comment'));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return Map.fromIterable(data,
-          key: (item) => item['nid'].toString(),
-          value: (item) => {
-                'average_rating': item['average_rating'].toDouble(),
-                'comment_count': item['comment_count'],
-              });
-    } else {
-      throw Exception('Failed to load average ratings');
-    }
-  }
-
-  void _filterByCategory(String category) {
-    setState(() {
-      _selectedCategory = category == 'All' ? null : category;
-      _filteredItems = _selectedCategory == null
-          ? _mapItems
-          : _mapItems
-              .where((item) => item.categoryName == _selectedCategory)
-              .toList();
-      _updateMapView();
-      _popupController.hideAllPopups();
     });
   }
 
   void _updateMapView({bool useAllItems = false}) {
     List<MapItem> itemsToUse = useAllItems ? _mapItems : _filteredItems;
-
-    if (itemsToUse.isNotEmpty) {
-      double minLat = itemsToUse[0].position.latitude;
-      double maxLat = itemsToUse[0].position.latitude;
-      double minLng = itemsToUse[0].position.longitude;
-      double maxLng = itemsToUse[0].position.longitude;
-
-      for (var item in itemsToUse) {
-        minLat = min(minLat, item.position.latitude);
-        maxLat = max(maxLat, item.position.latitude);
-        minLng = min(minLng, item.position.longitude);
-        maxLng = max(maxLng, item.position.longitude);
-      }
-
-      double centerLat = (minLat + maxLat) / 2;
-      double centerLng = (minLng + maxLng) / 2;
-      LatLng centerPosition = LatLng(centerLat, centerLng);
-
-      double zoomLevel = _calculateZoomLevel(minLat, maxLat, minLng, maxLng);
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.move(centerPosition, zoomLevel);
+    if (itemsToUse.isEmpty) {
+      setState(() {
+        _centerPosition = LatLng(39.4697, 3.1483);
+        _zoomLevel = 15.0;
       });
+      return;
     }
+
+    double sumLat = 0;
+    double sumLng = 0;
+    double minLat = itemsToUse.first.position.latitude;
+    double maxLat = itemsToUse.first.position.latitude;
+    double minLng = itemsToUse.first.position.longitude;
+    double maxLng = itemsToUse.first.position.longitude;
+
+    for (var item in itemsToUse) {
+      sumLat += item.position.latitude;
+      sumLng += item.position.longitude;
+      minLat = min(minLat, item.position.latitude);
+      maxLat = max(maxLat, item.position.latitude);
+      minLng = min(minLng, item.position.longitude);
+      maxLng = max(maxLng, item.position.longitude);
+    }
+
+    double centerLat = sumLat / itemsToUse.length;
+    double centerLng = sumLng / itemsToUse.length;
+    double zoomLevel = _calculateZoomLevel(minLat, maxLat, minLng, maxLng);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapController.move(LatLng(centerLat, centerLng), zoomLevel);
+    });
   }
 
   double _calculateZoomLevel(
@@ -205,14 +271,13 @@ class _MapPageState extends State<MapPage> {
     double lngDiff = maxLng - minLng;
     double maxDiff = max(latDiff, lngDiff);
 
-    // Ajustamos estos valores para obtener un zoom más alejado
-    if (maxDiff < 0.01)
-      return 14.0; // Zoom más alejado para diferencias pequeñas
-    if (maxDiff > 1) return zoomMin.toDouble();
+    if (maxDiff < 0.01) {
+      return 15.0;
+    }
+    if (maxDiff > 1) return 12.0;
 
-    // Ajustamos la fórmula para obtener un zoom más alejado en general
-    double zoomLevel = 15 - log(maxDiff * 111) / log(2);
-    return max(zoomLevel.clamp(zoomMin.toDouble(), zoomMax.toDouble()), 10.0);
+    double zoomLevel = 16 - log(maxDiff * 111) / log(2);
+    return max(zoomLevel.clamp(12.0, zoomMax.toDouble()), 12.0);
   }
 
   String get _mapTileUrl {
@@ -260,34 +325,196 @@ class _MapPageState extends State<MapPage> {
                         ),
                         children: [
                           TileLayer(
-                            urlTemplate: _mapTileUrl,
+                            urlTemplate: Platform.isAndroid
+                                ? 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+                                : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             subdomains: Platform.isAndroid
                                 ? ['0', '1', '2', '3']
                                 : ['a', 'b', 'c'],
                           ),
                           PopupMarkerLayerWidget(
                             options: PopupMarkerLayerOptions(
-                              markers: _filteredItems.map((item) {
-                                return Marker(
-                                  point: item.position,
-                                  width: 40,
-                                  height: 40,
-                                  builder: (_) =>
-                                      const Icon(Icons.location_on, size: 40),
-                                  anchorPos: AnchorPos.align(AnchorAlign.top),
-                                );
-                              }).toList(),
+                              markers: _filteredItems
+                                  .map((item) => Marker(
+                                        point: item.position,
+                                        width: 40,
+                                        height: 40,
+                                        builder: (_) => Image.asset(
+                                          item.markerIcon,
+                                          width: 40,
+                                          height: 40,
+                                        ),
+                                        anchorPos:
+                                            AnchorPos.align(AnchorAlign.top),
+                                      ))
+                                  .toList(),
                               popupController: _popupController,
                               popupDisplayOptions: PopupDisplayOptions(
-                                builder: (BuildContext context, Marker marker) {
+                                builder: (_, Marker marker) {
                                   final item = _filteredItems.firstWhereOrNull(
                                     (item) => item.position == marker.point,
                                   );
-                                  if (item == null) {
-                                    return SizedBox.shrink();
-                                  }
-                                  return _buildPopupContent(item);
+                                  if (item == null) return SizedBox.shrink();
+
+                                  return Container(
+                                    width: double.infinity,
+                                    margin: EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 10,
+                                          offset: Offset(0, 5),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Stack(
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.vertical(
+                                                      top: Radius.circular(12)),
+                                              child: Image.network(
+                                                item.imageUrl,
+                                                height: 200,
+                                                width: double.infinity,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error,
+                                                    stackTrace) {
+                                                  return Container(
+                                                    height: 200,
+                                                    color: Colors.grey[300],
+                                                    child: Icon(Icons
+                                                        .image_not_supported),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                            Positioned(
+                                              top: 8,
+                                              right: 8,
+                                              child: Material(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                child: InkWell(
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                  onTap: () {
+                                                    _popupController
+                                                        .hideAllPopups();
+                                                  },
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Icon(Icons.close,
+                                                        size: 20),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(16),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item.title,
+                                                style: TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                item.categoryName,
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              SizedBox(height: 8),
+                                              Text(
+                                                item.description,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              SizedBox(height: 16),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                children: [
+                                                  ElevatedButton.icon(
+                                                    onPressed: () =>
+                                                        _navigateToDetail(item),
+                                                    icon: Icon(
+                                                        Icons.info_outline),
+                                                    label: Text('Ver detalles'),
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Theme.of(context)
+                                                              .primaryColor,
+                                                      foregroundColor:
+                                                          Colors.white,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  OutlinedButton.icon(
+                                                    onPressed: () {
+                                                      _popupController
+                                                          .hideAllPopups();
+                                                      _openInMaps(item);
+                                                    },
+                                                    icon: Icon(
+                                                        Icons.map_outlined),
+                                                    label: Text('Cómo llegar'),
+                                                    style: OutlinedButton
+                                                        .styleFrom(
+                                                      foregroundColor:
+                                                          Theme.of(context)
+                                                              .primaryColor,
+                                                      side: BorderSide(
+                                                        color: Theme.of(context)
+                                                            .primaryColor,
+                                                      ),
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
                                 },
+                                snap: PopupSnap.mapBottom,
                               ),
                             ),
                           ),
@@ -297,41 +524,7 @@ class _MapPageState extends State<MapPage> {
                         top: 80,
                         right: 20,
                         child: FloatingActionButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(20)),
-                              ),
-                              builder: (context) {
-                                return StatefulBuilder(
-                                  builder: (BuildContext context,
-                                      StateSetter setState) {
-                                    return Container(
-                                      padding: EdgeInsets.all(20),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: _categories.map((category) {
-                                          return CheckboxListTile(
-                                            title: Text(category),
-                                            value:
-                                                _selectedCategory == category,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                _filterByCategory(category);
-                                              });
-                                              Navigator.pop(context);
-                                            },
-                                          );
-                                        }).toList(),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            );
-                          },
+                          onPressed: () => _showFilterSheet(),
                           child: Icon(Icons.filter_list),
                           backgroundColor: Theme.of(context).primaryColor,
                           foregroundColor: Colors.white,
@@ -361,167 +554,225 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  Widget _buildPopupContent(MapItem item) {
-    return GestureDetector(
-      onTap: () {
-        // Evita que el popup se cierre cuando se toca
-        _popupController.hidePopupsOnlyFor([
-          Marker(
-            point: item.position,
-            width: 40,
-            height: 40,
-            builder: (_) => const Icon(Icons.location_on, size: 40),
-            anchorPos: AnchorPos.align(AnchorAlign.top),
-          )
-        ]);
-      },
-      child: Container(
-        width: 200,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.5),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ClipRRect(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(8.0)),
-                  child: Stack(
-                    children: [
-                      Image.network(
-                        item.imageUrl,
-                        width: 200,
-                        height: 100,
-                        fit: BoxFit.cover,
-                      ),
-                      Positioned(
-                        top: 4,
-                        right: 4,
-                        child: GestureDetector(
-                          onTap: () {
-                            _popupController.hideAllPopups();
-                          },
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.red,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16.0,
-                        ),
-                      ),
-                      SizedBox(height: 4.0),
-                      Text(
-                        item.categoryName,
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14.0,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          if (item.averageRating > 0)
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.star,
-                                  color: Colors.amber,
-                                  size: 16,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  item.averageRating.toStringAsFixed(1),
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  '(${item.commentCount})',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          Row(
-                            children: [
-                              IconButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          ItemDetailPage(item: item),
-                                    ),
-                                  );
-                                },
-                                icon: Icon(Icons.info),
-                                color: Colors.blue,
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  _openInMaps(item);
-                                },
-                                icon: Icon(Icons.map),
-                                color: Colors.green,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (context) => _buildFilterSheet(),
     );
   }
 
-  void _updateMarkers() {
-    setState(() {
-      // Actualiza los marcadores en el mapa sin cambiar la posición o el zoom
-      _popupController.hideAllPopups();
-    });
+  Widget _buildFilterSheet() {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        final filterEntries = _activeFilters.entries.toList()
+          ..sort((a, b) => a.key.compareTo(b.key));
+
+        return Container(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Filtrar por tipo',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              ...filterEntries.map((entry) {
+                final filterName = entry.key;
+                final isActive = entry.value;
+                final item = _mapItems.firstWhere(
+                  (item) => item.filterName == filterName,
+                  orElse: () => _mapItems.first,
+                );
+
+                return CheckboxListTile(
+                  title: Row(
+                    children: [
+                      Image.asset(
+                        item.getIconForFilter(),
+                        width: 24,
+                        height: 24,
+                      ),
+                      SizedBox(width: 12),
+                      Text(filterName),
+                    ],
+                  ),
+                  value: isActive,
+                  activeColor: Theme.of(context).primaryColor,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      _activeFilters[filterName] = value ?? false;
+                    });
+                    this.setState(() {
+                      _updateFilteredItems();
+                    });
+                  },
+                );
+              }).toList(),
+              SizedBox(height: 16),
+              if (_activeFilters.values.any((v) => !v))
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _activeFilters.forEach((key, value) {
+                          _activeFilters[key] = true;
+                        });
+                      });
+                      this.setState(() {
+                        _updateFilteredItems();
+                      });
+                    },
+                    child: Text('Mostrar todos'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _navigateToDetail(MapItem item) {
+    _popupController.hideAllPopups();
+
+    switch (item.type) {
+      case 'interest':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InterestDetailPage(
+              interest: Interest(
+                id: item.id,
+                title: item.title,
+                description: item.description,
+                address: item.address ?? '',
+                location: item.position,
+                categoryId:
+                    int.tryParse(item.categoryId?.toString() ?? '') ?? 0,
+                featured: item.featured ?? false,
+                imageGallery: item.imageGallery ?? [],
+                mainImage: item.imageUrl,
+                langcode: item.langcode ?? _currentLanguage,
+                facebookUrl: item.facebookUrl,
+                instagramUrl: item.instagramUrl,
+                twitterUrl: item.twitterUrl,
+                websiteUrl: item.websiteUrl,
+                phoneNumber: item.phoneNumber,
+                audioUrl: item.audioUrl,
+                videoUrl: item.videoUrl,
+              ),
+            ),
+          ),
+        );
+        break;
+
+      case 'route_walk':
+      case 'route_bike':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RouteDetailPage(
+              route: RouteModel(
+                id: int.parse(item.id),
+                title: item.title,
+                description: item.description,
+                mainImage: item.imageUrl,
+                location: item.position,
+                distance: item.distance ?? 0,
+                hours: item.hours ?? 0,
+                minutes: item.minutes ?? 0,
+                positiveElevation: item.positiveElevation ?? 0,
+                negativeElevation: item.negativeElevation ?? 0,
+                difficultyId: item.difficultyId ?? 0,
+                circuitTypeId: item.circuitTypeId ?? 0,
+                routeTypeId:
+                    item.routeTypeId ?? (item.type == 'route_bike' ? 254 : 257),
+                gpxFile: item.gpxFile,
+                kmlUrl: item.kmlUrl,
+              ),
+            ),
+          ),
+        );
+        break;
+
+      case 'hotel':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AccommodationDetailPage(
+              accommodation: Accommodation(
+                id: item.id,
+                title: item.title,
+                description: item.description,
+                mainImage: item.imageUrl,
+                location: item.position,
+                hotelType: item.hotelType ?? 0,
+                hotelServices: item.hotelServices ?? [],
+                address: item.address ?? '',
+                phoneNumber: item.phoneNumber ?? '',
+                phoneNumber2: item.phoneNumber2,
+                email: item.email ?? '',
+                imageGallery: item.imageGallery ?? [],
+                categoryId:
+                    int.tryParse(item.categoryId?.toString() ?? '') ?? 0,
+                facebook: item.facebookUrl,
+                instagram: item.instagramUrl,
+                twitter: item.twitterUrl,
+                web: item.websiteUrl,
+                stars: item.stars,
+              ),
+            ),
+          ),
+        );
+        break;
+
+      case 'population':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PopulationDetailPage(
+              population: Population(
+                id: item.id,
+                title: item.title,
+                mainImage: item.imageUrl,
+                imageGallery: item.imageGallery ?? [],
+                location: item.position,
+                description1: item.description,
+                title1: item.title1,
+                title2: item.title2,
+                title3: item.title3,
+                description2: item.description2,
+                description3: item.description3,
+              ),
+            ),
+          ),
+        );
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    // Asegurarse de limpiar los listeners
+    super.dispose();
   }
 }

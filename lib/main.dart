@@ -9,7 +9,6 @@ import 'pages/category/population_centers_page.dart';
 import 'pages/category/points_of_interest_page.dart';
 import 'pages/category/routes_page.dart';
 import 'pages/category/accommodation_page.dart';
-import 'pages/category/restaurants_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +36,6 @@ class MyApp extends StatelessWidget {
         '/points_of_interest_page.dart': (context) => PointsOfInterestPage(),
         '/routes_page.dart': (context) => RoutesPage(),
         '/accommodation_page.dart': (context) => AccommodationPage(),
-        '/restaurants_page.dart': (context) => RestaurantsPage(),
       },
     );
   }

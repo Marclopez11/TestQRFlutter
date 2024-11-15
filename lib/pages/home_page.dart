@@ -9,7 +9,6 @@ import 'package:felanitx/pages/category/points_of_interest_page.dart';
 import 'package:felanitx/pages/category/population_centers_page.dart';
 import 'package:felanitx/pages/category/routes_page.dart';
 import 'package:felanitx/pages/category/accommodation_page.dart';
-import 'package:felanitx/pages/category/restaurants_page.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/models/banner.dart';
 import 'package:felanitx/widgets/banner_carousel.dart';
