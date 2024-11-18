@@ -30,13 +30,16 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
   List<Interest> _pointsOfInterest = [];
   bool _isLoading = true;
   String _currentLanguage = 'ca';
+  String _title = '';
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadCurrentLanguage().then((_) {
+      _loadTitle();
+    });
     _loadPointsOfInterest();
-    _loadCurrentLanguage();
   }
 
   Future<void> _loadPointsOfInterest() async {
@@ -71,6 +74,38 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
     setState(() {
       _currentLanguage = language;
     });
+  }
+
+  Future<void> _loadTitle() async {
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      setState(() {
+        switch (language) {
+          case 'ca':
+            _title = 'Punts d\'interès';
+            break;
+          case 'es':
+            _title = 'Puntos de interés';
+            break;
+          case 'en':
+            _title = 'Points of interest';
+            break;
+          case 'fr':
+            _title = 'Points d\'intérêt';
+            break;
+          case 'de':
+            _title = 'Sehenswürdigkeiten';
+            break;
+          default:
+            _title = 'Puntos de interés';
+        }
+      });
+    } catch (e) {
+      print('Error loading title: $e');
+      setState(() {
+        _title = 'Puntos de interés';
+      });
+    }
   }
 
   List<Interest> get filteredItems {
@@ -211,7 +246,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
             children: [
               Expanded(
                 child: Text(
-                  'Puntos de interés',
+                  _title,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -947,6 +982,28 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
       });
 
       await _apiService.setLanguage(language);
+
+      setState(() {
+        switch (language) {
+          case 'ca':
+            _title = 'Punts d\'interès';
+            break;
+          case 'es':
+            _title = 'Puntos de interés';
+            break;
+          case 'en':
+            _title = 'Points of interest';
+            break;
+          case 'fr':
+            _title = 'Points d\'intérêt';
+            break;
+          case 'de':
+            _title = 'Sehenswürdigkeiten';
+            break;
+          default:
+            _title = 'Puntos de interés';
+        }
+      });
 
       try {
         final cachedData =
