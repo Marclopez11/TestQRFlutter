@@ -479,8 +479,101 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
   }
 
   Widget _buildListItem(Population item) {
+    return SizedBox(
+      height: 120,
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PopulationDetailPage(population: item),
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  child: Image.network(
+                    item.mainImage,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[300],
+                        child: Icon(Icons.image_not_supported),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4),
+                      if (item.description1 != null) ...[
+                        Text(
+                          item.description1!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: BoxConstraints(),
+                            icon: Icon(Icons.map, size: 20),
+                            onPressed: () => _openInMaps(item),
+                            color: Colors.grey[600],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGridItem(Population item) {
     return Card(
-      margin: EdgeInsets.zero,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -490,17 +583,13 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
             ),
           );
         },
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 120,
-              height: 120,
+            AspectRatio(
+              aspectRatio: 16 / 9,
               child: ClipRRect(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  bottomLeft: Radius.circular(4),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
                 child: Image.network(
                   item.mainImage,
                   fit: BoxFit.cover,
@@ -514,155 +603,44 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
               ),
             ),
             Expanded(
-              child: Container(
-                height: 120,
+              child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (item.description1 != null) ...[
-                          SizedBox(height: 4),
-                          Text(
-                            item.description1!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ],
+                    Text(
+                      item.title,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    SizedBox(height: 4),
+                    if (item.description1 != null) ...[
+                      Text(
+                        item.description1!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            icon: Icon(Icons.map, size: 20),
-                            onPressed: () {
-                              _openInMaps(item);
-                            },
-                          ),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: BoxConstraints(),
+                          icon: Icon(Icons.map, size: 20),
+                          onPressed: () => _openInMaps(item),
+                          color: Colors.grey[600],
                         ),
                       ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGridItem(Population item) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PopulationDetailPage(population: item),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Hero(
-                tag: item.id,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                  child: Image.network(
-                    item.mainImage,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[300],
-                        child: Icon(Icons.image_not_supported),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (item.description1 != null) ...[
-                          SizedBox(height: 2),
-                          Text(
-                            item.description1!,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    Container(
-                      margin: EdgeInsets.only(top: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              constraints: BoxConstraints(),
-                              iconSize: 20,
-                              icon: Icon(Icons.map),
-                              onPressed: () {
-                                _openInMaps(item);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 ),
