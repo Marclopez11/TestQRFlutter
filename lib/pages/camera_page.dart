@@ -347,6 +347,38 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
       child: AppScaffold(
         body: Column(
           children: [
+            // Header específico para CameraPage
+            Container(
+              height: 60,
+              color: Theme.of(context).scaffoldBackgroundColor,
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Image.asset(
+                    'assets/images/logo_felanitx.png',
+                    height: 40,
+                  ),
+                  DropdownButton<String>(
+                    value: _currentLanguage.toUpperCase(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        _handleLanguageChange(newValue.toLowerCase());
+                      }
+                    },
+                    items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                        .map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    underline: Container(),
+                    icon: Icon(Icons.arrow_drop_down),
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: _isCheckingPermission
                   ? _buildLoadingIndicator()
@@ -581,5 +613,19 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   bool isQRInitialized() {
     return _isQRInitialized;
+  }
+
+  // Añadir el método para manejar el cambio de idioma
+  Future<void> _handleLanguageChange(String language) async {
+    if (_currentLanguage != language) {
+      final apiService = ApiService();
+      await apiService.setLanguage(language);
+
+      setState(() {
+        _currentLanguage = language;
+      });
+
+      _updateTexts();
+    }
   }
 }

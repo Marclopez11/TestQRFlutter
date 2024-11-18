@@ -10,6 +10,7 @@ import 'package:flutter_map/plugin_api.dart';
 import 'package:felanitx/main.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:felanitx/pages/home_page.dart';
 
 class PointsOfInterestPage extends StatefulWidget {
   final String title;
@@ -123,7 +124,11 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            final homePage = HomePage.of(context);
+            homePage?.reloadData();
+            Navigator.of(context).pop();
+          },
         ),
         title: Image.asset(
           'assets/images/logo_felanitx.png',
@@ -982,6 +987,11 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
       });
 
       await _apiService.setLanguage(language);
+
+      if (mounted) {
+        final homePage = HomePage.of(context);
+        homePage?.reloadData();
+      }
 
       setState(() {
         switch (language) {

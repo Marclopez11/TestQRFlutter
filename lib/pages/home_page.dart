@@ -14,6 +14,7 @@ import 'package:felanitx/models/banner.dart';
 import 'package:felanitx/widgets/banner_carousel.dart';
 import 'package:felanitx/models/calendar_event.dart';
 import 'package:felanitx/models/interest.dart';
+import 'package:felanitx/widgets/app_header.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage>
   int _currentCarouselIndex = 0;
   List<Category> _apiData = [];
   List<BannerModel> _banners = [];
+  late String _currentLanguage;
 
   @override
   bool get wantKeepAlive => true;
@@ -39,6 +41,7 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
+    _currentLanguage = 'ca'; // Default language
     _loadData();
     _subscribeToLanguageChanges();
     _loadBanners();
@@ -65,7 +68,20 @@ class _HomePageState extends State<HomePage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (ModalRoute.of(context)?.isCurrent == true) {
-      _loadData();
+      _loadCurrentLanguage();
+    }
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+    if (mounted && language != _currentLanguage) {
+      setState(() {
+        _currentLanguage = language;
+      });
+      // Recargar los datos si el idioma ha cambiado
+      await _loadData();
+      await _loadBanners();
     }
   }
 
@@ -144,23 +160,78 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  void reloadData() {
-    _loadData();
+  void reloadData() async {
+    await _loadCurrentLanguage();
+    await _loadData();
+    await _loadBanners();
+  }
+
+  Future<void> _handleLanguageChange(String language) async {
+    if (_currentLanguage != language) {
+      final apiService = ApiService();
+      await apiService.setLanguage(language);
+
+      setState(() {
+        _currentLanguage = language;
+      });
+
+      // Recargar los datos con el nuevo idioma
+      await _loadData();
+      await _loadBanners();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            BannerCarousel(banners: _banners),
-            SizedBox(height: 30),
-            _buildItemsGrid(),
-            SizedBox(height: 20),
-          ],
-        ),
+      body: Column(
+        children: [
+          // Header específico para HomePage
+          Container(
+            height: 60,
+            color: Theme.of(context).scaffoldBackgroundColor,
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Image.asset(
+                  'assets/images/logo_felanitx.png',
+                  height: 40,
+                ),
+                DropdownButton<String>(
+                  value: _currentLanguage.toUpperCase(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      _handleLanguageChange(newValue.toLowerCase());
+                    }
+                  },
+                  items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                      .map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  underline: Container(),
+                  icon: Icon(Icons.arrow_drop_down),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BannerCarousel(banners: _banners),
+                  SizedBox(height: 30),
+                  _buildItemsGrid(),
+                  SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

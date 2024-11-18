@@ -5,9 +5,13 @@ import 'package:felanitx/pages/map_page.dart';
 
 class AppHeader extends StatelessWidget {
   final bool showLanguageDropdown;
+  final String currentLanguage;
 
-  const AppHeader({Key? key, this.showLanguageDropdown = true})
-      : super(key: key);
+  const AppHeader({
+    Key? key,
+    this.showLanguageDropdown = true,
+    required this.currentLanguage,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +26,9 @@ class AppHeader extends StatelessWidget {
             'assets/images/logo_felanitx.png',
             height: 40,
           ),
-          if (showLanguageDropdown) LanguageDropdown(),
-          if (!showLanguageDropdown)
-            Spacer(), // Añade un espacio flexible a la derecha si no se muestra el dropdown
+          if (showLanguageDropdown)
+            LanguageDropdown(currentLanguage: currentLanguage),
+          if (!showLanguageDropdown) Spacer(),
         ],
       ),
     );
@@ -32,7 +36,12 @@ class AppHeader extends StatelessWidget {
 }
 
 class LanguageDropdown extends StatefulWidget {
-  const LanguageDropdown({Key? key}) : super(key: key);
+  final String currentLanguage;
+
+  const LanguageDropdown({
+    Key? key,
+    required this.currentLanguage,
+  }) : super(key: key);
 
   @override
   _LanguageDropdownState createState() => _LanguageDropdownState();
@@ -44,26 +53,30 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
   @override
   void initState() {
     super.initState();
-    _loadLanguage();
+    _selectedLanguage = widget.currentLanguage.toUpperCase();
   }
 
-  Future<void> _loadLanguage() async {
+  @override
+  void didUpdateWidget(LanguageDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentLanguage != widget.currentLanguage) {
+      setState(() {
+        _selectedLanguage = widget.currentLanguage.toUpperCase();
+      });
+    }
+  }
+
+  void _changeLanguage(String language) async {
     final apiService = ApiService();
-    final language = await apiService.getCurrentLanguage();
+    await apiService.setLanguage(language);
     setState(() {
       _selectedLanguage = language.toUpperCase();
     });
-  }
 
-  void _changeLanguage(String language) {
-    final apiService = ApiService();
-    apiService.setLanguage(language);
-    setState(() {
-      _selectedLanguage = language.toUpperCase();
-    });
-
-    // Notificar el cambio de idioma a todas las páginas
-    _notifyLanguageChange(context, language);
+    if (mounted) {
+      final homePage = HomePage.of(context);
+      homePage?.reloadData();
+    }
   }
 
   @override
@@ -71,7 +84,9 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
     return DropdownButton<String>(
       value: _selectedLanguage,
       onChanged: (String? newValue) {
-        _changeLanguage(newValue!.toLowerCase());
+        if (newValue != null) {
+          _changeLanguage(newValue.toLowerCase());
+        }
       },
       items: <String>['ES', 'EN', 'CA', 'DE', 'FR'].map((String value) {
         return DropdownMenuItem<String>(
@@ -83,9 +98,4 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
       icon: Icon(Icons.arrow_drop_down),
     );
   }
-}
-
-void _notifyLanguageChange(BuildContext context, String language) {
-  final homePage = HomePage.of(context);
-  homePage?.reloadData();
 }

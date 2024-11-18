@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import '../widgets/app_scaffold.dart'; // Agrega esta línea
+import '../widgets/app_scaffold.dart';
+import '../services/api_service.dart';
+import '../pages/home_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -16,6 +18,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _notificationsEnabled = false;
   bool _bluetoothEnabled = false;
   bool _qrScanningEnabled = false;
+  String _currentLanguage = 'ca';
 
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
   late StreamSubscription<BluetoothAdapterState> _adapterStateSubscription;
@@ -25,6 +28,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _checkBluetoothStatus();
     _checkCameraPermission();
+    _loadCurrentLanguage();
     _adapterStateSubscription = FlutterBluePlus.adapterState.listen((state) {
       _adapterState = state;
       if (mounted) {
@@ -33,6 +37,14 @@ class _SettingsPageState extends State<SettingsPage> {
         });
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      _loadCurrentLanguage(); // Recargar el idioma cuando la página se muestra
+    }
   }
 
   @override
@@ -145,45 +157,84 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      showLanguageDropdown: true,
-      body: ListView(
-        padding: EdgeInsets.all(20),
-        children: [
-          _buildSectionTitle('NOTIFICACIONES'),
-          Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 2,
-            child: _buildSwitchTile(
-              'Habilitar Notificaciones',
-              _notificationsEnabled,
-              (value) => setState(() => _notificationsEnabled = value),
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header específico para SettingsPage
+            Container(
+              height: 60,
+              color: Theme.of(context).scaffoldBackgroundColor,
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Image.asset(
+                    'assets/images/logo_felanitx.png',
+                    height: 40,
+                  ),
+                  DropdownButton<String>(
+                    value: _currentLanguage.toUpperCase(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        _handleLanguageChange(newValue.toLowerCase());
+                      }
+                    },
+                    items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                        .map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    underline: Container(),
+                    icon: Icon(Icons.arrow_drop_down),
+                  ),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 20),
-          _buildSectionTitle('BLUETOOTH'),
-          Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 2,
-            child: _buildBluetoothTile(
-              'Bluetooth para Beacons',
-              _bluetoothEnabled,
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.all(20),
+                children: [
+                  _buildSectionTitle('NOTIFICACIONES'),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    elevation: 2,
+                    child: _buildSwitchTile(
+                      'Habilitar Notificaciones',
+                      _notificationsEnabled,
+                      (value) => setState(() => _notificationsEnabled = value),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  _buildSectionTitle('BLUETOOTH'),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    elevation: 2,
+                    child: _buildBluetoothTile(
+                      'Bluetooth para Beacons',
+                      _bluetoothEnabled,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  _buildSectionTitle('ESCANEO DE CÓDIGO QR'),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    elevation: 2,
+                    child: _buildPermissionTile(
+                      'Escaneo de Código QR',
+                      _qrScanningEnabled,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 20),
-          _buildSectionTitle('ESCANEO DE CÓDIGO QR'),
-          Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 2,
-            child: _buildPermissionTile(
-              'Escaneo de Código QR',
-              _qrScanningEnabled,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -235,5 +286,36 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       onTap: _openBluetoothSettings,
     );
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    try {
+      final apiService = ApiService();
+      final language = await apiService.getCurrentLanguage();
+      if (mounted) {
+        setState(() {
+          _currentLanguage = language;
+        });
+      }
+    } catch (e) {
+      print('Error loading current language: $e');
+    }
+  }
+
+  Future<void> _handleLanguageChange(String language) async {
+    if (_currentLanguage != language) {
+      final apiService = ApiService();
+      await apiService.setLanguage(language);
+
+      setState(() {
+        _currentLanguage = language;
+      });
+
+      // Notificar a HomePage del cambio
+      if (mounted) {
+        final homePage = HomePage.of(context);
+        homePage?.reloadData();
+      }
+    }
   }
 }
