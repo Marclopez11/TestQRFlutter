@@ -570,80 +570,129 @@ class _MapPageState extends State<MapPage> {
         final filterEntries = _activeFilters.entries.toList()
           ..sort((a, b) => a.key.compareTo(b.key));
 
+        final bool hasInactiveFilters = _activeFilters.values.any((v) => !v);
+
         return Container(
-          padding: EdgeInsets.all(20),
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Filtrar por tipo',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+              // Indicador de arrastre
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              SizedBox(height: 20),
-              ...filterEntries.map((entry) {
-                final filterName = entry.key;
-                final isActive = entry.value;
-                final item = _mapItems.firstWhere(
-                  (item) => item.filterName == filterName,
-                  orElse: () => _mapItems.first,
-                );
 
-                return CheckboxListTile(
-                  title: Row(
-                    children: [
-                      Image.asset(
-                        item.getIconForFilter(),
-                        width: 24,
-                        height: 24,
+              // Contenedor de altura fija para el encabezado
+              Container(
+                height: 48, // Altura fija para evitar saltos
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Filtrar por tipo',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                      SizedBox(width: 12),
-                      Text(filterName),
-                    ],
-                  ),
-                  value: isActive,
-                  activeColor: Theme.of(context).primaryColor,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _activeFilters[filterName] = value ?? false;
-                    });
-                    this.setState(() {
-                      _updateFilteredItems();
-                    });
-                  },
-                );
-              }).toList(),
-              SizedBox(height: 16),
-              if (_activeFilters.values.any((v) => !v))
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _activeFilters.forEach((key, value) {
-                          _activeFilters[key] = true;
-                        });
-                      });
-                      this.setState(() {
-                        _updateFilteredItems();
-                      });
-                    },
-                    child: Text('Mostrar todos'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).primaryColor,
                     ),
+                    AnimatedOpacity(
+                      opacity: hasInactiveFilters ? 1.0 : 0.0,
+                      duration: Duration(milliseconds: 200),
+                      child: TextButton(
+                        onPressed: hasInactiveFilters
+                            ? () {
+                                setState(() {
+                                  _activeFilters.forEach((key, value) {
+                                    _activeFilters[key] = true;
+                                  });
+                                });
+                                this.setState(() {
+                                  _updateFilteredItems();
+                                });
+                              }
+                            : null,
+                        child: Text('Mostrar todos'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).primaryColor,
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: Size(0, 36),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 12),
+
+              // Lista de filtros con scroll
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.4,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: filterEntries.map((entry) {
+                      final filterName = entry.key;
+                      final isActive = entry.value;
+                      final item = _mapItems.firstWhere(
+                        (item) => item.filterName == filterName,
+                        orElse: () => _mapItems.first,
+                      );
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey[200]!,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: CheckboxListTile(
+                          title: Row(
+                            children: [
+                              Image.asset(
+                                item.getIconForFilter(),
+                                width: 24,
+                                height: 24,
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  filterName,
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ),
+                            ],
+                          ),
+                          value: isActive,
+                          activeColor: Theme.of(context).primaryColor,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 8),
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _activeFilters[filterName] = value ?? false;
+                            });
+                            this.setState(() {
+                              _updateFilteredItems();
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
+              ),
             ],
           ),
         );
@@ -705,7 +754,7 @@ class _MapPageState extends State<MapPage> {
                 difficultyId: item.difficultyId ?? 0,
                 circuitTypeId: item.circuitTypeId ?? 0,
                 routeTypeId:
-                    item.routeTypeId ?? (item.type == 'route_bike' ? 254 : 257),
+                    item.routeTypeId ?? (item.type == 'route_bike' ? 255 : 257),
                 gpxFile: item.gpxFile,
                 kmlUrl: item.kmlUrl,
               ),

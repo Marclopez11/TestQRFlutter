@@ -151,7 +151,18 @@ class ApiService {
     await prefs.setString('${apiName}_$language', json.encode(data));
   }
 
-  Future<List<dynamic>> loadData(String apiName, String language) async {
+  Future<List<dynamic>> loadCachedData(String apiName, String language) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = '${apiName}_$language';
+
+    final cachedData = prefs.getString(cacheKey);
+    if (cachedData != null) {
+      return json.decode(cachedData);
+    }
+    return [];
+  }
+
+  Future<List<dynamic>> loadFreshData(String apiName, String language) async {
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = '${apiName}_$language';
 
@@ -162,7 +173,7 @@ class ApiService {
         return [];
       }
 
-      print('Fetching data from: $url');
+      print('Fetching fresh data from: $url');
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -172,22 +183,22 @@ class ApiService {
         return data;
       } else {
         print('Error fetching data: ${response.statusCode}');
-        // Intentar usar datos en caché si hay error
-        final cachedData = prefs.getString(cacheKey);
-        if (cachedData != null) {
-          return json.decode(cachedData);
-        }
         return [];
       }
     } catch (e) {
-      print('Error in loadData: $e');
-      // Intentar usar datos en caché si hay error
-      final cachedData = prefs.getString(cacheKey);
-      if (cachedData != null) {
-        return json.decode(cachedData);
-      }
+      print('Error in loadFreshData: $e');
       return [];
     }
+  }
+
+  Future<List<dynamic>> loadData(String apiName, String language) async {
+    final cachedData = await loadCachedData(apiName, language);
+    if (cachedData.isNotEmpty) {
+      // Si hay datos en caché, los devolvemos inmediatamente
+      return cachedData;
+    }
+    // Si no hay datos en caché, cargamos datos frescos
+    return await loadFreshData(apiName, language);
   }
 
   Future<void> _saveLanguage() async {

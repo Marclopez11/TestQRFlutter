@@ -582,8 +582,35 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
     return IconButton(
       icon: FaIcon(icon, color: color),
       onPressed: () async {
-        if (await canLaunch(url)) {
-          await launch(url);
+        String formattedUrl = url;
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          formattedUrl = 'https://$url';
+        }
+
+        try {
+          if (await canLaunch(formattedUrl)) {
+            await launch(
+              formattedUrl,
+              forceSafariVC: false,
+              forceWebView: false,
+              enableJavaScript: true,
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('No se pudo abrir el enlace: $formattedUrl'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        } catch (e) {
+          print('Error al abrir la URL: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al abrir el enlace'),
+              duration: Duration(seconds: 2),
+            ),
+          );
         }
       },
     );

@@ -137,6 +137,13 @@ class MapItem {
     final routeTypeName = routeTypes[route.routeTypeId.toString()] ??
         (isBikeRoute ? 'Ruta en bici' : 'Ruta a pie');
 
+    String markerIcon;
+    if (route.routeTypeId == 254 || route.routeTypeId == 255) {
+      markerIcon = 'assets/images/marker-icon03.png';
+    } else {
+      markerIcon = 'assets/images/marker-icon02.png';
+    }
+
     return MapItem(
       id: route.id.toString(),
       title: route.title,
@@ -145,10 +152,9 @@ class MapItem {
       imageUrl: route.mainImage ?? '',
       categoryName: routeTypeName,
       type: isBikeRoute ? 'route_bike' : 'route_walk',
-      markerIcon: isBikeRoute
-          ? 'assets/images/marker-icon03.png'
-          : 'assets/images/marker-icon02.png',
+      markerIcon: markerIcon,
       filterName: routeTypeName,
+      routeTypeId: route.routeTypeId,
       // Añadir todos los campos específicos de ruta
       distance: route.distance,
       hours: route.hours,
@@ -157,7 +163,6 @@ class MapItem {
       negativeElevation: route.negativeElevation,
       difficultyId: route.difficultyId,
       circuitTypeId: route.circuitTypeId,
-      routeTypeId: route.routeTypeId,
       gpxFile: route.gpxFile,
       kmlUrl: route.kmlUrl,
       // Campos opcionales que podrían ser null
@@ -168,8 +173,15 @@ class MapItem {
     );
   }
 
-  // Factory constructor para alojamientos
+  // Factory constructor para rutas
   factory MapItem.fromRoute(RouteModel route, bool isBikeRoute) {
+    String markerIcon;
+    if (route.routeTypeId == 254 || route.routeTypeId == 255) {
+      markerIcon = 'assets/images/marker-icon03.png';
+    } else {
+      markerIcon = 'assets/images/marker-icon02.png';
+    }
+
     return MapItem(
       id: route.id.toString(),
       title: route.title,
@@ -178,10 +190,9 @@ class MapItem {
       imageUrl: route.mainImage ?? '',
       categoryName: isBikeRoute ? 'Ruta en bici' : 'Ruta a pie',
       type: isBikeRoute ? 'route_bike' : 'route_walk',
-      markerIcon: isBikeRoute
-          ? 'assets/images/marker-icon03.png'
-          : 'assets/images/marker-icon02.png',
+      markerIcon: markerIcon,
       filterName: isBikeRoute ? 'Ruta en bici' : 'Ruta a pie',
+      routeTypeId: route.routeTypeId,
       // Añadir todos los campos específicos de ruta
       distance: route.distance,
       hours: route.hours,
@@ -190,7 +201,6 @@ class MapItem {
       negativeElevation: route.negativeElevation,
       difficultyId: route.difficultyId,
       circuitTypeId: route.circuitTypeId,
-      routeTypeId: route.routeTypeId,
       gpxFile: route.gpxFile,
       kmlUrl: route.kmlUrl,
     );
@@ -248,9 +258,13 @@ class MapItem {
       case 'interest':
         return 'assets/images/icon01.png';
       case 'route_walk':
-        return 'assets/images/icon02.png';
       case 'route_bike':
-        return 'assets/images/icon03.png'; // Asegurar que este es el icono correcto para bici
+        print('routeTypeId: $routeTypeId');
+        if (routeTypeId == 254 || routeTypeId == 255) {
+          return 'assets/images/icon03.png';
+        } else {
+          return 'assets/images/icon02.png';
+        }
       case 'hotel':
         return 'assets/images/icon04.png';
       case 'population':
