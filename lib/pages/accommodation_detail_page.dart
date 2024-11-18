@@ -9,6 +9,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:felanitx/services/taxonomy_service.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:felanitx/main.dart';
 
 class AccommodationDetailPage extends StatefulWidget {
   final Accommodation accommodation;
@@ -350,81 +351,31 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Lógica para guardar en plan de viaje
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('Guardar a mi plan de viaje'),
-                              SizedBox(width: 8),
-                              Icon(Icons.bookmark),
-                            ],
-                          ),
+                  child: Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Lógica para guardar en plan de viaje
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
                       ),
-                      SizedBox(height: 20),
-                      Text(
-                        'Valoración',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Guardar a mi plan de viaje'),
+                          SizedBox(width: 8),
+                          Icon(Icons.bookmark),
+                        ],
                       ),
-                      SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          5,
-                          (index) => GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _rating = index + 1;
-                              });
-                            },
-                            child: Icon(
-                              index < _rating ? Icons.star : Icons.star_border,
-                              color: Colors.amber,
-                              size: 32,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _submitComment,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 32,
-                              vertical: 16,
-                            ),
-                          ),
-                          child: Text('Enviar comentario'),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
@@ -432,6 +383,45 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
+        ],
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.of(context).pop();
+          } else {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) =>
+                    MainScreen(initialIndex: index),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          }
+        },
       ),
     );
   }
@@ -616,8 +606,6 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
     );
   }
 
-  int _rating = 0;
-
   void _openInMaps() async {
     final url = Platform.isIOS
         ? 'http://maps.apple.com/?q=${widget.accommodation.location.latitude},${widget.accommodation.location.longitude}'
@@ -630,10 +618,6 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
         SnackBar(content: Text('No se pudo abrir la aplicación de mapas')),
       );
     }
-  }
-
-  void _submitComment() {
-    // Implementar lógica para enviar comentario
   }
 
   IconData _getServiceIcon(String service) {

@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/route.dart';
 import 'package:felanitx/services/taxonomy_service.dart';
+import 'package:felanitx/main.dart';
 
 class RouteDetailPage extends StatefulWidget {
   final RouteModel route;
@@ -196,12 +197,53 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                           ),
                         ),
                       ),
+                    SizedBox(
+                        height: MediaQuery.of(context).padding.bottom + 16),
                   ],
                 ),
               ),
             ]),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
+        ],
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.of(context).pop();
+          } else {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) =>
+                    MainScreen(initialIndex: index),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          }
+        },
       ),
     );
   }

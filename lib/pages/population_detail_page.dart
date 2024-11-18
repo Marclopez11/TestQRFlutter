@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:felanitx/main.dart';
 
 class PopulationDetailPage extends StatefulWidget {
   final Population population;
@@ -23,7 +24,6 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
   int _currentImageIndex = 0;
   final ScrollController _scrollController = ScrollController();
   bool _showTitle = false;
-  int _rating = 0;
 
   @override
   void initState() {
@@ -144,41 +144,35 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // Lógica para guardar en plan de viaje
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).primaryColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text('Guardar a mi plan de viaje'),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.bookmark),
-                                  ],
-                                ),
+                        child: Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Lógica para guardar en plan de viaje
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
                               ),
                             ),
-                            SizedBox(height: 20),
-                            _buildRatingSection(),
-                          ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('Guardar a mi plan de viaje'),
+                                SizedBox(width: 8),
+                                Icon(Icons.bookmark),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
+                      SizedBox(
+                          height: MediaQuery.of(context).padding.bottom + 16),
                     ],
                   ),
                 ),
@@ -186,6 +180,45 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
+        ],
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.of(context).pop();
+          } else {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) =>
+                    MainScreen(initialIndex: index),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          }
+        },
       ),
     );
   }
@@ -348,54 +381,6 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
         SnackBar(content: Text('No se pudo abrir la aplicación de mapas')),
       );
     }
-  }
-
-  Widget _buildRatingSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Valoración',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(5, (index) {
-            return Icon(
-              index < _rating ? Icons.star : Icons.star_border,
-              color: Colors.amber,
-              size: 32,
-            );
-          }),
-        ),
-        SizedBox(height: 20),
-        Center(
-          child: ElevatedButton(
-            onPressed: _submitComment,
-            child: Text('Enviar comentario'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: 32,
-                vertical: 16,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _submitComment() {
-    // Lógica para enviar comentario
   }
 }
 

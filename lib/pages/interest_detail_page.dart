@@ -11,6 +11,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:felanitx/main.dart';
 
 class InterestDetailPage extends StatefulWidget {
   final Interest interest;
@@ -29,7 +30,6 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
   bool _isPlaying = false;
   final ScrollController _scrollController = ScrollController();
   bool _showTitle = false;
-  int _rating = 0;
   bool _isDescriptionExpanded = false;
   bool _isVideoControlsVisible = true;
   bool _isVideoInitialized = false;
@@ -229,87 +229,35 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // Lógica para guardar en plan de viaje
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).primaryColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text('Guardar a mi plan de viaje'),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.bookmark),
-                                  ],
-                                ),
+                        child: Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Lógica para guardar en plan de viaje
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
                               ),
                             ),
-                            SizedBox(height: 20),
-                            Text(
-                              'Valoración',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                for (int i = 1; i <= 5; i++)
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _rating = i;
-                                      });
-                                    },
-                                    child: Icon(
-                                      i <= _rating
-                                          ? Icons.star
-                                          : Icons.star_border,
-                                      color: Colors.amber,
-                                      size: 32,
-                                    ),
-                                  ),
+                                Text('Guardar a mi plan de viaje'),
+                                SizedBox(width: 8),
+                                Icon(Icons.bookmark),
                               ],
                             ),
-                            SizedBox(height: 20),
-                            Center(
-                              child: ElevatedButton(
-                                onPressed: _submitComment,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      Theme.of(context).primaryColor,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 16,
-                                  ),
-                                ),
-                                child: Text('Enviar comentario'),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
+                      SizedBox(
+                          height: MediaQuery.of(context).padding.bottom + 16),
                     ],
                   ),
                 ),
@@ -317,6 +265,45 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
+        ],
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.of(context).pop();
+          } else {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) =>
+                    MainScreen(initialIndex: index),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          }
+        },
       ),
     );
   }
@@ -574,10 +561,6 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
         ],
       ),
     );
-  }
-
-  void _submitComment() {
-    // Implementar lógica para enviar comentario
   }
 }
 
