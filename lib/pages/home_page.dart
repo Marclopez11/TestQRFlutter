@@ -15,6 +15,7 @@ import 'package:felanitx/widgets/banner_carousel.dart';
 import 'package:felanitx/models/calendar_event.dart';
 import 'package:felanitx/models/interest.dart';
 import 'package:felanitx/widgets/app_header.dart';
+import 'package:shimmer/shimmer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -223,9 +224,11 @@ class _HomePageState extends State<HomePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  BannerCarousel(banners: _banners),
+                  _banners.isEmpty
+                      ? _buildShimmerBanner()
+                      : BannerCarousel(banners: _banners),
                   SizedBox(height: 30),
-                  _buildItemsGrid(),
+                  _apiData.isEmpty ? _buildShimmerGrid() : _buildItemsGrid(),
                   SizedBox(height: 20),
                 ],
               ),
@@ -308,6 +311,86 @@ class _HomePageState extends State<HomePage>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildShimmerBanner() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        height: 200,
+        width: double.infinity,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _buildShimmerGrid() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20.0),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 0.9,
+            crossAxisSpacing: 15.0,
+            mainAxisSpacing: 15.0,
+          ),
+          itemCount: 6, // Número de items de shimmer a mostrar
+          itemBuilder: (context, index) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10.0),
+                          topRight: Radius.circular(10.0),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            height: 14,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 8),
+                          Container(
+                            width: 100,
+                            height: 12,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
