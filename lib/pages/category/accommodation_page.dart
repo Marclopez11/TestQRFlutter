@@ -9,6 +9,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:felanitx/main.dart';
 import 'package:felanitx/services/api_service.dart';
+import 'package:felanitx/pages/home_page.dart';
+import 'package:shimmer/shimmer.dart';
 
 class AccommodationPage extends StatefulWidget {
   final String title;
@@ -27,10 +29,13 @@ class _AccommodationPageState extends State<AccommodationPage> {
   MapController _mapController = MapController();
   List<Accommodation> _accommodations = [];
   bool _isLoading = true;
+  String _currentLanguage = 'ca';
+  String _title = 'Alojamientos';
 
   @override
   void initState() {
     super.initState();
+    _loadInitialLanguage();
     _loadPreferences();
     _loadAccommodations();
   }
@@ -92,12 +97,39 @@ class _AccommodationPageState extends State<AccommodationPage> {
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            final homePage = HomePage.of(context);
+            homePage?.reloadData();
+            Navigator.of(context).pop();
+          },
         ),
-        title: Text(
-          'Alojamientos',
-          style: TextStyle(color: Colors.black),
+        title: Image.asset(
+          'assets/images/logo_felanitx.png',
+          height: 40,
+          fit: BoxFit.contain,
         ),
+        actions: [
+          _isLoading
+              ? SizedBox(width: 24, height: 24)
+              : DropdownButton<String>(
+                  value: _currentLanguage.toUpperCase(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      _handleLanguageChange(newValue.toLowerCase());
+                    }
+                  },
+                  items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                      .map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  underline: Container(),
+                  icon: Icon(Icons.arrow_drop_down),
+                ),
+          SizedBox(width: 16),
+        ],
         centerTitle: true,
       ),
       body: SafeArea(
@@ -147,7 +179,14 @@ class _AccommodationPageState extends State<AccommodationPage> {
 
   Widget _buildNavContent() {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
+      return Column(
+        children: [
+          _buildShimmerFiltersAndViewToggle(),
+          Expanded(
+            child: isGridView ? _buildShimmerGrid() : _buildShimmerList(),
+          ),
+        ],
+      );
     }
     switch (_selectedNavIndex) {
       case 0:
@@ -185,7 +224,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
             children: [
               Expanded(
                 child: Text(
-                  'Alojamientos',
+                  _title,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -864,5 +903,264 @@ class _AccommodationPageState extends State<AccommodationPage> {
         );
       },
     );
+  }
+
+  Future<void> _handleLanguageChange(String language) async {
+    if (_currentLanguage != language) {
+      setState(() {
+        _currentLanguage = language;
+      });
+
+      await _apiService.setLanguage(language);
+
+      if (mounted) {
+        final homePage = HomePage.of(context);
+        homePage?.reloadData();
+      }
+
+      setState(() {
+        switch (language) {
+          case 'ca':
+            _title = 'Allotjaments';
+            break;
+          case 'es':
+            _title = 'Alojamientos';
+            break;
+          case 'en':
+            _title = 'Accommodations';
+            break;
+          case 'fr':
+            _title = 'Hébergements';
+            break;
+          case 'de':
+            _title = 'Unterkünfte';
+            break;
+          default:
+            _title = 'Alojamientos';
+        }
+      });
+
+      try {
+        final cachedData = await _apiService.loadCachedData('hotel', language);
+        if (cachedData.isNotEmpty) {
+          setState(() {
+            _accommodations =
+                cachedData.map((item) => Accommodation.fromJson(item)).toList();
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        print('Error loading cached data: $e');
+      }
+
+      try {
+        final freshData = await _apiService.loadFreshData('hotel', language);
+        setState(() {
+          _accommodations =
+              freshData.map((item) => Accommodation.fromJson(item)).toList();
+          _isLoading = false;
+        });
+      } catch (e) {
+        print('Error loading fresh data: $e');
+      }
+    }
+  }
+
+  Widget _buildShimmerList() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: ListView.separated(
+        padding: EdgeInsets.all(16),
+        itemCount: 6,
+        separatorBuilder: (context, index) => SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          return Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 20,
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          height: 16,
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 4),
+                        Container(
+                          width: 200,
+                          height: 16,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildShimmerGrid() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: GridView.builder(
+        padding: EdgeInsets.all(16),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 16,
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          width: 100,
+                          height: 14,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildShimmerFiltersAndViewToggle() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 200,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Row(
+                  children: List.generate(
+                    3,
+                    (index) => Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _loadInitialLanguage() async {
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      setState(() {
+        _currentLanguage = language;
+        switch (language) {
+          case 'ca':
+            _title = 'Allotjaments';
+            break;
+          case 'es':
+            _title = 'Alojamientos';
+            break;
+          case 'en':
+            _title = 'Accommodations';
+            break;
+          case 'fr':
+            _title = 'Hébergements';
+            break;
+          case 'de':
+            _title = 'Unterkünfte';
+            break;
+          default:
+            _title = 'Alojamientos';
+        }
+      });
+    } catch (e) {
+      print('Error loading initial language: $e');
+    }
   }
 }
