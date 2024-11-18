@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const MainScreen(),
-        '/agenda_page.dart': (context) => AgendaPage(title: ''),
+        '/agenda_page.dart': (context) => AgendaPage(),
         '/population_centers_page.dart': (context) => PopulationCentersPage(),
         '/points_of_interest_page.dart': (context) => PointsOfInterestPage(),
         '/routes_page.dart': (context) => RoutesPage(),

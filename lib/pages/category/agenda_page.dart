@@ -8,74 +8,144 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:felanitx/main.dart';
 import 'package:felanitx/pages/calendar_detail_page.dart';
+import 'package:felanitx/pages/home_page.dart';
 
 class AgendaPage extends StatefulWidget {
   final String title;
 
-  AgendaPage({Key? key, required this.title}) : super(key: key);
+  const AgendaPage({Key? key, this.title = ''}) : super(key: key);
 
   @override
   _AgendaPageState createState() => _AgendaPageState();
 }
 
 class _AgendaPageState extends State<AgendaPage> {
+  final ApiService _apiService = ApiService();
   List<CalendarEvent> _events = [];
-  String _currentLanguage = '';
+  String _currentLanguage = 'ca';
+  String _title = 'Agenda';
   int _selectedNavIndex = 1;
   CalendarFormat _calendarFormat = CalendarFormat.week;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _loadInitialLanguage();
     _initializeLocale();
   }
 
   Future<void> _initializeLocale() async {
-    final apiService = ApiService();
-    final language = await apiService.getCurrentLanguage();
-
-    // Mapear los códigos de idioma a los locales de Intl
-    final localeMap = {
-      'es': 'es_ES',
-      'ca': 'ca_ES',
-      'en': 'en_US',
-      'fr': 'fr_FR',
-      'de': 'de_DE',
-    };
-
-    await initializeDateFormatting(localeMap[language] ?? 'es_ES');
-    _loadEvents();
+    await initializeDateFormatting(_currentLanguage, null);
+    await _loadEvents();
   }
 
   Future<void> _loadEvents() async {
-    final apiService = ApiService();
-    final language = await apiService.getCurrentLanguage();
-    final data = await apiService.loadData('agenda', language);
-
     setState(() {
-      _events = data.map((item) => CalendarEvent.fromJson(item)).toList();
-      _events.sort((a, b) => a.date.compareTo(b.date));
-      _events = _events
-          .where((event) =>
-              event.date.isAfter(DateTime.now().subtract(Duration(days: 1))))
-          .toList();
-      _currentLanguage = language;
+      _isLoading = true;
+    });
+
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      final data = await _apiService.loadData('agenda', language);
+
+      if (data != null && data is List) {
+        setState(() {
+          _events = data.map((item) => CalendarEvent.fromJson(item)).toList();
+          _isLoading = false;
+        });
+      } else {
+        print('Error: Los datos recibidos no son una lista válida');
+        setState(() {
+          _events = [];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading events: $e');
+      setState(() {
+        _events = [];
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadInitialLanguage() async {
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      setState(() {
+        _currentLanguage = language;
+        _updateTitleForLanguage(language);
+      });
+    } catch (e) {
+      print('Error loading initial language: $e');
+    }
+  }
+
+  void _updateTitleForLanguage(String language) {
+    setState(() {
+      switch (language) {
+        case 'ca':
+          _title = 'Agenda';
+          break;
+        case 'es':
+          _title = 'Agenda';
+          break;
+        case 'en':
+          _title = 'Calendar';
+          break;
+        case 'fr':
+          _title = 'Agenda';
+          break;
+        case 'de':
+          _title = 'Kalender';
+          break;
+        default:
+          _title = 'Agenda';
+      }
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _checkLanguageChange();
-  }
+  Future<void> _handleLanguageChange(String language) async {
+    if (_currentLanguage != language) {
+      setState(() {
+        _currentLanguage = language;
+        _isLoading = true;
+      });
 
-  void _checkLanguageChange() async {
-    final apiService = ApiService();
-    final newLanguage = await apiService.getCurrentLanguage();
-    if (newLanguage != _currentLanguage) {
-      await _initializeLocale(); // Reinicializar el locale al cambiar el idioma
+      await _apiService.setLanguage(language);
+      _updateTitleForLanguage(language);
+
+      if (mounted) {
+        final homePage = HomePage.of(context);
+        homePage?.reloadData();
+      }
+
+      try {
+        final cachedData = await _apiService.loadCachedData('agenda', language);
+        if (cachedData.isNotEmpty) {
+          setState(() {
+            _events =
+                cachedData.map((item) => CalendarEvent.fromJson(item)).toList();
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        print('Error loading cached data: $e');
+      }
+
+      try {
+        final freshData = await _apiService.loadFreshData('agenda', language);
+        setState(() {
+          _events =
+              freshData.map((item) => CalendarEvent.fromJson(item)).toList();
+          _isLoading = false;
+        });
+      } catch (e) {
+        print('Error loading fresh data: $e');
+      }
     }
   }
 
@@ -86,12 +156,39 @@ class _AgendaPageState extends State<AgendaPage> {
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            final homePage = HomePage.of(context);
+            homePage?.reloadData();
+            Navigator.of(context).pop();
+          },
         ),
-        title: Text(
-          widget.title,
-          style: TextStyle(color: Colors.black),
+        title: Image.asset(
+          'assets/images/logo_felanitx.png',
+          height: 40,
+          fit: BoxFit.contain,
         ),
+        actions: [
+          _isLoading
+              ? SizedBox(width: 24, height: 24)
+              : DropdownButton<String>(
+                  value: _currentLanguage.toUpperCase(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      _handleLanguageChange(newValue.toLowerCase());
+                    }
+                  },
+                  items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                      .map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  underline: Container(),
+                  icon: Icon(Icons.arrow_drop_down),
+                ),
+          SizedBox(width: 16),
+        ],
         centerTitle: true,
       ),
       body: _buildNavContent(),
@@ -666,7 +763,7 @@ class _AgendaPageState extends State<AgendaPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Agenda',
+                _title,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 32,
