@@ -37,28 +37,51 @@ class RouteModel {
 
   factory RouteModel.fromJson(Map<String, dynamic> json) {
     try {
-      // Extraer valores con manejo de nulos
-      final nid = json['nid']?[0]?['value'] ?? 0;
-      final title = json['title']?[0]?['value'] ?? '';
-      final description = json['field_route_description']?[0]?['value'] ?? '';
-      final mainImage = json['field_route_main_image']?.isNotEmpty == true
-          ? json['field_route_main_image'][0]['url']
+      print('Procesando JSON: ${json.toString()}');
+
+      // Extraer valores con manejo de nulos y conversión segura
+      final nid =
+          int.tryParse(json['nid']?[0]?['value']?.toString() ?? '0') ?? 0;
+      final title = json['title']?[0]?['value']?.toString() ?? '';
+      final description =
+          json['field_route_description']?[0]?['value']?.toString() ?? '';
+
+      // Manejo seguro de la imagen principal
+      final mainImage = json['field_route_main_image'] != null &&
+              (json['field_route_main_image'] as List).isNotEmpty
+          ? json['field_route_main_image'][0]['url']?.toString()
           : null;
 
-      // Ubicación con valores por defecto de Felanitx si falta
-      final lat = json['field_route_location']?[0]?['lat'] ?? 39.4699;
-      final lng = json['field_route_location']?[0]?['lng'] ?? 3.1150;
+      // Ubicación con manejo seguro de valores numéricos
+      final lat = double.tryParse(
+              json['field_route_location']?[0]?['lat']?.toString() ??
+                  '39.4699') ??
+          39.4699;
+      final lng = double.tryParse(
+              json['field_route_location']?[0]?['lng']?.toString() ??
+                  '3.1150') ??
+          3.1150;
 
-      // Valores numéricos con manejo de nulos
+      // Valores numéricos con conversión segura
       final distance = double.tryParse(
               json['field_route_distance']?[0]?['value']?.toString() ?? '0') ??
           0.0;
-      final hours = int.tryParse(
-              json['field_route_hours']?[0]?['value']?.toString() ?? '0') ??
-          0;
-      final minutes = int.tryParse(
-              json['field_route_minutes']?[0]?['value']?.toString() ?? '0') ??
-          0;
+
+      // Manejo especial para horas y minutos que pueden venir como arrays vacíos
+      final hours = json['field_route_hour'] != null &&
+              (json['field_route_hour'] as List).isNotEmpty
+          ? int.tryParse(
+                  json['field_route_hour'][0]['value']?.toString() ?? '0') ??
+              0
+          : 0;
+
+      final minutes = json['field_route_minutes'] != null &&
+              (json['field_route_minutes'] as List).isNotEmpty
+          ? int.tryParse(
+                  json['field_route_minutes'][0]['value']?.toString() ?? '0') ??
+              0
+          : 0;
+
       final positiveElevation = double.tryParse(
               json['field_route_positive_elevation']?[0]?['value']
                       ?.toString() ??
@@ -70,27 +93,36 @@ class RouteModel {
                   '0') ??
           0.0;
 
-      // IDs de taxonomía con valores por defecto
-      final difficultyId =
-          json['field_route_difficulty']?[0]?['target_id'] ?? 0;
-      final circuitTypeId =
-          json['field_route_circuit_type']?[0]?['target_id'] ?? 0;
-      final routeTypeId = json['field_route_type']?[0]?['target_id'] ?? 0;
+      // IDs de taxonomía con conversión segura
+      final difficultyId = int.tryParse(
+              json['field_route_difficulty']?[0]?['target_id']?.toString() ??
+                  '0') ??
+          0;
+      final circuitTypeId = int.tryParse(
+              json['field_route_circuit_type']?[0]?['target_id']?.toString() ??
+                  '0') ??
+          0;
+      final routeTypeId = int.tryParse(
+              json['field_route_type']?[0]?['target_id']?.toString() ?? '0') ??
+          0;
 
-      // URLs opcionales
-      final gpxFile = json['field_route_gpx']?.isNotEmpty == true
-          ? json['field_route_gpx'][0]['url']
+      // URLs opcionales con manejo seguro
+      final gpxFile = json['field_route_gpx'] != null &&
+              (json['field_route_gpx'] as List).isNotEmpty
+          ? json['field_route_gpx'][0]['url']?.toString()
           : null;
-      final kmlUrl = json['field_route_kml']?.isNotEmpty == true
-          ? json['field_route_kml'][0]['url']
+      final kmlUrl = json['field_route_kml'] != null &&
+              (json['field_route_kml'] as List).isNotEmpty
+          ? json['field_route_kml'][0]['url']?.toString()
           : null;
 
-      print('Procesando ruta exitosamente:');
+      print('Ruta procesada exitosamente:');
       print('ID: $nid');
       print('Título: $title');
+      print('Ubicación: $lat, $lng');
       print('Distancia: $distance');
-      print('Horas: $hours');
-      print('Minutos: $minutes');
+      print('Tiempo: ${hours}h ${minutes}min');
+      print('Elevación: +$positiveElevation, -$negativeElevation');
 
       return RouteModel(
         id: nid,
@@ -110,9 +142,10 @@ class RouteModel {
         kmlUrl: kmlUrl,
       );
     } catch (e, stackTrace) {
-      print('Error parsing route: $e');
+      print('Error procesando ruta:');
+      print('Error: $e');
       print('Stack trace: $stackTrace');
-      print('JSON data: $json');
+      print('JSON recibido: $json');
       rethrow;
     }
   }

@@ -12,6 +12,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:felanitx/services/taxonomy_service.dart';
 import 'package:felanitx/pages/map_page.dart';
 import 'package:felanitx/main.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:felanitx/pages/home_page.dart';
 
 class RoutesPage extends StatefulWidget {
   const RoutesPage({Key? key}) : super(key: key);
@@ -21,150 +23,207 @@ class RoutesPage extends StatefulWidget {
 }
 
 class _RoutesPageState extends State<RoutesPage> {
+  final ApiService _apiService = ApiService();
   bool isGridView = false;
   int? selectedDifficulty;
   int? selectedCircuitType;
   int? selectedRouteType;
   List<RouteModel> routes = [];
-  String pageTitle = 'Rutas';
+  String _currentLanguage = 'ca';
+  String _title = 'Rutas';
   Map<String, String> _difficultyTerms = {};
   Map<String, String> _circuitTypeTerms = {};
   Map<String, String> _routeTypeTerms = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _loadInitialLanguage();
     _loadPreferences();
     _loadRoutes();
     _loadTaxonomyTerms();
-    _setPageTitle();
   }
 
-  Future<void> _loadRoutes() async {
+  Future<void> _loadInitialLanguage() async {
     try {
-      final apiService = ApiService();
-      final language = await apiService.getCurrentLanguage();
-      final data = await apiService.loadData('rutes', language);
-
-      print('Datos recibidos de la API: $data'); // Log completo de datos
-      print('Tipo de datos recibidos: ${data.runtimeType}'); // Tipo de datos
-
-      if (data != null && data is List) {
-        final List<RouteModel> loadedRoutes = [];
-
-        for (var item in data) {
-          try {
-            print('\nProcesando ruta:');
-            print('ID: ${item['nid']?[0]?['value']}');
-            print('Título: ${item['title']?[0]?['value']}');
-            print(
-                'Descripción: ${item['field_route_description']?[0]?['value']}');
-            print('Imagen: ${item['field_route_main_image']?[0]?['url']}');
-            print(
-                'Ubicación: lat=${item['field_route_location']?[0]?['lat']}, lng=${item['field_route_location']?[0]?['lng']}');
-            print('Distancia: ${item['field_route_distance']?[0]?['value']}');
-            print('Horas: ${item['field_route_hours']?[0]?['value']}');
-            print('Minutos: ${item['field_route_minutes']?[0]?['value']}');
-            print(
-                'Elevación positiva: ${item['field_route_positive_elevation']?[0]?['value']}');
-            print(
-                'Elevación negativa: ${item['field_route_negative_elevation']?[0]?['value']}');
-            print(
-                'Dificultad ID: ${item['field_route_difficulty']?[0]?['target_id']}');
-            print(
-                'Tipo de circuito ID: ${item['field_route_circuit_type']?[0]?['target_id']}');
-            print(
-                'Tipo de ruta ID: ${item['field_route_type']?[0]?['target_id']}');
-            print('GPX URL: ${item['field_route_gpx']?[0]?['url']}');
-            print('KML URL: ${item['field_route_kml']?[0]?['url']}');
-
-            final route = RouteModel.fromJson(item);
-            loadedRoutes.add(route);
-            print('Ruta procesada exitosamente\n');
-          } catch (e) {
-            print('Error procesando ruta: $e');
-            continue;
-          }
-        }
-
-        setState(() {
-          routes = loadedRoutes;
-        });
-
-        print('Total de rutas cargadas: ${routes.length}');
-      } else {
-        print('Error: Los datos recibidos no son una lista válida');
-        setState(() {
-          routes = [];
-        });
-      }
-    } catch (e, stackTrace) {
-      print('Error loading routes: $e');
-      print('Stack trace: $stackTrace');
+      final language = await _apiService.getCurrentLanguage();
       setState(() {
-        routes = [];
+        _currentLanguage = language;
+        _updateTitleForLanguage(language);
       });
+    } catch (e) {
+      print('Error loading initial language: $e');
     }
   }
 
-  void _setPageTitle() async {
-    final apiService = ApiService();
-    final language = await apiService.getCurrentLanguage();
+  void _updateTitleForLanguage(String language) {
     setState(() {
       switch (language) {
+        case 'ca':
+          _title = 'Rutes';
+          break;
         case 'es':
-          pageTitle = 'Rutas';
+          _title = 'Rutas';
           break;
         case 'en':
-          pageTitle = 'Routes';
-          break;
-        case 'ca':
-          pageTitle = 'Rutes';
-          break;
-        case 'de':
-          pageTitle = 'Routen';
+          _title = 'Routes';
           break;
         case 'fr':
-          pageTitle = 'Itinéraires';
+          _title = 'Itinéraires';
+          break;
+        case 'de':
+          _title = 'Routen';
           break;
         default:
-          pageTitle = 'Rutas';
+          _title = 'Rutas';
       }
     });
   }
 
-  List<RouteModel> get filteredItems {
-    return routes.where((route) {
-      if (selectedDifficulty != null &&
-          route.difficultyId != selectedDifficulty) {
-        return false;
+  Future<void> _handleLanguageChange(String language) async {
+    if (_currentLanguage != language) {
+      setState(() {
+        _currentLanguage = language;
+        _isLoading = true;
+      });
+
+      await _apiService.setLanguage(language);
+      _updateTitleForLanguage(language);
+
+      if (mounted) {
+        final homePage = HomePage.of(context);
+        homePage?.reloadData();
       }
-      if (selectedCircuitType != null &&
-          route.circuitTypeId != selectedCircuitType) {
-        return false;
+
+      try {
+        final cachedData = await _apiService.loadCachedData('rutes', language);
+        if (cachedData.isNotEmpty) {
+          setState(() {
+            routes =
+                cachedData.map((item) => RouteModel.fromJson(item)).toList();
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        print('Error loading cached data: $e');
       }
-      if (selectedRouteType != null && route.routeTypeId != selectedRouteType) {
-        return false;
+
+      try {
+        final freshData = await _apiService.loadFreshData('rutes', language);
+        setState(() {
+          routes = freshData.map((item) => RouteModel.fromJson(item)).toList();
+          _isLoading = false;
+        });
+      } catch (e) {
+        print('Error loading fresh data: $e');
       }
-      return true;
-    }).toList();
+
+      // Recargar los términos de taxonomía en el nuevo idioma
+      await _loadTaxonomyTerms();
+    }
   }
 
-  Future<void> _loadPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      isGridView = prefs.getBool('isGridView') ?? false;
-    });
-  }
-
-  Future<void> _loadTaxonomyTerms() async {
-    final taxonomyService = TaxonomyService();
-    _difficultyTerms = await taxonomyService.getTaxonomyTerms('dificultat');
-    _circuitTypeTerms = await taxonomyService.getTaxonomyTerms('tipuscircuit');
-    _routeTypeTerms = await taxonomyService.getTaxonomyTerms('tipusruta');
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            final homePage = HomePage.of(context);
+            homePage?.reloadData();
+            Navigator.of(context).pop();
+          },
+        ),
+        title: Image.asset(
+          'assets/images/logo_felanitx.png',
+          height: 40,
+          fit: BoxFit.contain,
+        ),
+        actions: [
+          _isLoading
+              ? SizedBox(width: 24, height: 24)
+              : DropdownButton<String>(
+                  value: _currentLanguage.toUpperCase(),
+                  onChanged: (String? newValue) {
+                    if (newValue != null) {
+                      _handleLanguageChange(newValue.toLowerCase());
+                    }
+                  },
+                  items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                      .map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  underline: Container(),
+                  icon: Icon(Icons.arrow_drop_down),
+                ),
+          SizedBox(width: 16),
+        ],
+        centerTitle: true,
+      ),
+      body: _buildNavContent(),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Mapa',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: 'Cámara',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
+        ],
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (index == 0) {
+            // Usar el mismo efecto que el botón de atrás
+            Navigator.of(context).pop();
+          } else {
+            // Para los demás botones, mantener el comportamiento actual
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushReplacement(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation1, animation2) =>
+                      MainScreen(initialIndex: index),
+                  transitionDuration: Duration.zero,
+                  reverseTransitionDuration: Duration.zero,
+                ),
+              );
+            });
+          }
+        },
+      ),
+    );
   }
 
   Widget _buildNavContent() {
+    if (_isLoading) {
+      return Column(
+        children: [
+          _buildShimmerFiltersAndViewToggle(),
+          Expanded(
+            child: isGridView ? _buildShimmerGrid() : _buildShimmerList(),
+          ),
+        ],
+      );
+    }
     return Column(
       children: [
         _buildFiltersAndViewToggle(),
@@ -175,6 +234,222 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
+  Widget _buildShimmerFiltersAndViewToggle() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 200,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                Row(
+                  children: List.generate(
+                    3,
+                    (index) => Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerList() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: ListView.separated(
+        padding: EdgeInsets.all(16),
+        itemCount: 6,
+        separatorBuilder: (context, index) => SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          return Container(
+            height: 150,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 20,
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          height: 16,
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 16,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: 16),
+                            Container(
+                              width: 60,
+                              height: 16,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                        Spacer(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              width: 80,
+                              height: 16,
+                              color: Colors.white,
+                            ),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildShimmerGrid() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: GridView.builder(
+        padding: EdgeInsets.all(16),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.8,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 16,
+                          color: Colors.white,
+                        ),
+                        SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          height: 14,
+                          color: Colors.white,
+                        ),
+                        Spacer(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 14,
+                              color: Colors.white,
+                            ),
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildFiltersAndViewToggle() {
     return Padding(
       padding: EdgeInsets.all(16),
@@ -182,7 +457,7 @@ class _RoutesPageState extends State<RoutesPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            pageTitle,
+            _title,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -429,66 +704,35 @@ class _RoutesPageState extends State<RoutesPage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          pageTitle,
-          style: TextStyle(color: Colors.black),
-        ),
-        centerTitle: true,
-      ),
-      body: _buildNavContent(),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Mapa',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera),
-            label: 'Cámara',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Ajustes',
-          ),
-        ],
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).primaryColor,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
-          if (index == 0) {
-            // Usar el mismo efecto que el botón de atrás
-            Navigator.of(context).pop();
-          } else {
-            // Para los demás botones, mantener el comportamiento actual
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) =>
-                      MainScreen(initialIndex: index),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            });
-          }
-        },
-      ),
-    );
+  List<RouteModel> get filteredItems {
+    return routes.where((route) {
+      if (selectedDifficulty != null &&
+          route.difficultyId != selectedDifficulty) {
+        return false;
+      }
+      if (selectedCircuitType != null &&
+          route.circuitTypeId != selectedCircuitType) {
+        return false;
+      }
+      if (selectedRouteType != null && route.routeTypeId != selectedRouteType) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  Future<void> _loadPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isGridView = prefs.getBool('isGridView') ?? false;
+    });
+  }
+
+  Future<void> _loadTaxonomyTerms() async {
+    final taxonomyService = TaxonomyService();
+    _difficultyTerms = await taxonomyService.getTaxonomyTerms('dificultat');
+    _circuitTypeTerms = await taxonomyService.getTaxonomyTerms('tipuscircuit');
+    _routeTypeTerms = await taxonomyService.getTaxonomyTerms('tipusruta');
   }
 
   MapController _mapController = MapController();
@@ -1118,5 +1362,35 @@ class _RoutesPageState extends State<RoutesPage> {
     }
 
     return LatLng(sumLat / count, sumLng / count);
+  }
+
+  Future<void> _loadRoutes() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      final data = await _apiService.loadData('rutes', language);
+
+      if (data != null && data is List) {
+        setState(() {
+          routes = data.map((item) => RouteModel.fromJson(item)).toList();
+          _isLoading = false;
+        });
+      } else {
+        print('Error: Los datos recibidos no son una lista válida');
+        setState(() {
+          routes = [];
+          _isLoading = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      print('Error loading routes: $e');
+      print('Stack trace: $stackTrace');
+      setState(() {
+        routes = [];
+        _isLoading = false;
+      });
+    }
   }
 }
