@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:felanitx/models/accommodation.dart';
-import 'package:felanitx/pages/accommodation_detail_page.dart';
+import 'package:felanitx/pages/detail/accommodation_detail_page.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';

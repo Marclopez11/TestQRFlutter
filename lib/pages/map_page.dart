@@ -8,7 +8,7 @@ import '../models/map_item.dart';
 import '../models/interest.dart';
 import '../models/route.dart';
 import '../models/accommodation.dart';
-import 'item_detail_page.dart';
+import 'detail/item_detail_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:collection/collection.dart';
@@ -17,10 +17,10 @@ import 'package:shimmer/shimmer.dart';
 import '../services/api_service.dart';
 import '../models/population.dart';
 import '../services/taxonomy_service.dart';
-import 'interest_detail_page.dart';
+import 'detail/interest_detail_page.dart';
 import 'route_detail_page.dart';
-import 'population_detail_page.dart';
-import 'accommodation_detail_page.dart';
+import 'detail/population_detail_page.dart';
+import 'detail/accommodation_detail_page.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({Key? key}) : super(key: key);

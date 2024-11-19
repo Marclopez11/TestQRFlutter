@@ -7,7 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:felanitx/main.dart';
-import 'package:felanitx/pages/calendar_detail_page.dart';
+import 'package:felanitx/pages/detail/calendar_detail_page.dart';
 import 'package:felanitx/pages/home_page.dart';
 
 class AgendaPage extends StatefulWidget {

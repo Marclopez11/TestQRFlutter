@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:felanitx/models/banner.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:felanitx/pages/item_detail_page.dart';
-import 'package:felanitx/pages/calendar_detail_page.dart';
-import 'package:felanitx/pages/interest_detail_page.dart';
+import 'package:felanitx/pages/detail/item_detail_page.dart';
+import 'package:felanitx/pages/detail/calendar_detail_page.dart';
+import 'package:felanitx/pages/detail/interest_detail_page.dart';
 import 'package:felanitx/models/map_item.dart';
 
 class BannerCarousel extends StatefulWidget {
