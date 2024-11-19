@@ -168,10 +168,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                                 height: 40,
                                 builder: (_) => GestureDetector(
                                   onTap: _openInMaps,
-                                  child: Icon(
-                                    Icons.location_on,
-                                    color: Theme.of(context).primaryColor,
-                                    size: 40,
+                                  child: Image.asset(
+                                    'assets/images/marker-icon02.png',
+                                    width: 40,
+                                    height: 40,
                                   ),
                                 ),
                               ),
