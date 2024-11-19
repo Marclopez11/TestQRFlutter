@@ -9,6 +9,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:felanitx/main.dart';
 import 'package:felanitx/pages/detail/calendar_detail_page.dart';
 import 'package:felanitx/pages/home_page.dart';
+import 'package:felanitx/l10n/app_translations.dart';
 
 class AgendaPage extends StatefulWidget {
   final String title;
@@ -86,25 +87,7 @@ class _AgendaPageState extends State<AgendaPage> {
 
   void _updateTitleForLanguage(String language) {
     setState(() {
-      switch (language) {
-        case 'ca':
-          _title = 'Agenda';
-          break;
-        case 'es':
-          _title = 'Agenda';
-          break;
-        case 'en':
-          _title = 'Calendar';
-          break;
-        case 'fr':
-          _title = 'Agenda';
-          break;
-        case 'de':
-          _title = 'Kalender';
-          break;
-        default:
-          _title = 'Agenda';
-      }
+      _title = AppTranslations.translate('agenda', language);
     });
   }
 
@@ -193,22 +176,22 @@ class _AgendaPageState extends State<AgendaPage> {
       ),
       body: _buildNavContent(),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -470,6 +453,28 @@ class _AgendaPageState extends State<AgendaPage> {
                 ),
               ),
             ),
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              titleTextFormatter: (date, locale) {
+                return '${AppTranslations.getMonth(_currentLanguage, date.month)} ${date.year}';
+              },
+            ),
+            calendarBuilders: CalendarBuilders(
+              dowBuilder: (context, day) {
+                final weekDays = AppTranslations.getWeekDays(_currentLanguage);
+                return Center(
+                  child: Text(
+                    weekDays[day.weekday - 1].substring(0, 3).toUpperCase(),
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
           Padding(
             padding: EdgeInsets.all(16),
@@ -477,7 +482,7 @@ class _AgendaPageState extends State<AgendaPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildLegendItem(
-                  'Hoy',
+                  AppTranslations.translate('today', _currentLanguage),
                   BoxDecoration(
                     color: Theme.of(context).primaryColor.withOpacity(0.15),
                     shape: BoxShape.circle,
@@ -485,7 +490,7 @@ class _AgendaPageState extends State<AgendaPage> {
                 ),
                 SizedBox(width: 16),
                 _buildLegendItem(
-                  'Evento',
+                  AppTranslations.translate('event', _currentLanguage),
                   BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
@@ -588,8 +593,9 @@ class _AgendaPageState extends State<AgendaPage> {
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Text(
               _selectedDay != null
-                  ? 'Eventos a partir del ${DateFormat('d MMMM', locale).format(_selectedDay!)}'
-                  : 'Próximos eventos',
+                  ? '${AppTranslations.translate('events_from', _currentLanguage)} ${DateFormat('d MMMM', locale).format(_selectedDay!)}'
+                  : AppTranslations.translate(
+                      'upcoming_events', _currentLanguage),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -779,7 +785,7 @@ class _AgendaPageState extends State<AgendaPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildViewToggleButton(
-                      'Semana',
+                      AppTranslations.translate('week', _currentLanguage),
                       CalendarFormat.week,
                       leftRadius: true,
                     ),
@@ -789,7 +795,7 @@ class _AgendaPageState extends State<AgendaPage> {
                       color: Colors.white.withOpacity(0.3),
                     ),
                     _buildViewToggleButton(
-                      'Mes',
+                      AppTranslations.translate('month', _currentLanguage),
                       CalendarFormat.month,
                       rightRadius: true,
                     ),
