@@ -10,6 +10,8 @@ import 'package:felanitx/services/taxonomy_service.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:felanitx/main.dart';
+import 'package:felanitx/l10n/app_translations.dart';
+import 'package:felanitx/services/api_service.dart';
 
 class AccommodationDetailPage extends StatefulWidget {
   final Accommodation accommodation;
@@ -23,6 +25,8 @@ class AccommodationDetailPage extends StatefulWidget {
 }
 
 class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
+  String _currentLanguage = 'ca';
+  final ApiService _apiService = ApiService();
   final TaxonomyService _taxonomyService = TaxonomyService();
   String? hotelTypeName;
   List<String> hotelServices = [];
@@ -32,7 +36,19 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
   @override
   void initState() {
     super.initState();
+    _loadCurrentLanguage();
     _loadTaxonomyData();
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      setState(() {
+        _currentLanguage = language;
+      });
+    } catch (e) {
+      print('Error loading language: $e');
+    }
   }
 
   Future<void> _loadTaxonomyData() async {
@@ -124,7 +140,8 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                       children: [
                         SizedBox(height: 16),
                         Text(
-                          'Servicios disponibles',
+                          AppTranslations.translate(
+                              'available_services', _currentLanguage),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -238,7 +255,8 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Datos de contacto',
+                        AppTranslations.translate(
+                            'contact_info', _currentLanguage),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -370,7 +388,8 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('Guardar a mi plan de viaje'),
+                          Text(AppTranslations.translate(
+                              'save_to_trip', _currentLanguage)),
                           SizedBox(width: 8),
                           Icon(Icons.bookmark),
                         ],
@@ -385,22 +404,22 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -521,7 +540,9 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                 });
               },
               child: Text(
-                _isDescriptionExpanded ? 'Ver menos' : 'Ver más',
+                _isDescriptionExpanded
+                    ? AppTranslations.translate('see_less', _currentLanguage)
+                    : AppTranslations.translate('see_more', _currentLanguage),
                 style: TextStyle(
                   color: Theme.of(context).primaryColor,
                   fontWeight: FontWeight.bold,
@@ -588,8 +609,8 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('No se pudo abrir el enlace: $formattedUrl'),
-                duration: Duration(seconds: 2),
+                content: Text(AppTranslations.translate(
+                    'could_not_open_link', _currentLanguage)),
               ),
             );
           }
@@ -597,8 +618,8 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
           print('Error al abrir la URL: $e');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error al abrir el enlace'),
-              duration: Duration(seconds: 2),
+              content: Text(AppTranslations.translate(
+                  'error_opening_link', _currentLanguage)),
             ),
           );
         }
@@ -615,7 +636,9 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
       await launch(url);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo abrir la aplicación de mapas')),
+        SnackBar(
+            content: Text(AppTranslations.translate(
+                'could_not_open_maps', _currentLanguage))),
       );
     }
   }

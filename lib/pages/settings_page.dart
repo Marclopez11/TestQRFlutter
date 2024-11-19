@@ -19,6 +19,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _bluetoothEnabled = false;
   bool _qrScanningEnabled = false;
   String _currentLanguage = 'ca';
+  bool _isLoadingLanguage = true;
 
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
   late StreamSubscription<BluetoothAdapterState> _adapterStateSubscription;
@@ -28,7 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _checkBluetoothStatus();
     _checkCameraPermission();
-    _loadCurrentLanguage();
+    _loadInitialLanguage();
     _adapterStateSubscription = FlutterBluePlus.adapterState.listen((state) {
       _adapterState = state;
       if (mounted) {
@@ -155,13 +156,36 @@ class _SettingsPageState extends State<SettingsPage> {
     openAppSettings();
   }
 
+  Future<void> _loadInitialLanguage() async {
+    setState(() {
+      _isLoadingLanguage = true;
+    });
+
+    try {
+      final apiService = ApiService();
+      final language = await apiService.getCurrentLanguage();
+      if (mounted) {
+        setState(() {
+          _currentLanguage = language;
+          _isLoadingLanguage = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading current language: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLanguage = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            // Header específico para SettingsPage
             Container(
               height: 60,
               color: Theme.of(context).scaffoldBackgroundColor,
@@ -173,23 +197,25 @@ class _SettingsPageState extends State<SettingsPage> {
                     'assets/images/logo_felanitx.png',
                     height: 40,
                   ),
-                  DropdownButton<String>(
-                    value: _currentLanguage.toUpperCase(),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        _handleLanguageChange(newValue.toLowerCase());
-                      }
-                    },
-                    items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
-                        .map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    underline: Container(),
-                    icon: Icon(Icons.arrow_drop_down),
-                  ),
+                  if (!_isLoadingLanguage)
+                    DropdownButton<String>(
+                      value: _currentLanguage.toUpperCase(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          _handleLanguageChange(newValue.toLowerCase());
+                        }
+                      },
+                      items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                          .map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      underline: Container(),
+                      icon: Icon(Icons.arrow_drop_down),
+                    ),
+                  if (_isLoadingLanguage) SizedBox(width: 48),
                 ],
               ),
             ),

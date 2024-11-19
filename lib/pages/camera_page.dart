@@ -38,26 +38,41 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   String _scanQRCodeText = '';
 
   Timer? _languageTimer;
+  final ApiService _apiService = ApiService();
+  bool _isLoadingLanguage = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkCameraPermission();
-    _loadSavedLanguage();
+    _loadInitialLanguage();
     _startLanguageTimer();
     _updateTexts();
   }
 
-  Future<void> _loadSavedLanguage() async {
-    final apiService = ApiService();
-    final language = await apiService.getCurrentLanguage();
-    //print('Loaded saved language: $language');
+  Future<void> _loadInitialLanguage() async {
     setState(() {
-      _currentLanguage = language;
-      _selectedLanguage = language.toUpperCase();
+      _isLoadingLanguage = true;
     });
-    _updateTexts();
+
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      if (mounted) {
+        setState(() {
+          _currentLanguage = language;
+          _selectedLanguage = language.toUpperCase();
+          _isLoadingLanguage = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading initial language: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLanguage = false;
+        });
+      }
+    }
   }
 
   @override
@@ -359,23 +374,25 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                     'assets/images/logo_felanitx.png',
                     height: 40,
                   ),
-                  DropdownButton<String>(
-                    value: _currentLanguage.toUpperCase(),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        _handleLanguageChange(newValue.toLowerCase());
-                      }
-                    },
-                    items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
-                        .map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    underline: Container(),
-                    icon: Icon(Icons.arrow_drop_down),
-                  ),
+                  if (!_isLoadingLanguage)
+                    DropdownButton<String>(
+                      value: _currentLanguage.toUpperCase(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          _handleLanguageChange(newValue.toLowerCase());
+                        }
+                      },
+                      items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                          .map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      underline: Container(),
+                      icon: Icon(Icons.arrow_drop_down),
+                    ),
+                  if (_isLoadingLanguage) SizedBox(width: 48),
                 ],
               ),
             ),

@@ -11,6 +11,7 @@ import 'package:felanitx/main.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/pages/home_page.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:felanitx/l10n/app_translations.dart';
 
 class AccommodationPage extends StatefulWidget {
   final String title;
@@ -136,22 +137,22 @@ class _AccommodationPageState extends State<AccommodationPage> {
         child: _buildNavContent(),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -573,7 +574,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
                           ),
                           SizedBox(width: 12),
                           Text(
-                            'Alojamientos',
+                            AppTranslations.translate(
+                                'accommodations_map', _currentLanguage),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -802,7 +804,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
                             );
                           },
                           icon: Icon(Icons.info_outline),
-                          label: Text('Ver detalles'),
+                          label: Text(AppTranslations.translate(
+                              'see_details', _currentLanguage)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).primaryColor,
                             foregroundColor: Colors.white,
@@ -817,7 +820,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
                             _openInMaps(item);
                           },
                           icon: Icon(Icons.map_outlined),
-                          label: Text('Cómo llegar'),
+                          label: Text(AppTranslations.translate(
+                              'how_to_get_there', _currentLanguage)),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Theme.of(context).primaryColor,
                             side: BorderSide(
@@ -871,7 +875,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Filtrar por categoría',
+                        AppTranslations.translate(
+                            'filter_by_category', _currentLanguage),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -890,7 +895,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
                         final isSelected =
                             selectedCategories.contains(category);
                         return ListTile(
-                          title: Text('Categoría $category'),
+                          title: Text(
+                              '${AppTranslations.translate('category', _currentLanguage)} $category'),
                           trailing: isSelected
                               ? Icon(Icons.check,
                                   color: Theme.of(context).primaryColor)
@@ -919,7 +925,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
                           });
                           this.setState(() {});
                         },
-                        child: Text('Borrar filtros'),
+                        child: Text(AppTranslations.translate(
+                            'clear_filters', _currentLanguage)),
                       ),
                     ),
                 ],
@@ -945,25 +952,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
       }
 
       setState(() {
-        switch (language) {
-          case 'ca':
-            _title = 'Allotjaments';
-            break;
-          case 'es':
-            _title = 'Alojamientos';
-            break;
-          case 'en':
-            _title = 'Accommodations';
-            break;
-          case 'fr':
-            _title = 'Hébergements';
-            break;
-          case 'de':
-            _title = 'Unterkünfte';
-            break;
-          default:
-            _title = 'Alojamientos';
-        }
+        _title = AppTranslations.translate('accommodations', language);
       });
 
       try {
@@ -1165,25 +1154,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
       final language = await _apiService.getCurrentLanguage();
       setState(() {
         _currentLanguage = language;
-        switch (language) {
-          case 'ca':
-            _title = 'Allotjaments';
-            break;
-          case 'es':
-            _title = 'Alojamientos';
-            break;
-          case 'en':
-            _title = 'Accommodations';
-            break;
-          case 'fr':
-            _title = 'Hébergements';
-            break;
-          case 'de':
-            _title = 'Unterkünfte';
-            break;
-          default:
-            _title = 'Alojamientos';
-        }
+        _title = AppTranslations.translate('accommodations', language);
       });
     } catch (e) {
       print('Error loading initial language: $e');
