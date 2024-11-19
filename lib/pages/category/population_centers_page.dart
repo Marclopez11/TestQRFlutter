@@ -484,9 +484,9 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
 
   Widget _buildList() {
     return ListView.separated(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16),
       itemCount: populations.length,
-      separatorBuilder: (context, index) => SizedBox(height: 16),
+      separatorBuilder: (context, index) => SizedBox(height: 8),
       itemBuilder: (context, index) {
         final item = populations[index];
         return _buildListItem(item);
@@ -513,7 +513,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
 
   Widget _buildListItem(Population item) {
     return SizedBox(
-      height: 120,
+      height: 130,
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -531,8 +531,8 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
           child: Row(
             children: [
               SizedBox(
-                width: 120,
-                height: 120,
+                width: 130,
+                height: 130,
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(8),
@@ -552,7 +552,7 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -565,28 +565,31 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 4),
                       if (item.description1 != null) ...[
-                        Text(
-                          item.description1!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                        SizedBox(height: 6),
+                        Expanded(
+                          child: Text(
+                            item.description1!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              height: 1.2,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                      Spacer(),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: BoxConstraints(),
-                            icon: Icon(Icons.map, size: 20),
-                            onPressed: () => _openInMaps(item),
-                            color: Colors.grey[600],
+                          GestureDetector(
+                            onTap: () => _openInMaps(item),
+                            child: Icon(
+                              Icons.map,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
@@ -652,26 +655,28 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                     ),
                     SizedBox(height: 4),
                     if (item.description1 != null) ...[
-                      Text(
-                        item.description1!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                      Expanded(
+                        child: Text(
+                          item.description1!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
-                          icon: Icon(Icons.map, size: 20),
-                          onPressed: () => _openInMaps(item),
-                          color: Colors.grey[600],
+                        GestureDetector(
+                          onTap: () => _openInMaps(item),
+                          child: Icon(
+                            Icons.map,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
