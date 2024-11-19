@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/route.dart';
 import 'package:felanitx/services/taxonomy_service.dart';
 import 'package:felanitx/main.dart';
+import 'package:felanitx/l10n/app_translations.dart';
+import 'package:felanitx/services/api_service.dart';
 
 class RouteDetailPage extends StatefulWidget {
   final RouteModel route;
@@ -17,6 +19,8 @@ class RouteDetailPage extends StatefulWidget {
 }
 
 class _RouteDetailPageState extends State<RouteDetailPage> {
+  String _currentLanguage = 'ca';
+  final ApiService _apiService = ApiService();
   Map<String, String> _difficultyTerms = {};
   Map<String, String> _circuitTypeTerms = {};
   Map<String, String> _routeTypeTerms = {};
@@ -24,7 +28,19 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   @override
   void initState() {
     super.initState();
+    _loadCurrentLanguage();
     _loadTaxonomyTerms();
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      setState(() {
+        _currentLanguage = language;
+      });
+    } catch (e) {
+      print('Error loading language: $e');
+    }
   }
 
   Future<void> _loadTaxonomyTerms() async {
@@ -106,21 +122,25 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                         _buildInfoItem(
                           Icons.trending_up,
                           '${widget.route.positiveElevation.toStringAsFixed(0)}m',
+                          'elevation_gain',
                           Colors.green,
                         ),
                         _buildInfoItem(
                           Icons.trending_down,
                           '${widget.route.negativeElevation.toStringAsFixed(0)}m',
+                          'elevation_loss',
                           Colors.red,
                         ),
                         _buildInfoItem(
                           Icons.timer,
                           '${widget.route.hours}h ${widget.route.minutes}min',
+                          'duration',
                           Colors.blue,
                         ),
                         _buildInfoItem(
                           Icons.route,
                           '${widget.route.distance.toStringAsFixed(2)} km',
+                          'distance',
                           Colors.orange,
                         ),
                       ],
@@ -188,7 +208,8 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                       Center(
                         child: ElevatedButton(
                           onPressed: () => launch(widget.route.kmlUrl!),
-                          child: Text('Descargar KML'),
+                          child: Text(AppTranslations.translate(
+                              'download_kml', _currentLanguage)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).primaryColor,
                             foregroundColor: Colors.white,
@@ -210,22 +231,22 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -251,20 +272,24 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String text, Color color) {
+  Widget _buildInfoItem(
+      IconData icon, String value, String label, Color color) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 40,
-          color: color,
-        ),
+        Icon(icon, size: 40, color: color),
         SizedBox(height: 8),
         Text(
-          text,
+          value,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          AppTranslations.translate(label, _currentLanguage),
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
           ),
         ),
       ],

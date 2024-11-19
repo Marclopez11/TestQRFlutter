@@ -50,7 +50,20 @@ class AppTranslations {
       'clear_filters': 'Esborrar filtres',
       'see_details': 'Veure detalls',
       'how_to_get_there': 'Com arribar-hi',
-      'points_of_interest_map': 'Mapa de Punts d\'Interès'
+      'points_of_interest_map': 'Mapa de Punts d\'Interès',
+      'routes': 'Rutes',
+      'filters': 'Filtres',
+      'difficulty': 'Dificultat',
+      'circuit_type': 'Tipus de circuit',
+      'route_type': 'Tipus de ruta',
+      'clear_filters': 'Netejar filtres',
+      'apply': 'Aplicar',
+      'routes_map': 'Mapa de Rutes',
+      'download_kml': 'Descarregar KML',
+      'distance': 'Distància',
+      'duration': 'Durada',
+      'elevation_gain': 'Desnivell positiu',
+      'elevation_loss': 'Desnivell negatiu'
     },
     'es': {
       'agenda': 'Agenda',
@@ -102,7 +115,20 @@ class AppTranslations {
       'clear_filters': 'Borrar filtros',
       'see_details': 'Ver detalles',
       'how_to_get_there': 'Cómo llegar',
-      'points_of_interest_map': 'Mapa de Puntos de Interés'
+      'points_of_interest_map': 'Mapa de Puntos de Interés',
+      'routes': 'Rutas',
+      'filters': 'Filtros',
+      'difficulty': 'Dificultad',
+      'circuit_type': 'Tipo de circuito',
+      'route_type': 'Tipo de ruta',
+      'clear_filters': 'Limpiar filtros',
+      'apply': 'Aplicar',
+      'routes_map': 'Mapa de Rutas',
+      'download_kml': 'Descargar KML',
+      'distance': 'Distancia',
+      'duration': 'Duración',
+      'elevation_gain': 'Desnivel positivo',
+      'elevation_loss': 'Desnivel negativo'
     },
     'en': {
       'agenda': 'Calendar',
@@ -154,7 +180,20 @@ class AppTranslations {
       'clear_filters': 'Clear filters',
       'see_details': 'See details',
       'how_to_get_there': 'How to get there',
-      'points_of_interest_map': 'Points of Interest Map'
+      'points_of_interest_map': 'Points of Interest Map',
+      'routes': 'Routes',
+      'filters': 'Filters',
+      'difficulty': 'Difficulty',
+      'circuit_type': 'Circuit type',
+      'route_type': 'Route type',
+      'clear_filters': 'Clear filters',
+      'apply': 'Apply',
+      'routes_map': 'Routes Map',
+      'download_kml': 'Download KML',
+      'distance': 'Distance',
+      'duration': 'Duration',
+      'elevation_gain': 'Elevation gain',
+      'elevation_loss': 'Elevation loss'
     },
     'fr': {
       'agenda': 'Agenda',
@@ -206,7 +245,20 @@ class AppTranslations {
       'clear_filters': 'Effacer les filtres',
       'see_details': 'Voir les détails',
       'how_to_get_there': 'Comment y aller',
-      'points_of_interest_map': 'Carte des Points d\'Intérêt'
+      'points_of_interest_map': 'Carte des Points d\'Intérêt',
+      'routes': 'Itinéraires',
+      'filters': 'Filtres',
+      'difficulty': 'Difficulté',
+      'circuit_type': 'Type de circuit',
+      'route_type': 'Type d\'itinéraire',
+      'clear_filters': 'Effacer les filtres',
+      'apply': 'Appliquer',
+      'routes_map': 'Carte des Itinéraires',
+      'download_kml': 'Télécharger KML',
+      'distance': 'Distance',
+      'duration': 'Durée',
+      'elevation_gain': 'Dénivelé positif',
+      'elevation_loss': 'Dénivelé négatif'
     },
     'de': {
       'agenda': 'Kalender',
@@ -258,7 +310,20 @@ class AppTranslations {
       'clear_filters': 'Filter löschen',
       'see_details': 'Details anzeigen',
       'how_to_get_there': 'Wegbeschreibung',
-      'points_of_interest_map': 'Sehenswürdigkeiten Karte'
+      'points_of_interest_map': 'Sehenswürdigkeiten Karte',
+      'routes': 'Routen',
+      'filters': 'Filter',
+      'difficulty': 'Schwierigkeit',
+      'circuit_type': 'Kreistyp',
+      'route_type': 'Routentyp',
+      'clear_filters': 'Filter löschen',
+      'apply': 'Anwenden',
+      'routes_map': 'Routenkarte',
+      'download_kml': 'KML herunterladen',
+      'distance': 'Entfernung',
+      'duration': 'Dauer',
+      'elevation_gain': 'Höhengewinn',
+      'elevation_loss': 'Höhenverlust'
     }
   };
 

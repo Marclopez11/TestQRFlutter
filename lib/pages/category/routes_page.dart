@@ -14,6 +14,7 @@ import 'package:felanitx/pages/map_page.dart';
 import 'package:felanitx/main.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:felanitx/pages/home_page.dart';
+import 'package:felanitx/l10n/app_translations.dart';
 
 class RoutesPage extends StatefulWidget {
   const RoutesPage({Key? key}) : super(key: key);
@@ -59,25 +60,7 @@ class _RoutesPageState extends State<RoutesPage> {
 
   void _updateTitleForLanguage(String language) {
     setState(() {
-      switch (language) {
-        case 'ca':
-          _title = 'Rutes';
-          break;
-        case 'es':
-          _title = 'Rutas';
-          break;
-        case 'en':
-          _title = 'Routes';
-          break;
-        case 'fr':
-          _title = 'Itinéraires';
-          break;
-        case 'de':
-          _title = 'Routen';
-          break;
-        default:
-          _title = 'Rutas';
-      }
+      _title = AppTranslations.translate('routes', language);
     });
   }
 
@@ -168,22 +151,22 @@ class _RoutesPageState extends State<RoutesPage> {
       ),
       body: _buildNavContent(),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -826,7 +809,8 @@ class _RoutesPageState extends State<RoutesPage> {
                           ),
                           SizedBox(width: 12),
                           Text(
-                            'Mapa de Rutas',
+                            AppTranslations.translate(
+                                'routes_map', _currentLanguage),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -1176,7 +1160,7 @@ class _RoutesPageState extends State<RoutesPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Filtros',
+                        AppTranslations.translate('filters', _currentLanguage),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -1196,7 +1180,8 @@ class _RoutesPageState extends State<RoutesPage> {
                         children: [
                           if (difficulties.isNotEmpty) ...[
                             Text(
-                              'Dificultad',
+                              AppTranslations.translate(
+                                  'difficulty', _currentLanguage),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -1240,7 +1225,8 @@ class _RoutesPageState extends State<RoutesPage> {
                           ],
                           if (circuitTypes.isNotEmpty) ...[
                             Text(
-                              'Tipo de circuito',
+                              AppTranslations.translate(
+                                  'circuit_type', _currentLanguage),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -1282,7 +1268,8 @@ class _RoutesPageState extends State<RoutesPage> {
                           ],
                           if (routeTypes.isNotEmpty) ...[
                             Text(
-                              'Tipo de ruta',
+                              AppTranslations.translate(
+                                  'route_type', _currentLanguage),
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -1340,7 +1327,8 @@ class _RoutesPageState extends State<RoutesPage> {
                             });
                             this.setState(() {});
                           },
-                          child: Text('Limpiar filtros'),
+                          child: Text(AppTranslations.translate(
+                              'clear_filters', _currentLanguage)),
                         ),
                         ElevatedButton(
                           onPressed: () => Navigator.pop(context),
@@ -1353,7 +1341,8 @@ class _RoutesPageState extends State<RoutesPage> {
                             padding: EdgeInsets.symmetric(
                                 horizontal: 24, vertical: 12),
                           ),
-                          child: Text('Aplicar'),
+                          child: Text(AppTranslations.translate(
+                              'apply', _currentLanguage)),
                         ),
                       ],
                     ),
