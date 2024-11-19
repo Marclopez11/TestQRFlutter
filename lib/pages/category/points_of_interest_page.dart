@@ -11,6 +11,7 @@ import 'package:felanitx/main.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:felanitx/pages/home_page.dart';
+import 'package:felanitx/l10n/app_translations.dart';
 
 class PointsOfInterestPage extends StatefulWidget {
   final String title;
@@ -81,30 +82,12 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
     try {
       final language = await _apiService.getCurrentLanguage();
       setState(() {
-        switch (language) {
-          case 'ca':
-            _title = 'Punts d\'interès';
-            break;
-          case 'es':
-            _title = 'Puntos de interés';
-            break;
-          case 'en':
-            _title = 'Points of interest';
-            break;
-          case 'fr':
-            _title = 'Points d\'intérêt';
-            break;
-          case 'de':
-            _title = 'Sehenswürdigkeiten';
-            break;
-          default:
-            _title = 'Puntos de interés';
-        }
+        _title = AppTranslations.translate('points_of_interest', language);
       });
     } catch (e) {
       print('Error loading title: $e');
       setState(() {
-        _title = 'Puntos de interés';
+        _title = AppTranslations.translate('points_of_interest', 'es');
       });
     }
   }
@@ -163,22 +146,22 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
         child: _buildNavContent(),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -648,7 +631,8 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                           ),
                           SizedBox(width: 12),
                           Text(
-                            'Mapa de Puntos de Interés',
+                            AppTranslations.translate(
+                                'points_of_interest_map', _currentLanguage),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -885,7 +869,8 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                             );
                           },
                           icon: Icon(Icons.info_outline),
-                          label: Text('Ver detalles'),
+                          label: Text(AppTranslations.translate(
+                              'see_details', _currentLanguage)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).primaryColor,
                             foregroundColor: Colors.white,
@@ -900,7 +885,8 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                             _openInMaps(item);
                           },
                           icon: Icon(Icons.map_outlined),
-                          label: Text('Cómo llegar'),
+                          label: Text(AppTranslations.translate(
+                              'how_to_get_there', _currentLanguage)),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Theme.of(context).primaryColor,
                             side: BorderSide(
@@ -954,7 +940,8 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Filtrar por categoría',
+                        AppTranslations.translate(
+                            'filter_by_category', _currentLanguage),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -973,7 +960,8 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                         final isSelected =
                             selectedCategories.contains(category);
                         return ListTile(
-                          title: Text('Categoría $category'),
+                          title: Text(
+                              '${AppTranslations.translate('category', _currentLanguage)} $category'),
                           trailing: isSelected
                               ? Icon(Icons.check,
                                   color: Theme.of(context).primaryColor)
@@ -1002,7 +990,8 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                           });
                           this.setState(() {});
                         },
-                        child: Text('Borrar filtros'),
+                        child: Text(AppTranslations.translate(
+                            'clear_filters', _currentLanguage)),
                       ),
                     ),
                 ],

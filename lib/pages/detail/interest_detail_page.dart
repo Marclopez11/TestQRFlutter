@@ -12,6 +12,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:felanitx/main.dart';
+import 'package:felanitx/services/api_service.dart';
+import 'package:felanitx/l10n/app_translations.dart';
 
 class InterestDetailPage extends StatefulWidget {
   final Interest interest;
@@ -33,13 +35,27 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
   bool _isDescriptionExpanded = false;
   bool _isVideoControlsVisible = true;
   bool _isVideoInitialized = false;
+  String _currentLanguage = 'ca';
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadCurrentLanguage();
     if (widget.interest.videoUrl != null) {
       _initializeVideo();
+    }
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      setState(() {
+        _currentLanguage = language;
+      });
+    } catch (e) {
+      print('Error loading language: $e');
     }
   }
 
@@ -245,7 +261,8 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('Guardar a mi plan de viaje'),
+                                Text(AppTranslations.translate(
+                                    'save_to_trip', _currentLanguage)),
                                 SizedBox(width: 8),
                                 Icon(Icons.bookmark),
                               ],
@@ -264,22 +281,22 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -413,7 +430,10 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
       await launch(url);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo abrir la aplicación de mapas')),
+        SnackBar(
+          content: Text(AppTranslations.translate(
+              'could_not_open_maps', _currentLanguage)),
+        ),
       );
     }
   }

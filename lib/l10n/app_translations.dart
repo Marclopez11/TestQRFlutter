@@ -43,7 +43,14 @@ class AppTranslations {
       'share': 'Compartir',
       'look_interesting_place': 'Mira aquest lloc interessant',
       'could_not_open_maps': 'No s\'ha pogut obrir l\'aplicació de mapes',
-      'population_centers_map': 'Mapa de Nuclis'
+      'population_centers_map': 'Mapa de Nuclis',
+      'points_of_interest': 'Punts d\'interès',
+      'filter_by_category': 'Filtrar per categoria',
+      'category': 'Categoria',
+      'clear_filters': 'Esborrar filtres',
+      'see_details': 'Veure detalls',
+      'how_to_get_there': 'Com arribar-hi',
+      'points_of_interest_map': 'Mapa de Punts d\'Interès'
     },
     'es': {
       'agenda': 'Agenda',
@@ -88,7 +95,14 @@ class AppTranslations {
       'share': 'Compartir',
       'look_interesting_place': 'Mira este lugar interesante',
       'could_not_open_maps': 'No se pudo abrir la aplicación de mapas',
-      'population_centers_map': 'Mapa de Núcleos'
+      'population_centers_map': 'Mapa de Núcleos',
+      'points_of_interest': 'Puntos de interés',
+      'filter_by_category': 'Filtrar por categoría',
+      'category': 'Categoría',
+      'clear_filters': 'Borrar filtros',
+      'see_details': 'Ver detalles',
+      'how_to_get_there': 'Cómo llegar',
+      'points_of_interest_map': 'Mapa de Puntos de Interés'
     },
     'en': {
       'agenda': 'Calendar',
@@ -133,7 +147,14 @@ class AppTranslations {
       'share': 'Share',
       'look_interesting_place': 'Look at this interesting place',
       'could_not_open_maps': 'Could not open maps application',
-      'population_centers_map': 'Population Centers Map'
+      'population_centers_map': 'Population Centers Map',
+      'points_of_interest': 'Points of interest',
+      'filter_by_category': 'Filter by category',
+      'category': 'Category',
+      'clear_filters': 'Clear filters',
+      'see_details': 'See details',
+      'how_to_get_there': 'How to get there',
+      'points_of_interest_map': 'Points of Interest Map'
     },
     'fr': {
       'agenda': 'Agenda',
@@ -178,7 +199,14 @@ class AppTranslations {
       'share': 'Partager',
       'look_interesting_place': 'Regarde cet endroit intéressant',
       'could_not_open_maps': 'Impossible d\'ouvrir l\'application de cartes',
-      'population_centers_map': 'Carte des Centres'
+      'population_centers_map': 'Carte des Centres',
+      'points_of_interest': 'Points d\'intérêt',
+      'filter_by_category': 'Filtrer par catégorie',
+      'category': 'Catégorie',
+      'clear_filters': 'Effacer les filtres',
+      'see_details': 'Voir les détails',
+      'how_to_get_there': 'Comment y aller',
+      'points_of_interest_map': 'Carte des Points d\'Intérêt'
     },
     'de': {
       'agenda': 'Kalender',
@@ -223,7 +251,14 @@ class AppTranslations {
       'share': 'Teilen',
       'look_interesting_place': 'Schau dir diesen interessanten Ort an',
       'could_not_open_maps': 'Kartenanwendung konnte nicht geöffnet werden',
-      'population_centers_map': 'Zentren Karte'
+      'population_centers_map': 'Zentren Karte',
+      'points_of_interest': 'Sehenswürdigkeiten',
+      'filter_by_category': 'Nach Kategorie filtern',
+      'category': 'Kategorie',
+      'clear_filters': 'Filter löschen',
+      'see_details': 'Details anzeigen',
+      'how_to_get_there': 'Wegbeschreibung',
+      'points_of_interest_map': 'Sehenswürdigkeiten Karte'
     }
   };
 
