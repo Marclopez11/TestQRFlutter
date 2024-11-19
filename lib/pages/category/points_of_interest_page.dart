@@ -400,7 +400,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
 
   Widget _buildListItem(Interest item) {
     return SizedBox(
-      height: 120,
+      height: 130,
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -418,8 +418,8 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
           child: Row(
             children: [
               SizedBox(
-                width: 120,
-                height: 120,
+                width: 130,
+                height: 130,
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(8),
@@ -439,7 +439,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -452,33 +452,31 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        item.description,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Categoría ${item.categoryId}',
+                      if (item.description != null) ...[
+                        SizedBox(height: 6),
+                        Expanded(
+                          child: Text(
+                            item.description,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              height: 1.2,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          GestureDetector(
+                            onTap: () => _openInMaps(item),
+                            child: Icon(
+                              Icons.map,
+                              size: 16,
                               color: Colors.grey[600],
                             ),
-                          ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: BoxConstraints(),
-                            icon: Icon(Icons.map, size: 20),
-                            onPressed: () => _openInMaps(item),
-                            color: Colors.grey[600],
                           ),
                         ],
                       ),
@@ -498,7 +496,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
       padding: EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.85,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -560,32 +558,29 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
-                    Text(
-                      item.description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Categoría ${item.categoryId}',
+                    if (item.description != null) ...[
+                      Expanded(
+                        child: Text(
+                          item.description,
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
-                          icon: Icon(Icons.map, size: 20),
-                          onPressed: () => _openInMaps(item),
-                          color: Colors.grey[600],
+                      ),
+                    ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        GestureDetector(
+                          onTap: () => _openInMaps(item),
+                          child: Icon(
+                            Icons.map,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
