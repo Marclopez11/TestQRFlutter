@@ -311,16 +311,9 @@ class _AccommodationPageState extends State<AccommodationPage> {
 
   Widget _buildList() {
     return ListView.separated(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).padding.bottom +
-            kBottomNavigationBarHeight +
-            16,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 16),
       itemCount: filteredItems.length,
-      separatorBuilder: (context, index) => SizedBox(height: 16),
+      separatorBuilder: (context, index) => SizedBox(height: 8),
       itemBuilder: (context, index) {
         final item = filteredItems[index];
         return _buildListItem(item);
@@ -330,7 +323,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
 
   Widget _buildListItem(Accommodation item) {
     return SizedBox(
-      height: 120,
+      height: 130,
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(
@@ -349,8 +342,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
           child: Row(
             children: [
               SizedBox(
-                width: 120,
-                height: 120,
+                width: 130,
+                height: 130,
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(8),
@@ -370,7 +363,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -383,33 +376,31 @@ class _AccommodationPageState extends State<AccommodationPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        item.description,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Spacer(),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Categoría ${item.categoryId}',
+                      if (item.description != null) ...[
+                        SizedBox(height: 6),
+                        Expanded(
+                          child: Text(
+                            item.description,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              height: 1.2,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          GestureDetector(
+                            onTap: () => _openInMaps(item),
+                            child: Icon(
+                              Icons.map,
+                              size: 16,
                               color: Colors.grey[600],
                             ),
-                          ),
-                          IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: BoxConstraints(),
-                            icon: Icon(Icons.map, size: 20),
-                            onPressed: () => _openInMaps(item),
-                            color: Colors.grey[600],
                           ),
                         ],
                       ),
@@ -429,7 +420,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
       padding: EdgeInsets.all(16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.85,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -492,25 +483,29 @@ class _AccommodationPageState extends State<AccommodationPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     SizedBox(height: 4),
-                    Text(
-                      item.description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                    if (item.description != null) ...[
+                      Expanded(
+                        child: Text(
+                          item.description,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Spacer(),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
-                          icon: Icon(Icons.map, size: 20),
-                          onPressed: () => _openInMaps(item),
-                          color: Colors.grey[600],
+                        GestureDetector(
+                          onTap: () => _openInMaps(item),
+                          child: Icon(
+                            Icons.map,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
