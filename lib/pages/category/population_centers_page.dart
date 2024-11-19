@@ -10,6 +10,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map/plugin_api.dart';
 import 'package:felanitx/main.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:felanitx/l10n/app_translations.dart';
 
 class PopulationCentersPage extends StatefulWidget {
   const PopulationCentersPage({Key? key}) : super(key: key);
@@ -103,32 +104,13 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
     try {
       final apiService = ApiService();
       final language = await apiService.getCurrentLanguage();
-
       setState(() {
-        switch (language) {
-          case 'ca':
-            _title = 'Nuclis de població';
-            break;
-          case 'es':
-            _title = 'Núcleos de población';
-            break;
-          case 'en':
-            _title = 'Population centers';
-            break;
-          case 'fr':
-            _title = 'Centres de population';
-            break;
-          case 'de':
-            _title = 'Bevölkerungszentren';
-            break;
-          default:
-            _title = 'Núcleos de población';
-        }
+        _title = AppTranslations.translate('population_centers', language);
       });
     } catch (e) {
       print('Error loading title: $e');
       setState(() {
-        _title = 'Núcleos de población';
+        _title = AppTranslations.translate('population_centers', 'es');
       });
     }
   }
@@ -173,22 +155,22 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
       ),
       body: _buildNavContent(),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -233,7 +215,9 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
         _buildFiltersAndViewToggle(),
         Expanded(
           child: populations.isEmpty
-              ? Center(child: Text('No hay datos disponibles'))
+              ? Center(
+                  child: Text(AppTranslations.translate(
+                      'no_data_available', _currentLanguage)))
               : isGridView
                   ? _buildGrid()
                   : _buildList(),
@@ -385,7 +369,8 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                             );
                           },
                           icon: Icon(Icons.info_outline),
-                          label: Text('Ver detalles'),
+                          label: Text(AppTranslations.translate(
+                              'view_details', _currentLanguage)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).primaryColor,
                             foregroundColor: Colors.white,
@@ -400,7 +385,8 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                             _openInMaps(item);
                           },
                           icon: Icon(Icons.map_outlined),
-                          label: Text('Cómo llegar'),
+                          label: Text(AppTranslations.translate(
+                              'how_to_get_there', _currentLanguage)),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Theme.of(context).primaryColor,
                             side: BorderSide(
@@ -756,7 +742,8 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                           ),
                           SizedBox(width: 12),
                           Text(
-                            'Mapa de Núcleos',
+                            AppTranslations.translate(
+                                'population_centers_map', _currentLanguage),
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 20,

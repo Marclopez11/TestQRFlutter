@@ -34,7 +34,16 @@ class AppTranslations {
       'september': 'Setembre',
       'october': 'Octubre',
       'november': 'Novembre',
-      'december': 'Desembre'
+      'december': 'Desembre',
+      'population_centers': 'Nuclis de població',
+      'no_data_available': 'No hi ha dades disponibles',
+      'view_details': 'Veure detalls',
+      'how_to_get_there': 'Com arribar-hi',
+      'save_to_trip': 'Guardar al meu pla de viatge',
+      'share': 'Compartir',
+      'look_interesting_place': 'Mira aquest lloc interessant',
+      'could_not_open_maps': 'No s\'ha pogut obrir l\'aplicació de mapes',
+      'population_centers_map': 'Mapa de Nuclis'
     },
     'es': {
       'agenda': 'Agenda',
@@ -70,7 +79,16 @@ class AppTranslations {
       'september': 'Septiembre',
       'october': 'Octubre',
       'november': 'Noviembre',
-      'december': 'Diciembre'
+      'december': 'Diciembre',
+      'population_centers': 'Núcleos de población',
+      'no_data_available': 'No hay datos disponibles',
+      'view_details': 'Ver detalles',
+      'how_to_get_there': 'Cómo llegar',
+      'save_to_trip': 'Guardar a mi plan de viaje',
+      'share': 'Compartir',
+      'look_interesting_place': 'Mira este lugar interesante',
+      'could_not_open_maps': 'No se pudo abrir la aplicación de mapas',
+      'population_centers_map': 'Mapa de Núcleos'
     },
     'en': {
       'agenda': 'Calendar',
@@ -106,7 +124,16 @@ class AppTranslations {
       'september': 'September',
       'october': 'October',
       'november': 'November',
-      'december': 'December'
+      'december': 'December',
+      'population_centers': 'Population centers',
+      'no_data_available': 'No data available',
+      'view_details': 'View details',
+      'how_to_get_there': 'How to get there',
+      'save_to_trip': 'Save to my trip plan',
+      'share': 'Share',
+      'look_interesting_place': 'Look at this interesting place',
+      'could_not_open_maps': 'Could not open maps application',
+      'population_centers_map': 'Population Centers Map'
     },
     'fr': {
       'agenda': 'Agenda',
@@ -142,7 +169,16 @@ class AppTranslations {
       'september': 'Septembre',
       'october': 'Octobre',
       'november': 'Novembre',
-      'december': 'Décembre'
+      'december': 'Décembre',
+      'population_centers': 'Centres de population',
+      'no_data_available': 'Aucune donnée disponible',
+      'view_details': 'Voir les détails',
+      'how_to_get_there': 'Comment y aller',
+      'save_to_trip': 'Enregistrer dans mon plan de voyage',
+      'share': 'Partager',
+      'look_interesting_place': 'Regarde cet endroit intéressant',
+      'could_not_open_maps': 'Impossible d\'ouvrir l\'application de cartes',
+      'population_centers_map': 'Carte des Centres'
     },
     'de': {
       'agenda': 'Kalender',
@@ -178,7 +214,16 @@ class AppTranslations {
       'september': 'September',
       'october': 'Oktober',
       'november': 'November',
-      'december': 'Dezember'
+      'december': 'Dezember',
+      'population_centers': 'Bevölkerungszentren',
+      'no_data_available': 'Keine Daten verfügbar',
+      'view_details': 'Details anzeigen',
+      'how_to_get_there': 'Wegbeschreibung',
+      'save_to_trip': 'Zu meiner Reiseplanung hinzufügen',
+      'share': 'Teilen',
+      'look_interesting_place': 'Schau dir diesen interessanten Ort an',
+      'could_not_open_maps': 'Kartenanwendung konnte nicht geöffnet werden',
+      'population_centers_map': 'Zentren Karte'
     }
   };
 

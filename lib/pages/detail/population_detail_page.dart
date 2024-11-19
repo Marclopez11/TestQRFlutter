@@ -9,6 +9,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:felanitx/main.dart';
+import 'package:felanitx/l10n/app_translations.dart';
+import 'package:felanitx/services/api_service.dart';
 
 class PopulationDetailPage extends StatefulWidget {
   final Population population;
@@ -24,11 +26,25 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
   int _currentImageIndex = 0;
   final ScrollController _scrollController = ScrollController();
   bool _showTitle = false;
+  String _currentLanguage = 'ca';
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadCurrentLanguage();
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      setState(() {
+        _currentLanguage = language;
+      });
+    } catch (e) {
+      print('Error loading language: $e');
+    }
   }
 
   @override
@@ -163,7 +179,8 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('Guardar a mi plan de viaje'),
+                                Text(AppTranslations.translate(
+                                    'save_to_trip', _currentLanguage)),
                                 SizedBox(width: 8),
                                 Icon(Icons.bookmark),
                               ],
@@ -182,22 +199,22 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: 0,
@@ -364,7 +381,7 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
 
   void _shareContent() {
     Share.share(
-      'Mira este lugar interesante: ${widget.population.title}\n\nhttps://www.google.com/maps/dir/?api=1&destination=${widget.population.location.latitude},${widget.population.location.longitude}',
+      '${AppTranslations.translate('look_interesting_place', _currentLanguage)}: ${widget.population.title}\n\nhttps://www.google.com/maps/dir/?api=1&destination=${widget.population.location.latitude},${widget.population.location.longitude}',
       subject: widget.population.title,
     );
   }
@@ -378,7 +395,10 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
       await launch(url);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo abrir la aplicación de mapas')),
+        SnackBar(
+          content: Text(AppTranslations.translate(
+              'could_not_open_maps', _currentLanguage)),
+        ),
       );
     }
   }
