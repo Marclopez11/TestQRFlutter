@@ -169,7 +169,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                                 builder: (_) => GestureDetector(
                                   onTap: _openInMaps,
                                   child: Image.asset(
-                                    'assets/images/marker-icon02.png',
+                                    widget.route.routeTypeId == 254 ||
+                                            widget.route.routeTypeId == 255
+                                        ? 'assets/images/marker-icon03.png'
+                                        : 'assets/images/marker-icon02.png',
                                     width: 40,
                                     height: 40,
                                   ),

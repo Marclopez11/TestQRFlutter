@@ -531,7 +531,9 @@ class _RoutesPageState extends State<RoutesPage> {
                   _showMarkerPreview(context, route);
                 },
                 child: Image.asset(
-                  'assets/images/marker-icon02.png',
+                  route.routeTypeId == 254 || route.routeTypeId == 255
+                      ? 'assets/images/marker-icon03.png'
+                      : 'assets/images/marker-icon02.png',
                   width: 40,
                   height: 40,
                 ),
