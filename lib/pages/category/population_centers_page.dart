@@ -271,10 +271,10 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                 onTap: () {
                   _showMarkerPreview(ctx, item);
                 },
-                child: Icon(
-                  Icons.location_on,
-                  color: Theme.of(context).primaryColor,
-                  size: 40,
+                child: Image.asset(
+                  'assets/images/marker-icon05.png',
+                  width: 40,
+                  height: 40,
                 ),
               ),
             );
@@ -290,29 +290,60 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
         return Container(
-          margin: EdgeInsets.all(8),
+          width: double.infinity,
+          margin: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: Offset(0, 5),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                child: Image.network(
-                  item.mainImage,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(12)),
+                    child: Image.network(
+                      item.mainImage,
                       height: 200,
-                      color: Colors.grey[300],
-                      child: Icon(Icons.image_not_supported),
-                    );
-                  },
-                ),
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 200,
+                          color: Colors.grey[300],
+                          child: Icon(Icons.image_not_supported),
+                        );
+                      },
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Material(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Icon(Icons.close, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               Padding(
                 padding: EdgeInsets.all(16),
@@ -326,17 +357,19 @@ class _PopulationCentersPageState extends State<PopulationCentersPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    SizedBox(height: 8),
                     if (item.description1 != null) ...[
-                      SizedBox(height: 8),
                       Text(
                         item.description1!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,
                         ),
                       ),
+                      SizedBox(height: 16),
                     ],
-                    SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
