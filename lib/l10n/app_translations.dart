@@ -78,7 +78,9 @@ class AppTranslations {
       'error_opening_link': 'Error en obrir l\'enllaç',
       'could_not_open_maps': 'No s\'ha pogut obrir l\'aplicació de mapes',
       'see_more': 'Veure més',
-      'see_less': 'Veure menys'
+      'see_less': 'Veure menys',
+      'see_more_info': 'Veure més informació',
+      'check_out_event': 'Mira aquest esdeveniment'
     },
     'es': {
       'agenda': 'Agenda',
@@ -158,7 +160,9 @@ class AppTranslations {
       'error_opening_link': 'Error al abrir el enlace',
       'could_not_open_maps': 'No se pudo abrir la aplicación de mapas',
       'see_more': 'Ver más',
-      'see_less': 'Ver menos'
+      'see_less': 'Ver menos',
+      'see_more_info': 'Ver más información',
+      'check_out_event': 'Mira este evento'
     },
     'en': {
       'agenda': 'Calendar',
@@ -238,7 +242,9 @@ class AppTranslations {
       'error_opening_link': 'Error opening link',
       'could_not_open_maps': 'Could not open maps application',
       'see_more': 'See more',
-      'see_less': 'See less'
+      'see_less': 'See less',
+      'see_more_info': 'See more information',
+      'check_out_event': 'Check out this event'
     },
     'fr': {
       'agenda': 'Agenda',
@@ -318,7 +324,9 @@ class AppTranslations {
       'error_opening_link': 'Erreur lors de l\'ouverture du lien',
       'could_not_open_maps': 'Impossible d\'ouvrir l\'application de cartes',
       'see_more': 'Voir plus',
-      'see_less': 'Voir moins'
+      'see_less': 'Voir moins',
+      'see_more_info': 'Voir plus d\'informations',
+      'check_out_event': 'Découvrez cet événement'
     },
     'de': {
       'agenda': 'Kalender',
@@ -398,7 +406,9 @@ class AppTranslations {
       'error_opening_link': 'Fehler beim Öffnen des Links',
       'could_not_open_maps': 'Kartenanwendung konnte nicht geöffnet werden',
       'see_more': 'Mehr anzeigen',
-      'see_less': 'Weniger anzeigen'
+      'see_less': 'Weniger anzeigen',
+      'see_more_info': 'Weitere Informationen',
+      'check_out_event': 'Schau dir diese Veranstaltung an'
     }
   };
 

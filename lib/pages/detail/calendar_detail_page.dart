@@ -8,6 +8,12 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:felanitx/services/api_service.dart';
+import 'package:felanitx/l10n/app_translations.dart';
+import 'package:felanitx/main.dart';
+import 'package:felanitx/pages/home_page.dart';
+import 'package:felanitx/pages/category/agenda_page.dart';
 
 class CalendarDetailPage extends StatefulWidget {
   final CalendarEvent event;
@@ -21,11 +27,15 @@ class CalendarDetailPage extends StatefulWidget {
 class _CalendarDetailPageState extends State<CalendarDetailPage> {
   int _currentImageIndex = 0;
   bool _isDescriptionExpanded = false;
+  String _currentLanguage = 'ca';
+  final ApiService _apiService = ApiService();
+  bool _isLoadingLanguage = true;
 
   @override
   void initState() {
     super.initState();
     _initializeLocale();
+    _loadCurrentLanguage();
   }
 
   Future<void> _initializeLocale() async {
@@ -37,8 +47,47 @@ class _CalendarDetailPageState extends State<CalendarDetailPage> {
       'de': 'de_DE',
     };
 
-    await initializeDateFormatting(localeMap[widget.event.langcode] ?? 'es_ES');
+    await initializeDateFormatting(localeMap[_currentLanguage] ?? 'es_ES');
     if (mounted) setState(() {});
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    setState(() {
+      _isLoadingLanguage = true;
+    });
+
+    try {
+      final language = await _apiService.getCurrentLanguage();
+      if (mounted) {
+        setState(() {
+          _currentLanguage = language;
+          _isLoadingLanguage = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading language: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLanguage = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleLanguageChange(String language) async {
+    if (_currentLanguage != language) {
+      setState(() {
+        _currentLanguage = language;
+      });
+      await _apiService.setLanguage(language);
+      await _initializeLocale();
+
+      // Notificar a HomePage del cambio de idioma
+      if (mounted) {
+        final homePage = HomePage.of(context);
+        homePage?.reloadData();
+      }
+    }
   }
 
   @override
@@ -54,15 +103,17 @@ class _CalendarDetailPageState extends State<CalendarDetailPage> {
             backgroundColor: Colors.white,
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                // Simplemente volver atrás
+                Navigator.of(context).pop();
+
+                // Opcional: Recargar los datos de la página anterior si es necesario
+                if (mounted) {
+                  final homePage = HomePage.of(context);
+                  homePage?.reloadData();
+                }
+              },
             ),
-            actions: [
-              if (widget.event.link.isNotEmpty)
-                IconButton(
-                  icon: Icon(Icons.link, color: Colors.black),
-                  onPressed: () => _launchURL(widget.event.link),
-                ),
-            ],
             title: Image.asset(
               'assets/images/logo_felanitx.png',
               height: 40,
@@ -184,11 +235,84 @@ class _CalendarDetailPageState extends State<CalendarDetailPage> {
                       ],
                     ),
                   ),
+                if (widget.event.link.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Container(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _launchURL(widget.event.link),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              AppTranslations.translate(
+                                  'see_more_info', _currentLanguage),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.open_in_new),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
               ],
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: AppTranslations.translate('home', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: AppTranslations.translate('map', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.camera),
+            label: AppTranslations.translate('camera', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: AppTranslations.translate('settings', _currentLanguage),
+          ),
+        ],
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Theme.of(context).primaryColor,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.of(context).pop();
+          } else {
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) =>
+                    MainScreen(initialIndex: index),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
+          }
+        },
       ),
     );
   }
