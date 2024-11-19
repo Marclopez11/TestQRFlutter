@@ -201,13 +201,10 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
                                   point: widget.interest.location,
                                   width: 40,
                                   height: 40,
-                                  builder: (_) => GestureDetector(
-                                    onTap: _openInMaps,
-                                    child: Icon(
-                                      Icons.location_on,
-                                      color: Theme.of(context).primaryColor,
-                                      size: 40,
-                                    ),
+                                  builder: (_) => Image.asset(
+                                    'assets/images/marker-icon01.png',
+                                    width: 40,
+                                    height: 40,
                                   ),
                                 ),
                               ],
