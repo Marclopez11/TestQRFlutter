@@ -28,9 +28,9 @@ class CalendarEvent {
   });
 
   factory CalendarEvent.fromJson(Map<String, dynamic> json) {
-    print('Parsing calendar event: ${json['title']?[0]?['value']}');
-    print(
-        'Featured raw value: ${json['field_calendar_featured']?[0]?['value']}');
+    //print('Parsing calendar event: ${json['title']?[0]?['value']}');
+    //print(
+    //    'Featured raw value: ${json['field_calendar_featured']?[0]?['value']}');
 
     final featuredValue = json['field_calendar_featured']?[0]?['value'];
     final isFeatured = featuredValue == true ||
@@ -38,7 +38,7 @@ class CalendarEvent {
         featuredValue == '1' ||
         featuredValue == 'true';
 
-    print('Featured parsed value: $isFeatured');
+    //print('Featured parsed value: $isFeatured');
 
     return CalendarEvent(
       title: json['title']?[0]?['value'] ?? '',

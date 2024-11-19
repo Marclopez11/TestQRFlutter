@@ -46,14 +46,27 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _mapController = MapController();
     _popupController = PopupController();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    // Cargar el idioma desde SharedPreferences antes de mostrar cualquier cosa
+    final language = await _apiService.getCurrentLanguage();
+    setState(() {
+      _currentLanguage = language.toUpperCase();
+    });
+
+    // Después de tener el idioma, cargar los datos
     _loadAllItems();
     _setupLanguageListener();
   }
 
   void _setupLanguageListener() {
     _apiService.languageStream.listen((String newLanguage) {
-      if (_currentLanguage != newLanguage) {
-        _currentLanguage = newLanguage;
+      if (_currentLanguage.toLowerCase() != newLanguage.toLowerCase()) {
+        setState(() {
+          _currentLanguage = newLanguage.toUpperCase();
+        });
         _reloadItemsPreservingFilters();
       }
     });
@@ -80,12 +93,14 @@ class _MapPageState extends State<MapPage> {
   Future<void> _loadAllItems() async {
     setState(() => _isLoading = true);
     try {
-      _currentLanguage = await _apiService.getCurrentLanguage();
+      final language = await _apiService.getCurrentLanguage();
+      _currentLanguage = language.toUpperCase();
+      final apiLanguage = language.toLowerCase();
 
       // Cargar puntos de interés
       final interestsData =
-          await _apiService.loadData('points_of_interest', _currentLanguage);
-      print('Loaded interests data: ${interestsData.length}'); // Debug
+          await _apiService.loadData('points_of_interest', apiLanguage);
+      print('Loaded interests data: ${interestsData.length}');
       final interests = interestsData
           .map((json) {
             try {
@@ -101,11 +116,10 @@ class _MapPageState extends State<MapPage> {
 
       final interestItems =
           interests.map((i) => MapItem.fromInterest(i)).toList();
-      print('Converted interest items: ${interestItems.length}'); // Debug
 
       // Cargar rutas a pie con taxonomía
       final walkingRoutesData =
-          await _apiService.loadData('rutes', _currentLanguage);
+          await _apiService.loadData('rutes', apiLanguage);
       final walkingRoutes = walkingRoutesData
           .map((json) {
             try {
@@ -123,7 +137,7 @@ class _MapPageState extends State<MapPage> {
 
       // Cargar rutas en bici con taxonomía
       final bikeRoutesData =
-          await _apiService.loadData('rutes_bici', _currentLanguage);
+          await _apiService.loadData('rutes_bici', apiLanguage);
       final bikeRoutes = bikeRoutesData
           .map((json) {
             try {
@@ -141,9 +155,7 @@ class _MapPageState extends State<MapPage> {
 
       // Cargar hoteles
       final accommodationsData =
-          await _apiService.loadData('hotel', _currentLanguage);
-      print(
-          'Loaded accommodations data: ${accommodationsData.length}'); // Debug
+          await _apiService.loadData('hotel', apiLanguage);
       final accommodations = accommodationsData
           .map((json) {
             try {
@@ -159,12 +171,10 @@ class _MapPageState extends State<MapPage> {
 
       final hotelItems =
           accommodations.map((a) => MapItem.fromAccommodation(a)).toList();
-      print('Converted hotel items: ${hotelItems.length}'); // Debug
 
       // Cargar poblaciones
       final populationsData =
-          await _apiService.loadData('poblacio', _currentLanguage);
-      print('Loaded populations data: ${populationsData.length}'); // Debug
+          await _apiService.loadData('poblacio', apiLanguage);
       final populations = populationsData
           .map((json) {
             try {
@@ -180,7 +190,6 @@ class _MapPageState extends State<MapPage> {
 
       final populationItems =
           populations.map((p) => MapItem.fromPopulation(p)).toList();
-      print('Converted population items: ${populationItems.length}'); // Debug
 
       setState(() {
         _mapItems = [
@@ -190,12 +199,12 @@ class _MapPageState extends State<MapPage> {
           ...hotelItems,
           ...populationItems,
         ];
-        print('Total map items: ${_mapItems.length}'); // Debug
+        print('Total map items: ${_mapItems.length}');
         _updateFilteredItems();
         if (_mapItems.isNotEmpty) {
           _updateMapView(useAllItems: true);
         } else {
-          print('No items loaded!'); // Debug
+          print('No items loaded!');
         }
       });
 
@@ -305,10 +314,18 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Si aún no tenemos el idioma, mostrar un indicador de carga
+    if (_currentLanguage.isEmpty) {
+      return AppScaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return AppScaffold(
       body: Column(
         children: [
-          // Header específico para MapPage
           Container(
             height: 60,
             color: Theme.of(context).scaffoldBackgroundColor,
@@ -321,19 +338,19 @@ class _MapPageState extends State<MapPage> {
                   height: 40,
                 ),
                 DropdownButton<String>(
-                  value: _currentLanguage.toUpperCase(),
+                  value: _currentLanguage,
                   onChanged: (String? newValue) {
                     if (newValue != null) {
                       _handleLanguageChange(newValue.toLowerCase());
                     }
                   },
-                  items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
-                      .map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+                  items: const [
+                    DropdownMenuItem(value: 'ES', child: Text('ES')),
+                    DropdownMenuItem(value: 'EN', child: Text('EN')),
+                    DropdownMenuItem(value: 'CA', child: Text('CA')),
+                    DropdownMenuItem(value: 'DE', child: Text('DE')),
+                    DropdownMenuItem(value: 'FR', child: Text('FR')),
+                  ],
                   underline: Container(),
                   icon: Icon(Icons.arrow_drop_down),
                 ),
@@ -859,12 +876,12 @@ class _MapPageState extends State<MapPage> {
 
   // Añadir el método para manejar el cambio de idioma
   Future<void> _handleLanguageChange(String language) async {
-    if (_currentLanguage != language) {
+    if (_currentLanguage.toLowerCase() != language) {
       final apiService = ApiService();
       await apiService.setLanguage(language);
 
       setState(() {
-        _currentLanguage = language;
+        _currentLanguage = language.toUpperCase();
       });
 
       _reloadItemsPreservingFilters();

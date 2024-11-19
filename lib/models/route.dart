@@ -37,7 +37,7 @@ class RouteModel {
 
   factory RouteModel.fromJson(Map<String, dynamic> json) {
     try {
-      print('Procesando JSON: ${json.toString()}');
+      //print('Procesando JSON: ${json.toString()}');
 
       // Extraer valores con manejo de nulos y conversión segura
       final nid =
@@ -116,13 +116,13 @@ class RouteModel {
           ? json['field_route_kml'][0]['url']?.toString()
           : null;
 
-      print('Ruta procesada exitosamente:');
-      print('ID: $nid');
-      print('Título: $title');
-      print('Ubicación: $lat, $lng');
-      print('Distancia: $distance');
-      print('Tiempo: ${hours}h ${minutes}min');
-      print('Elevación: +$positiveElevation, -$negativeElevation');
+      //print('Ruta procesada exitosamente:');
+      //print('ID: $nid');
+      //print('Título: $title');
+      //print('Ubicación: $lat, $lng');
+      //print('Distancia: $distance');
+      //print('Tiempo: ${hours}h ${minutes}min');
+      //print('Elevación: +$positiveElevation, -$negativeElevation');
 
       return RouteModel(
         id: nid,
@@ -144,8 +144,8 @@ class RouteModel {
     } catch (e, stackTrace) {
       print('Error procesando ruta:');
       print('Error: $e');
-      print('Stack trace: $stackTrace');
-      print('JSON recibido: $json');
+      //print('Stack trace: $stackTrace');
+      //print('JSON recibido: $json');
       rethrow;
     }
   }

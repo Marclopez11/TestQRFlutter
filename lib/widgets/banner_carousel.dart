@@ -20,7 +20,7 @@ class _BannerCarouselState extends State<BannerCarousel> {
   int _currentIndex = 0;
 
   void _handleBannerTap(BuildContext context, BannerModel banner) async {
-    print('Banner tapped - Type: ${banner.type}');
+    //print('Banner tapped - Type: ${banner.type}');
 
     switch (banner.type) {
       case 'banner':

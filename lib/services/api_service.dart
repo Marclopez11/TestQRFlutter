@@ -132,8 +132,7 @@ class ApiService {
           if (response.statusCode == 200) {
             final data = json.decode(response.body);
             await _saveData(apiName, language, data);
-            print(
-                'Data fetched and saved successfully for $apiName in $language');
+            //print('Data fetched and saved successfully for $apiName in $language');
           } else {
             print(
                 'Failed to fetch data for $apiName in $language. Status code: ${response.statusCode}');
@@ -169,11 +168,11 @@ class ApiService {
     try {
       final url = _apiUrls[apiName]?[language];
       if (url == null) {
-        print('URL not found for $apiName in language $language');
+        //print('URL not found for $apiName in language $language');
         return [];
       }
 
-      print('Fetching fresh data from: $url');
+      //print('Fetching fresh data from: $url');
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {

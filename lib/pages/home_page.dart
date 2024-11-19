@@ -124,7 +124,7 @@ class _HomePageState extends State<HomePage>
             print('Error processing event: $e');
           }
         }
-        print('Featured events added: ${allBanners.length}');
+        //print('Featured events added: ${allBanners.length}');
       }
 
       // Cargar banners regulares
@@ -145,7 +145,7 @@ class _HomePageState extends State<HomePage>
         final interests = interestData
             .map((item) => Interest.fromJson(item))
             .where((interest) {
-          print('Interest ${interest.title} - Featured: ${interest.featured}');
+          //print('Interest ${interest.title} - Featured: ${interest.featured}');
           return interest.featured;
         }).map((interest) => BannerModel.fromInterest(interest));
 

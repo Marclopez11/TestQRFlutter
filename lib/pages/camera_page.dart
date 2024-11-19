@@ -52,7 +52,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
   Future<void> _loadSavedLanguage() async {
     final apiService = ApiService();
     final language = await apiService.getCurrentLanguage();
-    print('Loaded saved language: $language');
+    //print('Loaded saved language: $language');
     setState(() {
       _currentLanguage = language;
       _selectedLanguage = language.toUpperCase();
@@ -259,7 +259,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
 
   void _subscribeToLanguageChanges() {
     _languageSubscription = ApiService().languageStream.listen((language) {
-      print('Language changed: $language');
+      //print('Language changed: $language');
       setState(() {
         _currentLanguage = language;
         _selectedLanguage = language.toUpperCase();
@@ -273,10 +273,10 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
     _openLinkText = _getTranslatedText('open_link');
     _placeQRCodeText = _getTranslatedText('place_qr_code_within_frame');
     _scanQRCodeText = _getTranslatedText('scan_qr_code');
-    print('Updated texts:');
-    print('  _openLinkText: $_openLinkText');
-    print('  _placeQRCodeText: $_placeQRCodeText');
-    print('  _scanQRCodeText: $_scanQRCodeText');
+    //print('Updated texts:');
+    //print('  _openLinkText: $_openLinkText');
+    //print('  _placeQRCodeText: $_placeQRCodeText');
+    //print('  _scanQRCodeText: $_scanQRCodeText');
   }
 
   void _refreshTexts() {
