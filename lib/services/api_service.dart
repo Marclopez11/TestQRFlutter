@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:felanitx/models/category_for_items.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -220,5 +221,99 @@ class ApiService {
       _currentLanguage = language;
     }
     return _currentLanguage;
+  }
+
+  Future<List<CategoryForItems>> getCategories() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedData = prefs.getString('categories');
+
+      if (cachedData != null) {
+        final List<dynamic> decodedData = json.decode(cachedData);
+        return decodedData
+            .map((json) => CategoryForItems.fromJson(json))
+            .toList();
+      }
+
+      final response = await http.get(
+        Uri.parse('https://felanitx.drupal.auroracities.com/categoria'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        await prefs.setString('categories', json.encode(data));
+        return data.map((json) => CategoryForItems.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load categories');
+      }
+    } catch (e) {
+      print('Error getting categories: $e');
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final cachedData = prefs.getString('categories');
+        if (cachedData != null) {
+          final List<dynamic> decodedData = json.decode(cachedData);
+          return decodedData
+              .map((json) => CategoryForItems.fromJson(json))
+              .toList();
+        }
+      } catch (e) {
+        print('Error getting cached categories: $e');
+      }
+      return [];
+    }
+  }
+
+  String getCategoryName(
+      List<CategoryForItems> categories, int categoryId, String language) {
+    try {
+      final category = categories.firstWhere((cat) => cat.tid == categoryId);
+      return category.getTranslatedName(language);
+    } catch (e) {
+      return 'Category $categoryId';
+    }
+  }
+
+  // Método para actualizar las categorías en segundo plano
+  Future<void> updateCategoriesInBackground() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://felanitx.drupal.auroracities.com/categoria'),
+      );
+
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('categories', response.body);
+
+        // Actualizamos la fecha de última actualización
+        await prefs.setString(
+            'categories_last_update', DateTime.now().toIso8601String());
+      }
+    } catch (e) {
+      print('Error updating categories in background: $e');
+    }
+  }
+
+  // Método para verificar si necesitamos actualizar las categorías
+  Future<void> checkCategoriesUpdate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lastUpdate = prefs.getString('categories_last_update');
+
+      if (lastUpdate == null) {
+        await updateCategoriesInBackground();
+        return;
+      }
+
+      final lastUpdateDate = DateTime.parse(lastUpdate);
+      final now = DateTime.now();
+
+      // Actualizamos si han pasado más de 24 horas
+      if (now.difference(lastUpdateDate).inHours > 24) {
+        await updateCategoriesInBackground();
+      }
+    } catch (e) {
+      print('Error checking categories update: $e');
+    }
   }
 }

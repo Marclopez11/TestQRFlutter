@@ -14,6 +14,7 @@ import 'package:photo_view/photo_view_gallery.dart';
 import 'package:felanitx/main.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/l10n/app_translations.dart';
+import 'package:felanitx/models/category_for_items.dart';
 
 class InterestDetailPage extends StatefulWidget {
   final Interest interest;
@@ -37,6 +38,7 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
   bool _isVideoInitialized = false;
   String _currentLanguage = 'ca';
   final ApiService _apiService = ApiService();
+  List<CategoryForItems> _categories = [];
 
   @override
   void initState() {
@@ -46,6 +48,7 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
     if (widget.interest.videoUrl != null) {
       _initializeVideo();
     }
+    _loadCategories();
   }
 
   Future<void> _loadCurrentLanguage() async {
@@ -147,7 +150,7 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Categoría ${widget.interest.categoryId}',
+                        '${_getCategoryName(widget.interest.categoryId)}',
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 14,
@@ -578,6 +581,22 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _apiService.getCategories();
+      setState(() {
+        _categories = categories;
+      });
+    } catch (e) {
+      print('Error loading categories: $e');
+    }
+  }
+
+  String _getCategoryName(int categoryId) {
+    return _apiService.getCategoryName(
+        _categories, categoryId, _currentLanguage);
   }
 }
 

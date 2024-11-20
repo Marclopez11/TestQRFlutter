@@ -12,6 +12,7 @@ import 'package:felanitx/services/api_service.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:felanitx/pages/home_page.dart';
 import 'package:felanitx/l10n/app_translations.dart';
+import 'package:felanitx/models/category_for_items.dart';
 
 class PointsOfInterestPage extends StatefulWidget {
   final String title;
@@ -33,6 +34,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
   bool _isLoading = true;
   String _currentLanguage = 'ca';
   String _title = '';
+  List<CategoryForItems> _categories = [];
 
   @override
   void initState() {
@@ -42,6 +44,9 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
       _loadTitle();
     });
     _loadPointsOfInterest();
+    _loadCategories();
+
+    _apiService.checkCategoriesUpdate();
   }
 
   Future<void> _loadPointsOfInterest() async {
@@ -303,11 +308,11 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
               runSpacing: 8,
               children: selectedCategories
                   .map(
-                    (category) => Chip(
-                      label: Text(category),
+                    (categoryId) => Chip(
+                      label: Text(_getCategoryName(int.parse(categoryId))),
                       onDeleted: () {
                         setState(() {
-                          selectedCategories.remove(category);
+                          selectedCategories.remove(categoryId);
                         });
                       },
                     ),
@@ -837,7 +842,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Categoría ${item.categoryId}',
+                      '${item.categoryId}',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -910,7 +915,7 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
   }
 
   void _showFilterBottomSheet() {
-    final List<String> categories = _pointsOfInterest
+    final List<String> categoryIds = _pointsOfInterest
         .map((e) => e.categoryId.toString())
         .toSet()
         .toList()
@@ -956,12 +961,13 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                   SizedBox(height: 20),
                   Expanded(
                     child: ListView(
-                      children: categories.map((category) {
+                      children: categoryIds.map((categoryId) {
                         final isSelected =
-                            selectedCategories.contains(category);
+                            selectedCategories.contains(categoryId);
+                        final categoryName =
+                            _getCategoryName(int.parse(categoryId));
                         return ListTile(
-                          title: Text(
-                              '${AppTranslations.translate('category', _currentLanguage)} $category'),
+                          title: Text(categoryName),
                           trailing: isSelected
                               ? Icon(Icons.check,
                                   color: Theme.of(context).primaryColor)
@@ -969,9 +975,9 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
                           onTap: () {
                             setState(() {
                               if (isSelected) {
-                                selectedCategories.remove(category);
+                                selectedCategories.remove(categoryId);
                               } else {
-                                selectedCategories.add(category);
+                                selectedCategories.add(categoryId);
                               }
                             });
                             this.setState(() {});
@@ -1189,5 +1195,25 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
         },
       ),
     );
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _apiService.getCategories();
+      setState(() {
+        _categories = categories;
+      });
+    } catch (e) {
+      print('Error loading categories: $e');
+    }
+  }
+
+  String _getCategoryName(int categoryId) {
+    return _apiService.getCategoryName(
+        _categories, categoryId, _currentLanguage);
+  }
+
+  Widget _buildCategoryName(int categoryId) {
+    return Text(_getCategoryName(categoryId));
   }
 }

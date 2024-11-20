@@ -12,6 +12,8 @@ import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/pages/home_page.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:felanitx/l10n/app_translations.dart';
+import 'package:felanitx/models/category_for_items.dart';
+import 'package:felanitx/services/taxonomy_service.dart';
 
 class AccommodationPage extends StatefulWidget {
   final String title;
@@ -24,6 +26,7 @@ class AccommodationPage extends StatefulWidget {
 
 class _AccommodationPageState extends State<AccommodationPage> {
   final ApiService _apiService = ApiService();
+  final TaxonomyService _taxonomyService = TaxonomyService();
   bool isGridView = false;
   List<String> selectedCategories = [];
   int _selectedNavIndex = 1;
@@ -32,6 +35,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
   bool _isLoading = true;
   String _currentLanguage = 'ca';
   String _title = 'Alojamientos';
+  List<CategoryForItems> _categories = [];
+  Map<String, String> _hotelTypes = {};
 
   @override
   void initState() {
@@ -39,6 +44,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
     _loadInitialLanguage();
     _loadPreferences();
     _loadAccommodations();
+    _loadHotelTypes();
   }
 
   Future<void> _loadAccommodations() async {
@@ -83,11 +89,27 @@ class _AccommodationPageState extends State<AccommodationPage> {
     });
   }
 
+  Future<void> _loadHotelTypes() async {
+    try {
+      await _taxonomyService.debugCache('tipushotel', _currentLanguage);
+
+      final hotelTypes = await _taxonomyService.getTaxonomyTerms('tipushotel',
+          language: _currentLanguage);
+
+      print('Loaded hotel types: $hotelTypes'); // Debug log
+
+      setState(() {
+        _hotelTypes = hotelTypes;
+      });
+    } catch (e) {
+      print('Error loading hotel types: $e');
+    }
+  }
+
   List<Accommodation> get filteredItems {
     if (selectedCategories.isEmpty) return _accommodations;
     return _accommodations
-        .where(
-            (item) => selectedCategories.contains(item.categoryId.toString()))
+        .where((item) => selectedCategories.contains(item.hotelType.toString()))
         .toList();
   }
 
@@ -294,11 +316,11 @@ class _AccommodationPageState extends State<AccommodationPage> {
               runSpacing: 8,
               children: selectedCategories
                   .map(
-                    (category) => Chip(
-                      label: Text(category),
+                    (categoryId) => Chip(
+                      label: Text(_getCategoryName(int.parse(categoryId))),
                       onDeleted: () {
                         setState(() {
-                          selectedCategories.remove(category);
+                          selectedCategories.remove(categoryId);
                         });
                       },
                     ),
@@ -845,8 +867,8 @@ class _AccommodationPageState extends State<AccommodationPage> {
   }
 
   void _showFilterBottomSheet() {
-    final List<String> categories = _accommodations
-        .map((e) => e.categoryId.toString())
+    final List<String> categoryIds = _accommodations
+        .map((e) => e.hotelType.toString())
         .toSet()
         .toList()
       ..sort();
@@ -876,7 +898,7 @@ class _AccommodationPageState extends State<AccommodationPage> {
                     children: [
                       Text(
                         AppTranslations.translate(
-                            'filter_by_category', _currentLanguage),
+                            'filter_by_hotel_type', _currentLanguage),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -891,12 +913,13 @@ class _AccommodationPageState extends State<AccommodationPage> {
                   SizedBox(height: 20),
                   Expanded(
                     child: ListView(
-                      children: categories.map((category) {
+                      children: categoryIds.map((categoryId) {
                         final isSelected =
-                            selectedCategories.contains(category);
+                            selectedCategories.contains(categoryId);
+                        final categoryName =
+                            _getCategoryName(int.parse(categoryId));
                         return ListTile(
-                          title: Text(
-                              '${AppTranslations.translate('category', _currentLanguage)} $category'),
+                          title: Text(categoryName),
                           trailing: isSelected
                               ? Icon(Icons.check,
                                   color: Theme.of(context).primaryColor)
@@ -904,9 +927,9 @@ class _AccommodationPageState extends State<AccommodationPage> {
                           onTap: () {
                             setState(() {
                               if (isSelected) {
-                                selectedCategories.remove(category);
+                                selectedCategories.remove(categoryId);
                               } else {
-                                selectedCategories.add(category);
+                                selectedCategories.add(categoryId);
                               }
                             });
                             this.setState(() {});
@@ -945,6 +968,10 @@ class _AccommodationPageState extends State<AccommodationPage> {
       });
 
       await _apiService.setLanguage(language);
+
+      await _taxonomyService.clearCache('tipushotel');
+
+      await _loadHotelTypes();
 
       if (mounted) {
         final homePage = HomePage.of(context);
@@ -1159,5 +1186,9 @@ class _AccommodationPageState extends State<AccommodationPage> {
     } catch (e) {
       print('Error loading initial language: $e');
     }
+  }
+
+  String _getCategoryName(int categoryId) {
+    return _hotelTypes[categoryId.toString()] ?? 'Hotel Type $categoryId';
   }
 }

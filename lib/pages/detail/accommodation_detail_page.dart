@@ -28,16 +28,17 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
   String _currentLanguage = 'ca';
   final ApiService _apiService = ApiService();
   final TaxonomyService _taxonomyService = TaxonomyService();
-  String? hotelTypeName;
-  List<String> hotelServices = [];
+  Map<String, String> _hotelTypes = {};
+  Map<String, String> _hotelServices = {};
   int _currentImageIndex = 0;
   bool _isDescriptionExpanded = false;
 
   @override
   void initState() {
     super.initState();
-    _loadCurrentLanguage();
-    _loadTaxonomyData();
+    _loadCurrentLanguage().then((_) {
+      _loadTaxonomyData();
+    });
   }
 
   Future<void> _loadCurrentLanguage() async {
@@ -52,16 +53,36 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
   }
 
   Future<void> _loadTaxonomyData() async {
-    final hotelTypes = await _taxonomyService.getTaxonomyTerms('tipushotel');
-    final services = await _taxonomyService.getTaxonomyTerms('serveishotel');
+    try {
+      print('Loading hotel types for language: $_currentLanguage');
 
-    setState(() {
-      hotelTypeName = hotelTypes[widget.accommodation.hotelType.toString()];
-      hotelServices = widget.accommodation.hotelServices
-          .map((id) => services[id.toString()] ?? '')
-          .where((name) => name.isNotEmpty)
-          .toList();
-    });
+      // Cargar tipos de hotel
+      final hotelTypes = await _taxonomyService.getTaxonomyTerms('tipushotel',
+          language: _currentLanguage);
+
+      // Cargar servicios de hotel
+      final services = await _taxonomyService.getTaxonomyTerms('serveishotel',
+          language: _currentLanguage);
+
+      print('Loaded hotel types: $hotelTypes');
+      print('Hotel type ID: ${widget.accommodation.hotelType}');
+
+      if (mounted) {
+        setState(() {
+          _hotelTypes = hotelTypes;
+          _hotelServices = services;
+        });
+      }
+    } catch (e) {
+      print('Error loading taxonomy data: $e');
+    }
+  }
+
+  String _getHotelTypeName() {
+    final typeId = widget.accommodation.hotelType.toString();
+    final name = _hotelTypes[typeId];
+    print('Getting hotel type name for ID $typeId: $name');
+    return name ?? '';
   }
 
   @override
@@ -116,23 +137,21 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                           color: Theme.of(context).primaryColor,
                         ),
                       ),
-                      if (hotelTypeName != null) ...[
-                        SizedBox(height: 8),
-                        Text(
-                          hotelTypeName!,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
+                      SizedBox(height: 8),
+                      Text(
+                        _getHotelTypeName(),
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
                 _buildImageGallery(),
                 _buildDescription(),
                 _buildSocialLinks(),
-                if (hotelServices.isNotEmpty)
+                if (_hotelServices.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
@@ -160,7 +179,7 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
                           ),
-                          itemCount: hotelServices.length,
+                          itemCount: _hotelServices.length,
                           itemBuilder: (context, index) {
                             return Container(
                               decoration: BoxDecoration(
@@ -185,7 +204,8 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                                       ),
                                     ),
                                     child: Icon(
-                                      _getServiceIcon(hotelServices[index]),
+                                      _getServiceIcon(_hotelServices.values
+                                          .elementAt(index)),
                                       color: Theme.of(context).primaryColor,
                                       size: 20,
                                     ),
@@ -195,7 +215,7 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8),
                                       child: Text(
-                                        hotelServices[index],
+                                        _hotelServices.values.elementAt(index),
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
@@ -699,6 +719,23 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
     };
 
     return serviceIcons[service] ?? Icons.check_circle_outline;
+  }
+
+  Future<void> _handleLanguageChange(String language) async {
+    if (_currentLanguage != language) {
+      setState(() {
+        _currentLanguage = language;
+      });
+
+      await _apiService.setLanguage(language);
+
+      // Limpiar la caché antes de recargar
+      await _taxonomyService.clearCache('tipushotel');
+      await _taxonomyService.clearCache('serveishotel');
+
+      // Recargar los datos
+      await _loadTaxonomyData();
+    }
   }
 }
 
