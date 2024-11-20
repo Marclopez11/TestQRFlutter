@@ -99,7 +99,15 @@ class AppTranslations {
       'date': 'Data',
       'time': 'Hora',
       'notes': 'Notes',
-      'add_notes': 'Afegir notes'
+      'add_notes': 'Afegir notes',
+      'add_to_plan': 'Añadir al plan',
+      'select_date': 'Seleccionar fecha',
+      'select_time': 'Seleccionar hora',
+      'error_saving': 'Error al guardar',
+      'saved_to_plan': 'Guardat al pla',
+      'save_to_plan': 'Guardar al pla',
+      'hour': 'Hora',
+      'minute': 'Minut'
     },
     'es': {
       'agenda': 'Agenda',
@@ -200,7 +208,15 @@ class AppTranslations {
       'date': 'Fecha',
       'time': 'Hora',
       'notes': 'Notas',
-      'add_notes': 'Añadir notas'
+      'add_notes': 'Añadir notas',
+      'add_to_plan': 'Añadir al plan',
+      'select_date': 'Seleccionar fecha',
+      'select_time': 'Seleccionar hora',
+      'error_saving': 'Error al guardar',
+      'saved_to_plan': 'Guardado en el plan',
+      'save_to_plan': 'Guardar al plan',
+      'hour': 'Hora',
+      'minute': 'Minuto'
     },
     'en': {
       'agenda': 'Calendar',
@@ -300,7 +316,15 @@ class AppTranslations {
       'date': 'Date',
       'time': 'Time',
       'notes': 'Notes',
-      'add_notes': 'Add notes'
+      'add_notes': 'Add notes',
+      'add_to_plan': 'Add to plan',
+      'select_date': 'Select date',
+      'select_time': 'Select time',
+      'error_saving': 'Error saving',
+      'saved_to_plan': 'Saved to plan',
+      'save_to_plan': 'Save to plan',
+      'hour': 'Hour',
+      'minute': 'Minute'
     },
     'fr': {
       'agenda': 'Agenda',
@@ -402,7 +426,15 @@ class AppTranslations {
       'date': 'Date',
       'time': 'Heure',
       'notes': 'Notes',
-      'add_notes': 'Ajouter des notes'
+      'add_notes': 'Ajouter des notes',
+      'add_to_plan': 'Ajouter au plan',
+      'select_date': 'Sélectionner la date',
+      'select_time': 'Sélectionner l\'heure',
+      'error_saving': 'Erreur de sauvegarde',
+      'saved_to_plan': 'Enregistré dans le plan',
+      'save_to_plan': 'Enregistrer au plan',
+      'hour': 'Heure',
+      'minute': 'Minute'
     },
     'de': {
       'agenda': 'Kalender',
@@ -503,7 +535,15 @@ class AppTranslations {
       'date': 'Datum',
       'time': 'Zeit',
       'notes': 'Notizen',
-      'add_notes': 'Notizen hinzufügen'
+      'add_notes': 'Notizen hinzufügen',
+      'add_to_plan': 'Zu meiner Reiseplanung hinzufügen',
+      'select_date': 'Datum auswählen',
+      'select_time': 'Zeit auswählen',
+      'error_saving': 'Fehler beim Speichern',
+      'saved_to_plan': 'Zum Plan hinzugefügt',
+      'save_to_plan': 'Zum Plan hinzufügen',
+      'hour': 'Stunde',
+      'minute': 'Minute'
     }
   };
 

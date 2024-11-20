@@ -11,6 +11,7 @@ import 'pages/category/routes_page.dart';
 import 'pages/category/accommodation_page.dart';
 import 'pages/plan_page.dart';
 import 'l10n/app_translations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,18 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: Color(0xFF1E88E5),
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ca'),
+        Locale('es'),
+        Locale('en'),
+        Locale('fr'),
+        Locale('de'),
+      ],
       initialRoute: '/',
       routes: {
         '/': (context) => const MainScreen(),

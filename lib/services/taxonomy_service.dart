@@ -10,8 +10,8 @@ class TaxonomyService {
   Future<Map<String, String>> getTaxonomyTerms(String vocabulary,
       {String language = 'ca'}) async {
     try {
-      print(
-          'Getting taxonomy terms for $vocabulary in language $language'); // Debug log
+      //print(
+      //    'Getting taxonomy terms for $vocabulary in language $language'); // Debug log
 
       // Primero intentamos obtener del almacenamiento local
       final prefs = await SharedPreferences.getInstance();
@@ -19,7 +19,7 @@ class TaxonomyService {
       final cachedData = prefs.getString(cacheKey);
 
       if (cachedData != null) {
-        print('Found cached data for $cacheKey'); // Debug log
+        //print('Found cached data for $cacheKey'); // Debug log
         try {
           final List<dynamic> decodedData = json.decode(cachedData);
           final Map<String, String> terms = {};
@@ -30,7 +30,7 @@ class TaxonomyService {
             terms[id] = name;
           }
 
-          print('Cached terms: $terms'); // Debug log
+          //print('Cached terms: $terms'); // Debug log
           return terms;
         } catch (e) {
           print('Error parsing cached data: $e');
@@ -59,8 +59,8 @@ class TaxonomyService {
 
         // Guardamos los datos originales en caché
         await prefs.setString(cacheKey, json.encode(data));
-        print('Saved new data to cache for $cacheKey'); // Debug log
-        print('Fresh terms: $terms'); // Debug log
+        //print('Saved new data to cache for $cacheKey'); // Debug log
+        //print('Fresh terms: $terms'); // Debug log
 
         return terms;
       } else {
@@ -68,7 +68,7 @@ class TaxonomyService {
             'Failed to load taxonomy terms: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error getting taxonomy terms: $e');
+      //print('Error getting taxonomy terms: $e');
 
       // Último intento de obtener datos en caché si hay un error
       try {

@@ -11,6 +11,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:felanitx/main.dart';
 import 'package:felanitx/l10n/app_translations.dart';
 import 'package:felanitx/services/api_service.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:felanitx/models/plan_item.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 class PopulationDetailPage extends StatefulWidget {
   final Population population;
@@ -162,9 +167,7 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
                         ),
                         child: Center(
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Lógica para guardar en plan de viaje
-                            },
+                            onPressed: _showAddToPlanModal,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).primaryColor,
                               foregroundColor: Colors.white,
@@ -401,6 +404,454 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
         ),
       );
     }
+  }
+
+  void _showAddToPlanModal() async {
+    final now = DateTime.now();
+    DateTime selectedDate = now;
+    TimeOfDay selectedTime = TimeOfDay.fromDateTime(now);
+
+    await initializeDateFormatting(_currentLanguage);
+    final dateFormat = DateFormat.yMMMd(_currentLanguage);
+
+    String _formatTime(TimeOfDay time) {
+      final hour = time.hour.toString().padLeft(2, '0');
+      final minute = time.minute.toString().padLeft(2, '0');
+      return '$hour:$minute';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                materialTapTargetSize: MaterialTapTargetSize.padded,
+              ),
+              child: Localizations.override(
+                context: context,
+                locale: Locale(_currentLanguage),
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.35,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(top: 8),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          AppTranslations.translate(
+                              'add_to_plan', _currentLanguage),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () async {
+                                    final date = await showDatePicker(
+                                      context: context,
+                                      initialDate: selectedDate,
+                                      firstDate: DateTime.now(),
+                                      lastDate: DateTime.now()
+                                          .add(Duration(days: 365)),
+                                      locale: Locale(_currentLanguage),
+                                      builder: (context, child) {
+                                        return Theme(
+                                          data: Theme.of(context).copyWith(
+                                            colorScheme: ColorScheme.light(
+                                              primary: Theme.of(context)
+                                                  .primaryColor,
+                                              onPrimary: Colors.white,
+                                              surface: Colors.white,
+                                              onSurface: Colors.black,
+                                            ),
+                                            textButtonTheme:
+                                                TextButtonThemeData(
+                                              style: TextButton.styleFrom(
+                                                foregroundColor:
+                                                    Theme.of(context)
+                                                        .primaryColor,
+                                              ),
+                                            ),
+                                            dialogTheme: DialogTheme(
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                              ),
+                                            ),
+                                            datePickerTheme:
+                                                DatePickerThemeData(
+                                              backgroundColor: Colors.white,
+                                              headerBackgroundColor:
+                                                  Theme.of(context)
+                                                      .primaryColor,
+                                              headerForegroundColor:
+                                                  Colors.white,
+                                              weekdayStyle: TextStyle(
+                                                color: Colors.grey[700],
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              dayStyle: TextStyle(
+                                                  fontWeight: FontWeight.w500),
+                                              todayBackgroundColor:
+                                                  MaterialStateProperty.all(
+                                                Theme.of(context)
+                                                    .primaryColor
+                                                    .withOpacity(0.1),
+                                              ),
+                                              todayForegroundColor:
+                                                  MaterialStateProperty.all(
+                                                Theme.of(context).primaryColor,
+                                              ),
+                                              dayBackgroundColor:
+                                                  MaterialStateProperty
+                                                      .resolveWith(
+                                                (states) {
+                                                  if (states.contains(
+                                                      MaterialState.selected)) {
+                                                    return Theme.of(context)
+                                                        .primaryColor;
+                                                  }
+                                                  return null;
+                                                },
+                                              ),
+                                              dayForegroundColor:
+                                                  MaterialStateProperty
+                                                      .resolveWith(
+                                                (states) {
+                                                  if (states.contains(
+                                                      MaterialState.selected)) {
+                                                    return Colors.white;
+                                                  }
+                                                  return null;
+                                                },
+                                              ),
+                                              surfaceTintColor:
+                                                  Colors.transparent,
+                                            ),
+                                          ),
+                                          child: Localizations.override(
+                                            context: context,
+                                            locale: Locale(_currentLanguage),
+                                            child: child!,
+                                          ),
+                                        );
+                                      },
+                                    );
+                                    if (date != null) {
+                                      setState(() => selectedDate = date);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border:
+                                          Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.calendar_today,
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            size: 20),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          dateFormat.format(selectedDate),
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () async {
+                                    final time = await showTimePicker(
+                                      context: context,
+                                      initialTime: selectedTime,
+                                      builder: (context, child) {
+                                        return Theme(
+                                          data: Theme.of(context).copyWith(
+                                            timePickerTheme:
+                                                TimePickerThemeData(
+                                              backgroundColor: Colors.white,
+                                              hourMinuteShape:
+                                                  RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              dayPeriodShape:
+                                                  RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              dayPeriodColor: MaterialStateColor
+                                                  .resolveWith((states) =>
+                                                      states
+                                                              .contains(
+                                                                  MaterialState
+                                                                      .selected)
+                                                          ? Theme.of(context)
+                                                              .primaryColor
+                                                          : Colors
+                                                              .grey.shade200),
+                                              dayPeriodTextColor:
+                                                  MaterialStateColor
+                                                      .resolveWith((states) =>
+                                                          states.contains(
+                                                                  MaterialState
+                                                                      .selected)
+                                                              ? Colors.white
+                                                              : Colors.black),
+                                              hourMinuteColor:
+                                                  MaterialStateColor
+                                                      .resolveWith((states) =>
+                                                          states.contains(
+                                                                  MaterialState
+                                                                      .selected)
+                                                              ? Theme.of(
+                                                                      context)
+                                                                  .primaryColor
+                                                              : Colors.grey
+                                                                  .shade200),
+                                              hourMinuteTextColor:
+                                                  MaterialStateColor
+                                                      .resolveWith((states) =>
+                                                          states.contains(
+                                                                  MaterialState
+                                                                      .selected)
+                                                              ? Colors.white
+                                                              : Colors.black),
+                                              dialHandColor: Theme.of(context)
+                                                  .primaryColor,
+                                              dialBackgroundColor:
+                                                  Colors.grey.shade200,
+                                              hourMinuteTextStyle: TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              dayPeriodTextStyle: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              helpTextStyle: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                              ),
+                                              dialTextColor: MaterialStateColor
+                                                  .resolveWith((states) =>
+                                                      states.contains(
+                                                              MaterialState
+                                                                  .selected)
+                                                          ? Colors.white
+                                                          : Colors.black),
+                                              entryModeIconColor:
+                                                  Theme.of(context)
+                                                      .primaryColor,
+                                            ),
+                                            textButtonTheme:
+                                                TextButtonThemeData(
+                                              style: TextButton.styleFrom(
+                                                foregroundColor:
+                                                    Theme.of(context)
+                                                        .primaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Localizations.override(
+                                            context: context,
+                                            locale: Locale(_currentLanguage),
+                                            child: MediaQuery(
+                                              data: MediaQuery.of(context)
+                                                  .copyWith(
+                                                alwaysUse24HourFormat: true,
+                                              ),
+                                              child: child!,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                    if (time != null) {
+                                      setState(() => selectedTime = time);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border:
+                                          Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.access_time,
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            size: 20),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          _formatTime(selectedTime),
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(24),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            try {
+                              final DateTime plannedDateTime = DateTime(
+                                selectedDate.year,
+                                selectedDate.month,
+                                selectedDate.day,
+                                selectedTime.hour,
+                                selectedTime.minute,
+                              );
+
+                              final planItem = PlanItem(
+                                title: widget.population.title,
+                                type: 'population',
+                                imageUrl: widget.population.mainImage,
+                                plannedDate: plannedDateTime,
+                                originalItem: {
+                                  'id': widget.population.id,
+                                  'type': 'population',
+                                  'data': _populationToJson(widget.population),
+                                },
+                              );
+
+                              await _savePlanItem(planItem);
+                              Navigator.pop(context);
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.translate(
+                                        'saved_to_plan', _currentLanguage),
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            } catch (e) {
+                              print('Error saving plan item: $e');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.translate(
+                                        'error_saving', _currentLanguage),
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            minimumSize: Size(double.infinity, 45),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            AppTranslations.translate(
+                                'save_to_plan', _currentLanguage),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _savePlanItem(PlanItem newItem) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final itemsJson = prefs.getString('plan_items') ?? '[]';
+      final List<dynamic> items = json.decode(itemsJson);
+
+      items.add(newItem.toJson());
+      await prefs.setString('plan_items', json.encode(items));
+    } catch (e) {
+      print('Error saving plan item: $e');
+    }
+  }
+
+  Map<String, dynamic> _populationToJson(Population population) {
+    return {
+      'uuid': [
+        {'value': population.id}
+      ],
+      'title': [
+        {'value': population.title}
+      ],
+      'field_population_main_image': [
+        {'url': population.mainImage}
+      ],
+      'field_population_location': [
+        {
+          'value':
+              '${population.location.latitude},${population.location.longitude}'
+        }
+      ],
+    };
   }
 }
 

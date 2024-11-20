@@ -21,15 +21,48 @@ class _PlanPageState extends State<PlanPage> {
   @override
   void initState() {
     super.initState();
-    _loadCurrentLanguage().then((_) => _loadPlanItems());
+    _initialize();
+    _subscribeToLanguageChanges();
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromLanguageChanges();
+    super.dispose();
+  }
+
+  void _subscribeToLanguageChanges() {
+    ApiService().languageStream.listen((_) {
+      _loadCurrentLanguage();
+      _loadPlanItems();
+    });
+  }
+
+  void _unsubscribeFromLanguageChanges() {
+    ApiService().languageStream.drain();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      _loadCurrentLanguage();
+    }
+  }
+
+  Future<void> _initialize() async {
+    await _loadCurrentLanguage();
+    await _loadPlanItems();
   }
 
   Future<void> _loadCurrentLanguage() async {
     try {
       final language = await _apiService.getCurrentLanguage();
-      setState(() {
-        _currentLanguage = language;
-      });
+      if (mounted && language != _currentLanguage) {
+        setState(() {
+          _currentLanguage = language;
+        });
+      }
     } catch (e) {
       print('Error loading language: $e');
     }
@@ -98,11 +131,132 @@ class _PlanPageState extends State<PlanPage> {
     );
 
     if (confirmed == true) {
-      setState(() {
-        _planItems.removeWhere((item) => item.id == itemId);
-      });
-      await _savePlanItems();
+      final index = _planItems.indexWhere((item) => item.id == itemId);
+      if (index != -1) {
+        final item = _planItems[index];
+
+        // Remove with animation
+        setState(() {
+          _planItems.removeAt(index);
+        });
+
+        // Show a sliding animation
+        AnimatedList.of(context).removeItem(
+          index,
+          (context, animation) => SlideTransition(
+            position: animation.drive(Tween(
+              begin: Offset(-1.0, 0.0),
+              end: Offset.zero,
+            )),
+            child: FadeTransition(
+              opacity: animation,
+              child: TimelineTile(
+                isFirst: index == 0,
+                isLast: index == _planItems.length - 1,
+                indicatorStyle: IndicatorStyle(
+                  width: 20,
+                  color: Theme.of(context).primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                ),
+                beforeLineStyle: LineStyle(
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                ),
+                endChild: Container(
+                  margin: EdgeInsets.only(left: 16, bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 5,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(12)),
+                        child: Image.network(
+                          item.imageUrl,
+                          height: 120,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (item.plannedDate != null)
+                              Text(
+                                DateFormat.yMMMd(_currentLanguage)
+                                    .add_Hm()
+                                    .format(item.plannedDate!),
+                                style: TextStyle(
+                                  color: Theme.of(context).primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            SizedBox(height: 4),
+                            Text(
+                              item.title,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (item.notes?.isNotEmpty == true) ...[
+                              SizedBox(height: 4),
+                              Text(
+                                item.notes!,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                            SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.edit),
+                                  onPressed: () => _editPlanItem(item),
+                                  color: Colors.blue,
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.delete),
+                                  onPressed: () => _deletePlanItem(item.id),
+                                  color: Colors.red,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          duration: Duration(milliseconds: 300),
+        );
+
+        await _savePlanItems();
+      }
     }
+  }
+
+  // Add this method to sort plan items
+  void _sortPlanItems() {
+    _planItems.sort((a, b) => (a.plannedDate ?? DateTime.now())
+        .compareTo(b.plannedDate ?? DateTime.now()));
   }
 
   Future<void> _editPlanItem(PlanItem item) async {
@@ -112,102 +266,206 @@ class _PlanPageState extends State<PlanPage> {
         : TimeOfDay.now();
     String notes = item.notes ?? '';
 
-    final result = await showDialog<Map<String, dynamic>>(
+    await showModalBottomSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(AppTranslations.translate('edit_plan', _currentLanguage)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  title:
-                      Text(AppTranslations.translate('date', _currentLanguage)),
-                  subtitle: Text(
-                    DateFormat.yMMMd(_currentLanguage).format(selectedDate),
-                  ),
-                  trailing: Icon(Icons.calendar_today),
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(Duration(days: 365)),
-                    );
-                    if (date != null) {
-                      setState(() => selectedDate = date);
-                    }
-                  },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                materialTapTargetSize: MaterialTapTargetSize.padded,
+              ),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.35,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                ListTile(
-                  title:
-                      Text(AppTranslations.translate('time', _currentLanguage)),
-                  subtitle: Text(selectedTime.format(context)),
-                  trailing: Icon(Icons.access_time),
-                  onTap: () async {
-                    final time = await showTimePicker(
-                      context: context,
-                      initialTime: selectedTime,
-                    );
-                    if (time != null) {
-                      setState(() => selectedTime = time);
-                    }
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(
-                    labelText:
-                        AppTranslations.translate('notes', _currentLanguage),
-                    hintText: AppTranslations.translate(
-                        'add_notes', _currentLanguage),
-                  ),
-                  maxLines: 3,
-                  controller: TextEditingController(text: notes),
-                  onChanged: (value) => notes = value,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child:
-                  Text(AppTranslations.translate('cancel', _currentLanguage)),
-            ),
-            TextButton(
-              onPressed: () {
-                final DateTime combinedDateTime = DateTime(
-                  selectedDate.year,
-                  selectedDate.month,
-                  selectedDate.day,
-                  selectedTime.hour,
-                  selectedTime.minute,
-                );
-                Navigator.pop(context, {
-                  'date': combinedDateTime,
-                  'notes': notes,
-                });
-              },
-              child: Text(AppTranslations.translate('save', _currentLanguage)),
-            ),
-          ],
-        ),
-      ),
-    );
+                child: Column(
+                  children: [
+                    Container(
+                      margin: EdgeInsets.only(top: 8),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        AppTranslations.translate(
+                            'edit_plan', _currentLanguage),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Date picker
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () async {
+                                  final date = await showDatePicker(
+                                    context: context,
+                                    initialDate: selectedDate,
+                                    firstDate: DateTime.now(),
+                                    lastDate:
+                                        DateTime.now().add(Duration(days: 365)),
+                                    builder: (context, child) {
+                                      return Theme(
+                                        data: Theme.of(context).copyWith(
+                                            // ... (same date picker theme as in population_detail_page)
+                                            ),
+                                        child: child!,
+                                      );
+                                    },
+                                  );
+                                  if (date != null) {
+                                    setModalState(() => selectedDate = date);
+                                  }
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border:
+                                        Border.all(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.calendar_today,
+                                          color: Theme.of(context).primaryColor,
+                                          size: 20),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        DateFormat.yMMMd(_currentLanguage)
+                                            .format(selectedDate),
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Time picker
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () async {
+                                  final time = await showTimePicker(
+                                    context: context,
+                                    initialTime: selectedTime,
+                                    builder: (context, child) {
+                                      return Theme(
+                                        data: Theme.of(context).copyWith(
+                                            // ... (same time picker theme as in population_detail_page)
+                                            ),
+                                        child: child!,
+                                      );
+                                    },
+                                  );
+                                  if (time != null) {
+                                    setModalState(() => selectedTime = time);
+                                  }
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border:
+                                        Border.all(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.access_time,
+                                          color: Theme.of(context).primaryColor,
+                                          size: 20),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        selectedTime.format(context),
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(24),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final DateTime combinedDateTime = DateTime(
+                            selectedDate.year,
+                            selectedDate.month,
+                            selectedDate.day,
+                            selectedTime.hour,
+                            selectedTime.minute,
+                          );
 
-    if (result != null) {
-      final index = _planItems.indexWhere((i) => i.id == item.id);
-      if (index != -1) {
-        setState(() {
-          _planItems[index] = item.copyWith(
-            plannedDate: result['date'],
-            notes: result['notes'],
-          );
-        });
-        await _savePlanItems();
-      }
-    }
+                          setState(() {
+                            final index =
+                                _planItems.indexWhere((i) => i.id == item.id);
+                            if (index != -1) {
+                              _planItems[index] = item.copyWith(
+                                plannedDate: combinedDateTime,
+                                notes: notes,
+                              );
+                              _sortPlanItems(); // Sort items after updating
+                            }
+                          });
+
+                          _savePlanItems();
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(double.infinity, 45),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          AppTranslations.translate('save', _currentLanguage),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -265,17 +523,14 @@ class _PlanPageState extends State<PlanPage> {
 
   Future<void> _handleLanguageChange(String language) async {
     if (_currentLanguage != language) {
-      setState(() {
-        _currentLanguage = language;
-      });
-
       await _apiService.setLanguage(language);
 
-      // Recargar los items del plan para actualizar las fechas formateadas
-      setState(() {
-        // Forzar actualización de la UI con el nuevo idioma
-        _planItems = List.from(_planItems);
-      });
+      if (mounted) {
+        setState(() {
+          _currentLanguage = language;
+        });
+        await _loadPlanItems(); // Recargar los items para actualizar el formato de las fechas
+      }
     }
   }
 
@@ -315,103 +570,114 @@ class _PlanPageState extends State<PlanPage> {
   }
 
   Widget _buildTimelineList() {
-    return ListView.builder(
+    return AnimatedList(
+      key: GlobalKey<AnimatedListState>(),
       padding: EdgeInsets.all(16),
-      itemCount: _planItems.length,
-      itemBuilder: (context, index) {
+      initialItemCount: _planItems.length,
+      itemBuilder: (context, index, animation) {
         final item = _planItems[index];
         final isFirst = index == 0;
         final isLast = index == _planItems.length - 1;
 
-        return TimelineTile(
-          isFirst: isFirst,
-          isLast: isLast,
-          indicatorStyle: IndicatorStyle(
-            width: 20,
-            color: Theme.of(context).primaryColor,
-            padding: EdgeInsets.symmetric(vertical: 8),
-          ),
-          beforeLineStyle: LineStyle(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
-          ),
-          endChild: Container(
-            margin: EdgeInsets.only(left: 16, bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
+        return SlideTransition(
+          position: animation.drive(Tween(
+            begin: Offset(1.0, 0.0),
+            end: Offset.zero,
+          )),
+          child: FadeTransition(
+            opacity: animation,
+            child: TimelineTile(
+              isFirst: isFirst,
+              isLast: isLast,
+              indicatorStyle: IndicatorStyle(
+                width: 20,
+                color: Theme.of(context).primaryColor,
+                padding: EdgeInsets.symmetric(vertical: 8),
+              ),
+              beforeLineStyle: LineStyle(
+                color: Theme.of(context).primaryColor.withOpacity(0.3),
+              ),
+              endChild: Container(
+                margin: EdgeInsets.only(left: 16, bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 5,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                  child: Image.network(
-                    item.imageUrl,
-                    height: 120,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (item.plannedDate != null)
-                        Text(
-                          DateFormat.yMMMd(_currentLanguage)
-                              .add_Hm()
-                              .format(item.plannedDate!),
-                          style: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      SizedBox(height: 4),
-                      Text(
-                        item.title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(12)),
+                      child: Image.network(
+                        item.imageUrl,
+                        height: 120,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                       ),
-                      if (item.notes?.isNotEmpty == true) ...[
-                        SizedBox(height: 4),
-                        Text(
-                          item.notes!,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                      SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          IconButton(
-                            icon: Icon(Icons.edit),
-                            onPressed: () => _editPlanItem(item),
-                            color: Colors.blue,
+                          if (item.plannedDate != null)
+                            Text(
+                              DateFormat.yMMMd(_currentLanguage)
+                                  .add_Hm()
+                                  .format(item.plannedDate!),
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          SizedBox(height: 4),
+                          Text(
+                            item.title,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () => _deletePlanItem(item.id),
-                            color: Colors.red,
+                          if (item.notes?.isNotEmpty == true) ...[
+                            SizedBox(height: 4),
+                            Text(
+                              item.notes!,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                          SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit),
+                                onPressed: () => _editPlanItem(item),
+                                color: Colors.blue,
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () => _deletePlanItem(item.id),
+                                color: Colors.red,
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );
