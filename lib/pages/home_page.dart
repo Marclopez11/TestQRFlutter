@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:felanitx/pages/detail/item_detail_page.dart';
 import 'package:felanitx/models/category.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import '../widgets/app_scaffold.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:felanitx/pages/category/agenda_page.dart';
-import 'package:felanitx/pages/category/points_of_interest_page.dart';
-import 'package:felanitx/pages/category/population_centers_page.dart';
-import 'package:felanitx/pages/category/routes_page.dart';
-import 'package:felanitx/pages/category/accommodation_page.dart';
 import 'package:felanitx/services/api_service.dart';
 import 'package:felanitx/models/banner.dart';
 import 'package:felanitx/widgets/banner_carousel.dart';
 import 'package:felanitx/models/calendar_event.dart';
 import 'package:felanitx/models/interest.dart';
-import 'package:felanitx/widgets/app_header.dart';
 import 'package:shimmer/shimmer.dart';
 
 class HomePage extends StatefulWidget {

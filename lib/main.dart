@@ -9,6 +9,8 @@ import 'pages/category/population_centers_page.dart';
 import 'pages/category/points_of_interest_page.dart';
 import 'pages/category/routes_page.dart';
 import 'pages/category/accommodation_page.dart';
+import 'pages/plan_page.dart';
+import 'l10n/app_translations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,8 +27,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primaryColor: Color(0xFF1E88E5), // Azul corporativo
-        // ... existing code ...
+        primaryColor: Color(0xFF1E88E5),
       ),
       initialRoute: '/',
       routes: {
@@ -51,11 +52,21 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   late int _selectedIndex;
+  String _currentLanguage = 'ca';
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _loadCurrentLanguage();
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    final apiService = ApiService();
+    final language = await apiService.getCurrentLanguage();
+    setState(() {
+      _currentLanguage = language;
+    });
   }
 
   List<Widget> _buildWidgetOptions() {
@@ -63,6 +74,7 @@ class _MainScreenState extends State<MainScreen> {
       HomePage(),
       MapPage(),
       CameraPage(),
+      PlanPage(),
       SettingsPage(),
     ];
   }
@@ -87,22 +99,26 @@ class _MainScreenState extends State<MainScreen> {
         children: _buildWidgetOptions(),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Inicio',
+            label: AppTranslations.translate('home', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
-            label: 'Mapa',
+            label: AppTranslations.translate('map', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
-            label: 'Cámara',
+            label: AppTranslations.translate('camera', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: AppTranslations.translate('plan', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Ajustes',
+            label: AppTranslations.translate('settings', _currentLanguage),
           ),
         ],
         currentIndex: _selectedIndex,

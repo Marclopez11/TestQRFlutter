@@ -81,7 +81,25 @@ class AppTranslations {
       'see_more': 'Veure més',
       'see_less': 'Veure menys',
       'see_more_info': 'Veure més informació',
-      'check_out_event': 'Mira aquest esdeveniment'
+      'check_out_event': 'Mira aquest esdeveniment',
+      'plan': 'Pla',
+      'my_trip_plan': 'El meu pla de viatge',
+      'no_saved_items': 'Encara no has guardat cap element al teu pla',
+      'start_adding':
+          'Comença a explorar i guarda els llocs que vulguis visitar',
+      'edit_plan': 'Editar pla',
+      'delete_item': 'Eliminar element',
+      'edit_date': 'Editar data i hora',
+      'confirm_delete': 'Confirmar eliminació',
+      'delete_confirmation':
+          'Estàs segur que vols eliminar aquest element del teu pla?',
+      'cancel': 'Cancel·lar',
+      'delete': 'Eliminar',
+      'save': 'Guardar',
+      'date': 'Data',
+      'time': 'Hora',
+      'notes': 'Notes',
+      'add_notes': 'Afegir notes'
     },
     'es': {
       'agenda': 'Agenda',
@@ -164,7 +182,25 @@ class AppTranslations {
       'see_more': 'Ver más',
       'see_less': 'Ver menos',
       'see_more_info': 'Ver más información',
-      'check_out_event': 'Mira este evento'
+      'check_out_event': 'Mira este evento',
+      'plan': 'Plan',
+      'my_trip_plan': 'Mi plan de viaje',
+      'no_saved_items': 'Aún no has guardado ningún elemento en tu plan',
+      'start_adding':
+          'Empieza a explorar y guarda los lugares que quieras visitar',
+      'edit_plan': 'Editar plan',
+      'delete_item': 'Eliminar elemento',
+      'edit_date': 'Editar fecha y hora',
+      'confirm_delete': 'Confirmar eliminación',
+      'delete_confirmation':
+          '¿Estás seguro que quieres eliminar este elemento de tu plan?',
+      'cancel': 'Cancelar',
+      'delete': 'Eliminar',
+      'save': 'Guardar',
+      'date': 'Fecha',
+      'time': 'Hora',
+      'notes': 'Notas',
+      'add_notes': 'Añadir notas'
     },
     'en': {
       'agenda': 'Calendar',
@@ -247,7 +283,24 @@ class AppTranslations {
       'see_more': 'See more',
       'see_less': 'See less',
       'see_more_info': 'See more information',
-      'check_out_event': 'Check out this event'
+      'check_out_event': 'Check out this event',
+      'plan': 'Plan',
+      'my_trip_plan': 'My trip plan',
+      'no_saved_items': 'You have not saved any items yet',
+      'start_adding': 'Start exploring and save places you want to visit',
+      'edit_plan': 'Edit plan',
+      'delete_item': 'Delete item',
+      'edit_date': 'Edit date and time',
+      'confirm_delete': 'Confirm delete',
+      'delete_confirmation':
+          'Are you sure you want to delete this item from your plan?',
+      'cancel': 'Cancel',
+      'delete': 'Delete',
+      'save': 'Save',
+      'date': 'Date',
+      'time': 'Time',
+      'notes': 'Notes',
+      'add_notes': 'Add notes'
     },
     'fr': {
       'agenda': 'Agenda',
@@ -330,7 +383,26 @@ class AppTranslations {
       'see_more': 'Voir plus',
       'see_less': 'Voir moins',
       'see_more_info': 'Voir plus d\'informations',
-      'check_out_event': 'Découvrez cet événement'
+      'check_out_event': 'Découvrez cet événement',
+      'plan': 'Plan',
+      'my_trip_plan': 'Mon plan de voyage',
+      'no_saved_items':
+          'Vous n\'avez pas encore enregistré d\'élément dans votre plan',
+      'start_adding':
+          'Commencez à explorer et enregistrez les endroits que vous souhaitez visiter',
+      'edit_plan': 'Modifier le plan',
+      'delete_item': 'Supprimer l\'élément',
+      'edit_date': 'Modifier la date et l\'heure',
+      'confirm_delete': 'Confirmer la suppression',
+      'delete_confirmation':
+          'Êtes-vous sûr de vouloir supprimer cet élément de votre plan ?',
+      'cancel': 'Annuler',
+      'delete': 'Supprimer',
+      'save': 'Enregistrer',
+      'date': 'Date',
+      'time': 'Heure',
+      'notes': 'Notes',
+      'add_notes': 'Ajouter des notes'
     },
     'de': {
       'agenda': 'Kalender',
@@ -413,7 +485,25 @@ class AppTranslations {
       'see_more': 'Mehr anzeigen',
       'see_less': 'Weniger anzeigen',
       'see_more_info': 'Weitere Informationen',
-      'check_out_event': 'Schau dir diese Veranstaltung an'
+      'check_out_event': 'Schau dir diese Veranstaltung an',
+      'plan': 'Plan',
+      'my_trip_plan': 'Mein Reiseplan',
+      'no_saved_items': 'Sie haben noch keine Elemente gespeichert',
+      'start_adding':
+          'Beginnen Sie mit dem Erkunden und Speichern von Orten, die Sie besuchen möchten',
+      'edit_plan': 'Plan bearbeiten',
+      'delete_item': 'Element löschen',
+      'edit_date': 'Datum und Zeit bearbeiten',
+      'confirm_delete': 'Löschen bestätigen',
+      'delete_confirmation':
+          'Sind Sie sicher, dass Sie dieses Element aus Ihrem Plan löschen möchten?',
+      'cancel': 'Abbrechen',
+      'delete': 'Löschen',
+      'save': 'Speichern',
+      'date': 'Datum',
+      'time': 'Zeit',
+      'notes': 'Notizen',
+      'add_notes': 'Notizen hinzufügen'
     }
   };
 
