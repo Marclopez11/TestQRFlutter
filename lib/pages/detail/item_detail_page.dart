@@ -388,7 +388,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                                 children: [
                                   Text('Guardar a mi plan de viaje'),
                                   SizedBox(width: 8),
-                                  Icon(Icons.bookmark),
+                                  Icon(Icons.calendar_today),
                                 ],
                               ),
                             ),

@@ -165,6 +165,10 @@ class _RoutesPageState extends State<RoutesPage> {
             label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: AppTranslations.translate('plan', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: AppTranslations.translate('settings', _currentLanguage),
           ),
@@ -175,21 +179,17 @@ class _RoutesPageState extends State<RoutesPage> {
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           if (index == 0) {
-            // Usar el mismo efecto que el botón de atrás
             Navigator.of(context).pop();
           } else {
-            // Para los demás botones, mantener el comportamiento actual
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) =>
-                      MainScreen(initialIndex: index),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            });
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) =>
+                    MainScreen(initialIndex: index),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
           }
         },
       ),

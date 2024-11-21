@@ -190,6 +190,10 @@ class _AgendaPageState extends State<AgendaPage> {
             label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: AppTranslations.translate('plan', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: AppTranslations.translate('settings', _currentLanguage),
           ),
@@ -202,17 +206,15 @@ class _AgendaPageState extends State<AgendaPage> {
           if (index == 0) {
             Navigator.of(context).pop();
           } else {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacement(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation1, animation2) =>
-                      MainScreen(initialIndex: index),
-                  transitionDuration: Duration.zero,
-                  reverseTransitionDuration: Duration.zero,
-                ),
-              );
-            });
+            Navigator.pushReplacement(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (context, animation1, animation2) =>
+                    MainScreen(initialIndex: index),
+                transitionDuration: Duration.zero,
+                reverseTransitionDuration: Duration.zero,
+              ),
+            );
           }
         },
       ),

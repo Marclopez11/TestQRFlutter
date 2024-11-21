@@ -173,6 +173,10 @@ class _AccommodationPageState extends State<AccommodationPage> {
             label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: AppTranslations.translate('plan', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: AppTranslations.translate('settings', _currentLanguage),
           ),

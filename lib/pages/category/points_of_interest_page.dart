@@ -165,6 +165,10 @@ class _PointsOfInterestPageState extends State<PointsOfInterestPage> {
             label: AppTranslations.translate('camera', _currentLanguage),
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.bookmark),
+            label: AppTranslations.translate('plan', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: AppTranslations.translate('settings', _currentLanguage),
           ),

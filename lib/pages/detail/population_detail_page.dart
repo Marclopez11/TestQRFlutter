@@ -185,7 +185,7 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
                                 Text(AppTranslations.translate(
                                     'save_to_trip', _currentLanguage)),
                                 SizedBox(width: 8),
-                                Icon(Icons.bookmark),
+                                Icon(Icons.calendar_today),
                               ],
                             ),
                           ),
@@ -214,6 +214,10 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
           BottomNavigationBarItem(
             icon: Icon(Icons.camera),
             label: AppTranslations.translate('camera', _currentLanguage),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: AppTranslations.translate('plan', _currentLanguage),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),

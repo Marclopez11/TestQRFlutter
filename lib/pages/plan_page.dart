@@ -28,9 +28,9 @@ class _PlanPageState extends State<PlanPage> {
   String _currentLanguage = 'ca';
   List<PlanItem> _planItems = [];
   bool _isLoading = true;
+  bool _isLanguageLoading = true;
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
-  // Añadir una constante para el límite de items
   static const int MAX_PLAN_ITEMS = 20;
 
   @override
@@ -67,19 +67,26 @@ class _PlanPageState extends State<PlanPage> {
   }
 
   Future<void> _initialize() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      await _loadCurrentLanguage();
+      final language = await _apiService.getCurrentLanguage();
+      _currentLanguage = language;
+
       await _loadPlanItems();
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isLanguageLoading = false;
+        });
+      }
     } catch (e) {
       print('Error in initialization: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isLanguageLoading = false;
+        });
+      }
     }
   }
 
@@ -129,12 +136,10 @@ class _PlanPageState extends State<PlanPage> {
 
   Future<void> _savePlanItems() async {
     try {
-      // Limitar la cantidad de items
       if (_planItems.length > MAX_PLAN_ITEMS) {
         _planItems = _planItems.take(MAX_PLAN_ITEMS).toList();
       }
 
-      // Limpiar datos innecesarios antes de guardar
       final cleanItems = _planItems.map((item) {
         final cleanItem = {
           'id': item.id,
@@ -143,7 +148,6 @@ class _PlanPageState extends State<PlanPage> {
           'imageUrl': item.imageUrl,
           'plannedDate': item.plannedDate?.toIso8601String(),
           'notes': item.notes,
-          // Solo guardar los datos esenciales del originalItem
           'originalItem': {
             'id': item.originalItem['id'],
             'type': item.originalItem['type'],
@@ -156,7 +160,6 @@ class _PlanPageState extends State<PlanPage> {
       await prefs.setString('plan_items', json.encode(cleanItems));
     } catch (e) {
       print('Error saving plan items: $e');
-      // Mostrar mensaje al usuario
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -200,7 +203,6 @@ class _PlanPageState extends State<PlanPage> {
         });
         await _savePlanItems();
 
-        // Mostrar feedback al usuario
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -213,7 +215,6 @@ class _PlanPageState extends State<PlanPage> {
     }
   }
 
-  // Extraer el widget del item a un método separado para reutilizarlo
   Widget _buildTimelineItem(PlanItem item) {
     return Container(
       margin: EdgeInsets.only(left: 16, bottom: 16),
@@ -309,7 +310,6 @@ class _PlanPageState extends State<PlanPage> {
     );
   }
 
-  // Añadir este nuevo método para manejar la apertura del detalle
   void _openItemDetail(PlanItem item) {
     if (item.type == 'route') {
       final routeData = item.originalItem['data'];
@@ -579,10 +579,8 @@ class _PlanPageState extends State<PlanPage> {
         );
       }
     }
-    // Aquí puedes añadir más casos para otros tipos de items
   }
 
-  // Add this method to sort plan items
   void _sortPlanItems() {
     _planItems.sort((a, b) => (a.plannedDate ?? DateTime.now())
         .compareTo(b.plannedDate ?? DateTime.now()));
@@ -640,7 +638,6 @@ class _PlanPageState extends State<PlanPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            // Date picker
                             Material(
                               color: Colors.transparent,
                               child: InkWell(
@@ -691,7 +688,6 @@ class _PlanPageState extends State<PlanPage> {
                                 ),
                               ),
                             ),
-                            // Time picker
                             Material(
                               color: Colors.transparent,
                               child: InkWell(
@@ -762,7 +758,7 @@ class _PlanPageState extends State<PlanPage> {
                                 plannedDate: combinedDateTime,
                                 notes: notes,
                               );
-                              _sortPlanItems(); // Sort items after updating
+                              _sortPlanItems();
                             }
                           });
 
@@ -803,7 +799,6 @@ class _PlanPageState extends State<PlanPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header simplificado
             Container(
               height: 60,
               color: Theme.of(context).scaffoldBackgroundColor,
@@ -816,27 +811,27 @@ class _PlanPageState extends State<PlanPage> {
                     'assets/images/logo_felanitx.png',
                     height: 40,
                   ),
-                  DropdownButton<String>(
-                    value: _currentLanguage.toUpperCase(),
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        _handleLanguageChange(newValue.toLowerCase());
-                      }
-                    },
-                    items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
-                        .map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    underline: Container(),
-                    icon: Icon(Icons.arrow_drop_down),
-                  ),
+                  if (!_isLanguageLoading)
+                    DropdownButton<String>(
+                      value: _currentLanguage.toUpperCase(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          _handleLanguageChange(newValue.toLowerCase());
+                        }
+                      },
+                      items: <String>['ES', 'EN', 'CA', 'DE', 'FR']
+                          .map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      underline: Container(),
+                      icon: Icon(Icons.arrow_drop_down),
+                    ),
                 ],
               ),
             ),
-            // Content
             Expanded(
               child: _isLoading
                   ? Center(child: CircularProgressIndicator())
@@ -852,13 +847,17 @@ class _PlanPageState extends State<PlanPage> {
 
   Future<void> _handleLanguageChange(String language) async {
     if (_currentLanguage != language) {
+      setState(() {
+        _isLanguageLoading = true;
+      });
+
       await _apiService.setLanguage(language);
 
       if (mounted) {
         setState(() {
           _currentLanguage = language;
+          _isLanguageLoading = false;
         });
-        await _loadPlanItems(); // Recargar los items para actualizar el formato de las fechas
       }
     }
   }
