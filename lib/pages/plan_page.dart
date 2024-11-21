@@ -17,6 +17,7 @@ class _PlanPageState extends State<PlanPage> {
   String _currentLanguage = 'ca';
   List<PlanItem> _planItems = [];
   bool _isLoading = true;
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
   @override
   void initState() {
@@ -90,11 +91,9 @@ class _PlanPageState extends State<PlanPage> {
         final List<dynamic> decodedItems = json.decode(itemsJson);
         if (mounted) {
           setState(() {
-            _planItems = decodedItems
-                .map((item) => PlanItem.fromJson(item))
-                .toList()
-              ..sort((a, b) => (a.plannedDate ?? DateTime.now())
-                  .compareTo(b.plannedDate ?? DateTime.now()));
+            _planItems =
+                decodedItems.map((item) => PlanItem.fromJson(item)).toList();
+            _sortAndUpdateItems();
           });
         }
       } else {
@@ -151,124 +150,113 @@ class _PlanPageState extends State<PlanPage> {
     if (confirmed == true) {
       final index = _planItems.indexWhere((item) => item.id == itemId);
       if (index != -1) {
-        final item = _planItems[index];
-
-        // Remove with animation
         setState(() {
           _planItems.removeAt(index);
         });
-
-        // Show a sliding animation
-        AnimatedList.of(context).removeItem(
-          index,
-          (context, animation) => SlideTransition(
-            position: animation.drive(Tween(
-              begin: Offset(-1.0, 0.0),
-              end: Offset.zero,
-            )),
-            child: FadeTransition(
-              opacity: animation,
-              child: TimelineTile(
-                isFirst: index == 0,
-                isLast: index == _planItems.length - 1,
-                indicatorStyle: IndicatorStyle(
-                  width: 20,
-                  color: Theme.of(context).primaryColor,
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                ),
-                beforeLineStyle: LineStyle(
-                  color: Theme.of(context).primaryColor.withOpacity(0.3),
-                ),
-                endChild: Container(
-                  margin: EdgeInsets.only(left: 16, bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 5,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(12)),
-                        child: Image.network(
-                          item.imageUrl,
-                          height: 120,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (item.plannedDate != null)
-                              Text(
-                                DateFormat.yMMMd(_currentLanguage)
-                                    .add_Hm()
-                                    .format(item.plannedDate!),
-                                style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            SizedBox(height: 4),
-                            Text(
-                              item.title,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (item.notes?.isNotEmpty == true) ...[
-                              SizedBox(height: 4),
-                              Text(
-                                item.notes!,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                            SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.edit),
-                                  onPressed: () => _editPlanItem(item),
-                                  color: Colors.blue,
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.delete),
-                                  onPressed: () => _deletePlanItem(item.id),
-                                  color: Colors.red,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          duration: Duration(milliseconds: 300),
-        );
-
         await _savePlanItems();
+
+        // Mostrar feedback al usuario
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppTranslations.translate('item_deleted', _currentLanguage),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     }
+  }
+
+  // Extraer el widget del item a un método separado para reutilizarlo
+  Widget _buildTimelineItem(PlanItem item) {
+    return Container(
+      margin: EdgeInsets.only(left: 16, bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (item.imageUrl.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              child: Image.network(
+                item.imageUrl,
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return SizedBox.shrink();
+                },
+              ),
+            ),
+          ],
+          Padding(
+            padding: EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (item.plannedDate != null)
+                  Text(
+                    DateFormat.yMMMd(_currentLanguage)
+                        .add_Hm()
+                        .format(item.plannedDate!),
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                SizedBox(height: 4),
+                Text(
+                  item.title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (item.notes?.isNotEmpty == true) ...[
+                  SizedBox(height: 4),
+                  Text(
+                    item.notes!,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (item.type != 'event') ...[
+                      IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () => _editPlanItem(item),
+                        color: Colors.blue,
+                      ),
+                    ],
+                    IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () => _deletePlanItem(item.id),
+                      color: Colors.red,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // Add this method to sort plan items
@@ -588,118 +576,35 @@ class _PlanPageState extends State<PlanPage> {
   }
 
   Widget _buildTimelineList() {
-    return AnimatedList(
-      key: GlobalKey<AnimatedListState>(),
+    return ListView.builder(
       padding: EdgeInsets.all(16),
-      initialItemCount: _planItems.length,
-      itemBuilder: (context, index, animation) {
+      itemCount: _planItems.length,
+      itemBuilder: (context, index) {
         final item = _planItems[index];
         final isFirst = index == 0;
         final isLast = index == _planItems.length - 1;
 
-        return SlideTransition(
-          position: animation.drive(Tween(
-            begin: Offset(1.0, 0.0),
-            end: Offset.zero,
-          )),
-          child: FadeTransition(
-            opacity: animation,
-            child: TimelineTile(
-              isFirst: isFirst,
-              isLast: isLast,
-              indicatorStyle: IndicatorStyle(
-                width: 20,
-                color: Theme.of(context).primaryColor,
-                padding: EdgeInsets.symmetric(vertical: 8),
-              ),
-              beforeLineStyle: LineStyle(
-                color: Theme.of(context).primaryColor.withOpacity(0.3),
-              ),
-              endChild: Container(
-                margin: EdgeInsets.only(left: 16, bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 5,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(12)),
-                      child: Image.network(
-                        item.imageUrl,
-                        height: 120,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (item.plannedDate != null)
-                            Text(
-                              DateFormat.yMMMd(_currentLanguage)
-                                  .add_Hm()
-                                  .format(item.plannedDate!),
-                              style: TextStyle(
-                                color: Theme.of(context).primaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          SizedBox(height: 4),
-                          Text(
-                            item.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (item.notes?.isNotEmpty == true) ...[
-                            SizedBox(height: 4),
-                            Text(
-                              item.notes!,
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                          SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit),
-                                onPressed: () => _editPlanItem(item),
-                                color: Colors.blue,
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => _deletePlanItem(item.id),
-                                color: Colors.red,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        return TimelineTile(
+          isFirst: isFirst,
+          isLast: isLast,
+          indicatorStyle: IndicatorStyle(
+            width: 20,
+            color: Theme.of(context).primaryColor,
+            padding: EdgeInsets.symmetric(vertical: 8),
           ),
+          beforeLineStyle: LineStyle(
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
+          ),
+          endChild: _buildTimelineItem(item),
         );
       },
     );
+  }
+
+  void _sortAndUpdateItems() {
+    setState(() {
+      _planItems.sort((a, b) => (a.plannedDate ?? DateTime.now())
+          .compareTo(b.plannedDate ?? DateTime.now()));
+    });
   }
 }

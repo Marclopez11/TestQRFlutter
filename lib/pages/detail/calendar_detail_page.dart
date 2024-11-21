@@ -14,6 +14,9 @@ import 'package:felanitx/l10n/app_translations.dart';
 import 'package:felanitx/main.dart';
 import 'package:felanitx/pages/home_page.dart';
 import 'package:felanitx/pages/category/agenda_page.dart';
+import 'package:felanitx/models/plan_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class CalendarDetailPage extends StatefulWidget {
   final CalendarEvent event;
@@ -269,6 +272,90 @@ class _CalendarDetailPageState extends State<CalendarDetailPage> {
                       ),
                     ),
                   ),
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          final planItem = PlanItem(
+                            title: widget.event.title,
+                            type: 'event',
+                            imageUrl: widget.event.mainImage ?? '',
+                            plannedDate: widget.event
+                                .date, // Usar la fecha del evento directamente
+                            originalItem: {
+                              'title': [
+                                {'value': widget.event.title}
+                              ],
+                              'field_calendar_main_image': [
+                                {'url': widget.event.mainImage}
+                              ],
+                              if (widget.event.location != null)
+                                'field_calendar_location': [
+                                  {
+                                    'value':
+                                        '${widget.event.location!.latitude},${widget.event.location!.longitude}'
+                                  }
+                                ],
+                              'field_calendar_date': [
+                                {'value': widget.event.date.toIso8601String()}
+                              ],
+                              'type': 'event',
+                            },
+                          );
+
+                          await _savePlanItem(planItem);
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppTranslations.translate(
+                                    'saved_to_plan', _currentLanguage),
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } catch (e) {
+                          print('Error saving plan item: $e');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppTranslations.translate(
+                                    'error_saving', _currentLanguage),
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(AppTranslations.translate(
+                              'save_to_trip', _currentLanguage)),
+                          SizedBox(width: 8),
+                          Icon(Icons.bookmark),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
               ],
             ),
@@ -387,6 +474,20 @@ class _CalendarDetailPageState extends State<CalendarDetailPage> {
   Future<void> _launchURL(String url) async {
     if (await canLaunch(url)) {
       await launch(url);
+    }
+  }
+
+  Future<void> _savePlanItem(PlanItem newItem) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final itemsJson = prefs.getString('plan_items') ?? '[]';
+      final List<dynamic> items = json.decode(itemsJson);
+
+      items.add(newItem.toJson());
+      await prefs.setString('plan_items', json.encode(items));
+    } catch (e) {
+      print('Error saving plan item: $e');
+      throw e;
     }
   }
 }

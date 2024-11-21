@@ -107,7 +107,9 @@ class AppTranslations {
       'saved_to_plan': 'Guardat al pla',
       'save_to_plan': 'Guardar al pla',
       'hour': 'Hora',
-      'minute': 'Minut'
+      'minute': 'Minut',
+      'error_opening_kml': 'Error al obrir el KML',
+      'item_deleted': 'Element eliminat'
     },
     'es': {
       'agenda': 'Agenda',
@@ -216,7 +218,8 @@ class AppTranslations {
       'saved_to_plan': 'Guardado en el plan',
       'save_to_plan': 'Guardar al plan',
       'hour': 'Hora',
-      'minute': 'Minuto'
+      'minute': 'Minuto',
+      'item_deleted': 'Elemento eliminado'
     },
     'en': {
       'agenda': 'Calendar',
@@ -324,7 +327,8 @@ class AppTranslations {
       'saved_to_plan': 'Saved to plan',
       'save_to_plan': 'Save to plan',
       'hour': 'Hour',
-      'minute': 'Minute'
+      'minute': 'Minute',
+      'item_deleted': 'Item deleted'
     },
     'fr': {
       'agenda': 'Agenda',
@@ -434,7 +438,8 @@ class AppTranslations {
       'saved_to_plan': 'Enregistré dans le plan',
       'save_to_plan': 'Enregistrer au plan',
       'hour': 'Heure',
-      'minute': 'Minute'
+      'minute': 'Minute',
+      'item_deleted': 'Élément supprimé'
     },
     'de': {
       'agenda': 'Kalender',
@@ -543,7 +548,8 @@ class AppTranslations {
       'saved_to_plan': 'Zum Plan hinzugefügt',
       'save_to_plan': 'Zum Plan hinzufügen',
       'hour': 'Stunde',
-      'minute': 'Minute'
+      'minute': 'Minute',
+      'item_deleted': 'Element gelöscht'
     }
   };
 
