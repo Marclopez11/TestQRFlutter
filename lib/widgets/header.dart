@@ -38,7 +38,7 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
   String? _selectedLanguage;
   bool _isLoading = true;
   static final ValueNotifier<String> _languageNotifier =
-      ValueNotifier<String>('es');
+      ValueNotifier<String>('ca');
 
   @override
   void initState() {

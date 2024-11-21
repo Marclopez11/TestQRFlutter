@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
 import 'pages/map_page.dart';
@@ -66,19 +67,40 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   late int _selectedIndex;
   String _currentLanguage = 'ca';
+  final ApiService _apiService = ApiService();
+  StreamSubscription? _languageSubscription;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
     _loadCurrentLanguage();
+    _setupLanguageListener();
+  }
+
+  @override
+  void dispose() {
+    _languageSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadCurrentLanguage() async {
-    final apiService = ApiService();
-    final language = await apiService.getCurrentLanguage();
-    setState(() {
-      _currentLanguage = language;
+    final language = await _apiService.getCurrentLanguage();
+    if (mounted) {
+      setState(() {
+        _currentLanguage = language;
+      });
+    }
+  }
+
+  void _setupLanguageListener() {
+    _languageSubscription =
+        _apiService.languageStream.listen((String language) {
+      if (mounted) {
+        setState(() {
+          _currentLanguage = language;
+        });
+      }
     });
   }
 
@@ -95,12 +117,8 @@ class _MainScreenState extends State<MainScreen> {
   void _onItemTapped(int index) {
     if (!mounted) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {
-          _selectedIndex = index;
-        });
-      }
+    setState(() {
+      _selectedIndex = index;
     });
   }
 

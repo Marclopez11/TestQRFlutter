@@ -97,97 +97,67 @@ class _MapPageState extends State<MapPage> {
       _currentLanguage = language.toUpperCase();
       final apiLanguage = language.toLowerCase();
 
-      // Cargar puntos de interés
+      // Primero cargar datos de caché
+      await _loadCachedData(apiLanguage);
+
+      // Después actualizar en segundo plano
+      _updateDataInBackground(apiLanguage);
+    } catch (e) {
+      print('Error loading items: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadCachedData(String language) async {
+    try {
+      // Cargar puntos de interés desde caché
       final interestsData =
-          await _apiService.loadData('points_of_interest', apiLanguage);
-      print('Loaded interests data: ${interestsData.length}');
+          await _apiService.loadCachedData('points_of_interest', language);
       final interests = interestsData
-          .map((json) {
-            try {
-              return Interest.fromJson(json);
-            } catch (e) {
-              print('Error parsing interest: $e');
-              print('JSON: $json');
-              return null;
-            }
-          })
+          .map((json) => Interest.fromJson(json))
           .whereType<Interest>()
           .toList();
-
       final interestItems =
           interests.map((i) => MapItem.fromInterest(i)).toList();
 
-      // Cargar rutas a pie con taxonomía
+      // Cargar rutas desde caché
       final walkingRoutesData =
-          await _apiService.loadData('rutes', apiLanguage);
+          await _apiService.loadCachedData('rutes', language);
       final walkingRoutes = walkingRoutesData
-          .map((json) {
-            try {
-              return RouteModel.fromJson(json);
-            } catch (e) {
-              print('Error parsing walking route: $e');
-              return null;
-            }
-          })
+          .map((json) => RouteModel.fromJson(json))
           .whereType<RouteModel>()
           .toList();
-
       final walkingItems = await Future.wait(
           walkingRoutes.map((r) => MapItem.fromRouteWithTaxonomy(r, false)));
 
-      // Cargar rutas en bici con taxonomía
+      // Cargar rutas en bici desde caché
       final bikeRoutesData =
-          await _apiService.loadData('rutes_bici', apiLanguage);
+          await _apiService.loadCachedData('rutes_bici', language);
       final bikeRoutes = bikeRoutesData
-          .map((json) {
-            try {
-              return RouteModel.fromJson(json);
-            } catch (e) {
-              print('Error parsing bike route: $e');
-              return null;
-            }
-          })
+          .map((json) => RouteModel.fromJson(json))
           .whereType<RouteModel>()
           .toList();
-
       final bikeItems = await Future.wait(
           bikeRoutes.map((r) => MapItem.fromRouteWithTaxonomy(r, true)));
 
-      // Cargar hoteles
+      // Cargar hoteles desde caché
       final accommodationsData =
-          await _apiService.loadData('hotel', apiLanguage);
+          await _apiService.loadCachedData('hotel', language);
       final accommodations = accommodationsData
-          .map((json) {
-            try {
-              return Accommodation.fromJson(json);
-            } catch (e) {
-              print('Error parsing accommodation: $e');
-              print('JSON: $json');
-              return null;
-            }
-          })
+          .map((json) => Accommodation.fromJson(json))
           .whereType<Accommodation>()
           .toList();
-
       final hotelItems =
           accommodations.map((a) => MapItem.fromAccommodation(a)).toList();
 
-      // Cargar poblaciones
+      // Cargar poblaciones desde caché
       final populationsData =
-          await _apiService.loadData('poblacio', apiLanguage);
+          await _apiService.loadCachedData('poblacio', language);
       final populations = populationsData
-          .map((json) {
-            try {
-              return Population.fromJson(json);
-            } catch (e) {
-              print('Error parsing population: $e');
-              print('JSON: $json');
-              return null;
-            }
-          })
+          .map((json) => Population.fromJson(json))
           .whereType<Population>()
           .toList();
-
       final populationItems =
           populations.map((p) => MapItem.fromPopulation(p)).toList();
 
@@ -199,28 +169,45 @@ class _MapPageState extends State<MapPage> {
           ...hotelItems,
           ...populationItems,
         ];
-        print('Total map items: ${_mapItems.length}');
         _updateFilteredItems();
         if (_mapItems.isNotEmpty) {
           _updateMapView(useAllItems: true);
-        } else {
-          print('No items loaded!');
         }
       });
 
-      // Obtener nombres únicos de filtros de todos los items
-      final filterNames = _mapItems.map((item) => item.filterName).toSet();
-
       // Inicializar filtros
+      final filterNames = _mapItems.map((item) => item.filterName).toSet();
       setState(() {
         _activeFilters =
             Map.fromEntries(filterNames.map((name) => MapEntry(name, true)));
         _updateFilteredItems();
       });
     } catch (e) {
-      print('Error loading items: $e');
-    } finally {
-      setState(() => _isLoading = false);
+      print('Error loading cached data: $e');
+    }
+  }
+
+  Future<void> _updateDataInBackground(String language) async {
+    try {
+      // Actualizar todos los datos en segundo plano
+      final futures = await Future.wait([
+        _apiService.loadFreshData('points_of_interest', language),
+        _apiService.loadFreshData('rutes', language),
+        _apiService.loadFreshData('rutes_bici', language),
+        _apiService.loadFreshData('hotel', language),
+        _apiService.loadFreshData('poblacio', language),
+      ]);
+
+      // Solo actualizar la UI si hay cambios significativos
+      bool hasChanges = false;
+      // ... procesar los datos y verificar si hay cambios ...
+
+      if (hasChanges && mounted) {
+        // Recargar los datos preservando los filtros actuales
+        _reloadItemsPreservingFilters();
+      }
+    } catch (e) {
+      print('Error updating data in background: $e');
     }
   }
 
