@@ -153,14 +153,6 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
                           color: Theme.of(context).primaryColor,
                         ),
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        '${_getCategoryName(widget.interest.categoryId)}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
                     ],
                   ),
                 ),

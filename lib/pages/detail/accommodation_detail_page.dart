@@ -141,14 +141,6 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                           color: Theme.of(context).primaryColor,
                         ),
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        _getHotelTypeName(),
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                      ),
                     ],
                   ),
                 ),
