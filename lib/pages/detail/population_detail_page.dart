@@ -851,6 +851,38 @@ class _PopulationDetailPageState extends State<PopulationDetailPage> {
               '${population.location.latitude},${population.location.longitude}'
         }
       ],
+      'field_population_title1': population.title1 != null
+          ? [
+              {'value': population.title1}
+            ]
+          : [],
+      'field_population_title2': population.title2 != null
+          ? [
+              {'value': population.title2}
+            ]
+          : [],
+      'field_population_title3': population.title3 != null
+          ? [
+              {'value': population.title3}
+            ]
+          : [],
+      'field_population_description1': population.description1 != null
+          ? [
+              {'value': population.description1}
+            ]
+          : [],
+      'field_population_description2': population.description2 != null
+          ? [
+              {'value': population.description2}
+            ]
+          : [],
+      'field_population_description3': population.description3 != null
+          ? [
+              {'value': population.description3}
+            ]
+          : [],
+      'field_population_image_gallery':
+          population.imageGallery.map((url) => {'url': url}).toList(),
     };
   }
 }

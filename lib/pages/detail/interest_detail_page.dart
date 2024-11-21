@@ -903,6 +903,55 @@ class _InterestDetailPageState extends State<InterestDetailPage> {
               '${interest.location.latitude},${interest.location.longitude}'
         }
       ],
+      'field_place_description': [
+        {'value': interest.description}
+      ],
+      'field_place_address': [
+        {'value': interest.address}
+      ],
+      'field_place_categoria': [
+        {'target_id': interest.categoryId}
+      ],
+      'field_place_featured': [
+        {'value': interest.featured}
+      ],
+      'field_place_image_gallery':
+          interest.imageGallery.map((url) => {'url': url}).toList(),
+      'field_place_audio': interest.audioUrl != null
+          ? [
+              {'url': interest.audioUrl}
+            ]
+          : [],
+      'field_place_facebook': interest.facebookUrl != null
+          ? [
+              {'value': interest.facebookUrl}
+            ]
+          : [],
+      'field_place_instagram': interest.instagramUrl != null
+          ? [
+              {'value': interest.instagramUrl}
+            ]
+          : [],
+      'field_place_twitter': interest.twitterUrl != null
+          ? [
+              {'value': interest.twitterUrl}
+            ]
+          : [],
+      'field_place_web': interest.websiteUrl != null
+          ? [
+              {'value': interest.websiteUrl}
+            ]
+          : [],
+      'field_place_phone_number': interest.phoneNumber != null
+          ? [
+              {'value': interest.phoneNumber}
+            ]
+          : [],
+      'field_place_video': interest.videoUrl != null
+          ? [
+              {'url': interest.videoUrl}
+            ]
+          : [],
     };
   }
 }

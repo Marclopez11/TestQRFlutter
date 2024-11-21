@@ -1034,15 +1034,66 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
       'title': [
         {'value': accommodation.title}
       ],
-      'field_accommodation_main_image': [
+      'field_hotel_description': [
+        {'value': accommodation.description}
+      ],
+      'field_hotel_main_image': [
         {'url': accommodation.mainImage}
       ],
-      'field_accommodation_location': [
+      'field_hotel_location': [
         {
           'value':
               '${accommodation.location.latitude},${accommodation.location.longitude}'
         }
       ],
+      'field_hotel_hoteltype': [
+        {'target_id': accommodation.hotelType}
+      ],
+      'field_hotel_hotelservices':
+          accommodation.hotelServices.map((id) => {'target_id': id}).toList(),
+      'field_hotel_web': accommodation.web != null
+          ? [
+              {'value': accommodation.web}
+            ]
+          : [],
+      'field_hotel_twitter': accommodation.twitter != null
+          ? [
+              {'value': accommodation.twitter}
+            ]
+          : [],
+      'field_hotel_instagram': accommodation.instagram != null
+          ? [
+              {'value': accommodation.instagram}
+            ]
+          : [],
+      'field_hotel_facebook': accommodation.facebook != null
+          ? [
+              {'value': accommodation.facebook}
+            ]
+          : [],
+      'field_hotel_address': [
+        {'value': accommodation.address}
+      ],
+      'field_hotel_phone_number': [
+        {'value': accommodation.phoneNumber}
+      ],
+      'field_hotel_phone_number2': accommodation.phoneNumber2 != null
+          ? [
+              {'value': accommodation.phoneNumber2}
+            ]
+          : [],
+      'field_hotel_email': accommodation.email.isNotEmpty
+          ? [
+              {'value': accommodation.email}
+            ]
+          : [],
+      'field_hotel_image_gallery':
+          accommodation.imageGallery.map((url) => {'url': url}).toList(),
+      'field_hotel_stars': accommodation.stars != null
+          ? [
+              {'value': accommodation.stars}
+            ]
+          : [],
     };
   }
 }

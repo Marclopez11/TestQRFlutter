@@ -286,26 +286,54 @@ class _CalendarDetailPageState extends State<CalendarDetailPage> {
                             title: widget.event.title,
                             type: 'event',
                             imageUrl: widget.event.mainImage ?? '',
-                            plannedDate: widget.event
-                                .date, // Usar la fecha del evento directamente
+                            plannedDate: widget.event.date,
                             originalItem: {
-                              'title': [
-                                {'value': widget.event.title}
-                              ],
-                              'field_calendar_main_image': [
-                                {'url': widget.event.mainImage}
-                              ],
-                              if (widget.event.location != null)
-                                'field_calendar_location': [
-                                  {
-                                    'value':
-                                        '${widget.event.location!.latitude},${widget.event.location!.longitude}'
-                                  }
-                                ],
-                              'field_calendar_date': [
-                                {'value': widget.event.date.toIso8601String()}
-                              ],
                               'type': 'event',
+                              'data': {
+                                'title': [
+                                  {'value': widget.event.title}
+                                ],
+                                'field_calendar_main_image':
+                                    widget.event.mainImage != null
+                                        ? [
+                                            {'url': widget.event.mainImage}
+                                          ]
+                                        : [],
+                                'field_calendar_location':
+                                    widget.event.location != null
+                                        ? [
+                                            {
+                                              'value':
+                                                  '${widget.event.location!.latitude},${widget.event.location!.longitude}'
+                                            }
+                                          ]
+                                        : [],
+                                'field_calendar_date': [
+                                  {'value': widget.event.date.toIso8601String()}
+                                ],
+                                'field_calendar_description': [
+                                  {'value': widget.event.longDescription}
+                                ],
+                                'field_calendar_short_description': [
+                                  {'value': widget.event.shortDescription}
+                                ],
+                                'field_calendar_link':
+                                    widget.event.link.isNotEmpty
+                                        ? [
+                                            {'value': widget.event.link}
+                                          ]
+                                        : [],
+                                'field_calendar_image_gallery': widget
+                                    .event.imageGallery
+                                    .map((url) => {'url': url})
+                                    .toList(),
+                                'field_calendar_featured': [
+                                  {'value': widget.event.featured}
+                                ],
+                                'langcode': [
+                                  {'value': widget.event.langcode}
+                                ],
+                              }
                             },
                           );
 

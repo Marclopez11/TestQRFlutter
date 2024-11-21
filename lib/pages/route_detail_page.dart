@@ -360,12 +360,49 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       'title': [
         {'value': route.title}
       ],
+      'field_route_description': [
+        {'value': route.description}
+      ],
       'field_route_main_image': [
         {'url': route.mainImage}
       ],
       'field_route_location': [
         {'value': '${route.location.latitude},${route.location.longitude}'}
       ],
+      'field_route_distance': [
+        {'value': route.distance}
+      ],
+      'field_route_hour': [
+        {'value': route.hours}
+      ],
+      'field_route_minutes': [
+        {'value': route.minutes}
+      ],
+      'field_route_positive_elevation': [
+        {'value': route.positiveElevation}
+      ],
+      'field_route_negative_elevation': [
+        {'value': route.negativeElevation}
+      ],
+      'field_route_difficulty': [
+        {'target_id': route.difficultyId}
+      ],
+      'field_route_circuit_type': [
+        {'target_id': route.circuitTypeId}
+      ],
+      'field_route_type': [
+        {'target_id': route.routeTypeId}
+      ],
+      'field_route_gpx': route.gpxFile != null
+          ? [
+              {'url': route.gpxFile}
+            ]
+          : [],
+      'field_route_kml': route.kmlUrl != null
+          ? [
+              {'url': route.kmlUrl}
+            ]
+          : [],
     };
   }
 

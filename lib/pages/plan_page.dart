@@ -6,6 +6,17 @@ import 'package:felanitx/l10n/app_translations.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:timeline_tile/timeline_tile.dart';
+import 'package:felanitx/pages/route_detail_page.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:felanitx/models/route.dart';
+import 'package:felanitx/models/interest.dart';
+import 'package:felanitx/pages/detail/interest_detail_page.dart';
+import 'package:felanitx/pages/detail/population_detail_page.dart';
+import 'package:felanitx/models/population.dart';
+import 'package:felanitx/pages/detail/accommodation_detail_page.dart';
+import 'package:felanitx/models/accommodation.dart';
+import 'package:felanitx/pages/detail/calendar_detail_page.dart';
+import 'package:felanitx/models/calendar_event.dart';
 
 class PlanPage extends StatefulWidget {
   @override
@@ -271,6 +282,11 @@ class _PlanPageState extends State<PlanPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    IconButton(
+                      icon: Icon(Icons.visibility),
+                      onPressed: () => _openItemDetail(item),
+                      color: Theme.of(context).primaryColor,
+                    ),
                     if (item.type != 'event') ...[
                       IconButton(
                         icon: Icon(Icons.edit),
@@ -291,6 +307,279 @@ class _PlanPageState extends State<PlanPage> {
         ],
       ),
     );
+  }
+
+  // Añadir este nuevo método para manejar la apertura del detalle
+  void _openItemDetail(PlanItem item) {
+    if (item.type == 'route') {
+      final routeData = item.originalItem['data'];
+      if (routeData != null) {
+        final route = RouteModel(
+          id: routeData['uuid'][0]['value'],
+          title: routeData['title'][0]['value'],
+          description: routeData['field_route_description'][0]['value'],
+          mainImage: routeData['field_route_main_image'][0]['url'],
+          location: LatLng(
+            double.parse(
+                routeData['field_route_location'][0]['value'].split(',')[0]),
+            double.parse(
+                routeData['field_route_location'][0]['value'].split(',')[1]),
+          ),
+          distance: double.parse(
+              routeData['field_route_distance'][0]['value'].toString()),
+          hours:
+              int.parse(routeData['field_route_hour'][0]['value'].toString()),
+          minutes: int.parse(
+              routeData['field_route_minutes'][0]['value'].toString()),
+          positiveElevation: double.parse(
+              routeData['field_route_positive_elevation'][0]['value']
+                  .toString()),
+          negativeElevation: double.parse(
+              routeData['field_route_negative_elevation'][0]['value']
+                  .toString()),
+          difficultyId: int.parse(
+              routeData['field_route_difficulty'][0]['target_id'].toString()),
+          circuitTypeId: int.parse(
+              routeData['field_route_circuit_type'][0]['target_id'].toString()),
+          routeTypeId: int.parse(
+              routeData['field_route_type'][0]['target_id'].toString()),
+          gpxFile: routeData['field_route_gpx']?.isNotEmpty == true
+              ? routeData['field_route_gpx'][0]['url']
+              : null,
+          kmlUrl: routeData['field_route_kml']?.isNotEmpty == true
+              ? routeData['field_route_kml'][0]['url']
+              : null,
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RouteDetailPage(route: route),
+          ),
+        );
+      }
+    } else if (item.type == 'interest') {
+      final interestData = item.originalItem['data'];
+      if (interestData != null) {
+        final interest = Interest(
+          id: interestData['uuid'][0]['value'],
+          title: interestData['title'][0]['value'],
+          description: interestData['field_place_description'][0]['value'],
+          address: interestData['field_place_address'][0]['value'],
+          location: LatLng(
+            double.parse(interestData['field_interest_location'][0]['value']
+                .split(',')[0]),
+            double.parse(interestData['field_interest_location'][0]['value']
+                .split(',')[1]),
+          ),
+          categoryId: int.parse(
+              interestData['field_place_categoria'][0]['target_id'].toString()),
+          featured: interestData['field_place_featured'][0]['value'] ?? false,
+          imageGallery: (interestData['field_place_image_gallery'] as List)
+              .map((img) => img['url'] as String)
+              .toList(),
+          mainImage: interestData['field_interest_main_image'][0]['url'],
+          langcode: _currentLanguage,
+          audioUrl: interestData['field_place_audio']?.isNotEmpty == true
+              ? interestData['field_place_audio'][0]['url']
+              : null,
+          facebookUrl: interestData['field_place_facebook']?.isNotEmpty == true
+              ? interestData['field_place_facebook'][0]['value']
+              : null,
+          instagramUrl:
+              interestData['field_place_instagram']?.isNotEmpty == true
+                  ? interestData['field_place_instagram'][0]['value']
+                  : null,
+          twitterUrl: interestData['field_place_twitter']?.isNotEmpty == true
+              ? interestData['field_place_twitter'][0]['value']
+              : null,
+          websiteUrl: interestData['field_place_web']?.isNotEmpty == true
+              ? interestData['field_place_web'][0]['value']
+              : null,
+          phoneNumber:
+              interestData['field_place_phone_number']?.isNotEmpty == true
+                  ? interestData['field_place_phone_number'][0]['value']
+                  : null,
+          videoUrl: interestData['field_place_video']?.isNotEmpty == true
+              ? interestData['field_place_video'][0]['url']
+              : null,
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InterestDetailPage(interest: interest),
+          ),
+        );
+      }
+    } else if (item.type == 'population') {
+      final populationData = item.originalItem['data'];
+      if (populationData != null) {
+        final population = Population(
+          id: populationData['uuid'][0]['value'],
+          title: populationData['title'][0]['value'],
+          mainImage: populationData['field_population_main_image'][0]['url'],
+          location: LatLng(
+            double.parse(populationData['field_population_location'][0]['value']
+                .split(',')[0]),
+            double.parse(populationData['field_population_location'][0]['value']
+                .split(',')[1]),
+          ),
+          title1: populationData['field_population_title1']?.isNotEmpty == true
+              ? populationData['field_population_title1'][0]['value']
+              : null,
+          title2: populationData['field_population_title2']?.isNotEmpty == true
+              ? populationData['field_population_title2'][0]['value']
+              : null,
+          title3: populationData['field_population_title3']?.isNotEmpty == true
+              ? populationData['field_population_title3'][0]['value']
+              : null,
+          description1:
+              populationData['field_population_description1']?.isNotEmpty ==
+                      true
+                  ? populationData['field_population_description1'][0]['value']
+                  : null,
+          description2:
+              populationData['field_population_description2']?.isNotEmpty ==
+                      true
+                  ? populationData['field_population_description2'][0]['value']
+                  : null,
+          description3:
+              populationData['field_population_description3']?.isNotEmpty ==
+                      true
+                  ? populationData['field_population_description3'][0]['value']
+                  : null,
+          imageGallery:
+              populationData['field_population_image_gallery']?.isNotEmpty ==
+                      true
+                  ? List<String>.from(
+                      populationData['field_population_image_gallery']
+                          .map((img) => img['url']))
+                  : [],
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PopulationDetailPage(population: population),
+          ),
+        );
+      }
+    } else if (item.type == 'accommodation') {
+      final accommodationData = item.originalItem['data'];
+      if (accommodationData != null) {
+        final accommodation = Accommodation(
+          id: accommodationData['uuid'][0]['value'],
+          title: accommodationData['title'][0]['value'],
+          description: accommodationData['field_hotel_description'][0]['value'],
+          mainImage: accommodationData['field_hotel_main_image'][0]['url'],
+          location: LatLng(
+            double.parse(accommodationData['field_hotel_location'][0]['value']
+                .split(',')[0]),
+            double.parse(accommodationData['field_hotel_location'][0]['value']
+                .split(',')[1]),
+          ),
+          hotelType: int.parse(accommodationData['field_hotel_hoteltype'][0]
+                  ['target_id']
+              .toString()),
+          hotelServices:
+              accommodationData['field_hotel_hotelservices']?.isNotEmpty == true
+                  ? List<int>.from(
+                      accommodationData['field_hotel_hotelservices']
+                          .map((service) => service['target_id']))
+                  : [],
+          web: accommodationData['field_hotel_web']?.isNotEmpty == true
+              ? accommodationData['field_hotel_web'][0]['value']
+              : null,
+          twitter: accommodationData['field_hotel_twitter']?.isNotEmpty == true
+              ? accommodationData['field_hotel_twitter'][0]['value']
+              : null,
+          instagram:
+              accommodationData['field_hotel_instagram']?.isNotEmpty == true
+                  ? accommodationData['field_hotel_instagram'][0]['value']
+                  : null,
+          facebook:
+              accommodationData['field_hotel_facebook']?.isNotEmpty == true
+                  ? accommodationData['field_hotel_facebook'][0]['value']
+                  : null,
+          address: accommodationData['field_hotel_address'][0]['value'],
+          phoneNumber: accommodationData['field_hotel_phone_number'][0]
+              ['value'],
+          phoneNumber2:
+              accommodationData['field_hotel_phone_number2']?.isNotEmpty == true
+                  ? accommodationData['field_hotel_phone_number2'][0]['value']
+                  : null,
+          email: accommodationData['field_hotel_email']?.isNotEmpty == true
+              ? accommodationData['field_hotel_email'][0]['value']
+              : '',
+          imageGallery:
+              accommodationData['field_hotel_image_gallery']?.isNotEmpty == true
+                  ? List<String>.from(
+                      accommodationData['field_hotel_image_gallery']
+                          .map((image) => image['url']))
+                  : [],
+          stars: accommodationData['field_hotel_stars']?.isNotEmpty == true
+              ? accommodationData['field_hotel_stars'][0]['value']
+              : null,
+          categoryId: int.parse(accommodationData['field_hotel_hoteltype'][0]
+                  ['target_id']
+              .toString()),
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                AccommodationDetailPage(accommodation: accommodation),
+          ),
+        );
+      }
+    } else if (item.type == 'event') {
+      final eventData = item.originalItem['data'];
+      if (eventData != null) {
+        final event = CalendarEvent(
+          title: eventData['title'][0]['value'],
+          date: DateTime.parse(eventData['field_calendar_date'][0]['value']),
+          mainImage: eventData['field_calendar_main_image']?.isNotEmpty == true
+              ? eventData['field_calendar_main_image'][0]['url']
+              : null,
+          location: eventData['field_calendar_location']?.isNotEmpty == true
+              ? LatLng(
+                  double.parse(eventData['field_calendar_location'][0]['value']
+                      .split(',')[0]),
+                  double.parse(eventData['field_calendar_location'][0]['value']
+                      .split(',')[1]),
+                )
+              : null,
+          imageGallery:
+              eventData['field_calendar_image_gallery']?.isNotEmpty == true
+                  ? List<String>.from(eventData['field_calendar_image_gallery']
+                      .map((img) => img['url']))
+                  : [],
+          longDescription:
+              eventData['field_calendar_description']?.isNotEmpty == true
+                  ? eventData['field_calendar_description'][0]['value']
+                  : '',
+          shortDescription:
+              eventData['field_calendar_short_description']?.isNotEmpty == true
+                  ? eventData['field_calendar_short_description'][0]['value']
+                  : '',
+          link: eventData['field_calendar_link']?.isNotEmpty == true
+              ? eventData['field_calendar_link'][0]['value']
+              : '',
+          langcode: eventData['langcode']?[0]?['value'] ?? _currentLanguage,
+          featured: eventData['field_calendar_featured']?[0]?['value'] ?? false,
+        );
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CalendarDetailPage(event: event),
+          ),
+        );
+      }
+    }
+    // Aquí puedes añadir más casos para otros tipos de items
   }
 
   // Add this method to sort plan items
