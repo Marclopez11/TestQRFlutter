@@ -100,15 +100,15 @@ class AppTranslations {
       'time': 'Hora',
       'notes': 'Notes',
       'add_notes': 'Afegir notes',
-      'add_to_plan': 'Añadir al plan',
+      'add_to_plan': 'Afegir al pla',
       'select_date': 'Seleccionar fecha',
       'select_time': 'Seleccionar hora',
       'error_saving': 'Error al guardar',
-      'saved_to_plan': 'Guardat al pla',
+      'saved_to_plan': 'Desat al pla',
       'save_to_plan': 'Guardar al pla',
       'hour': 'Hora',
       'minute': 'Minut',
-      'error_opening_kml': 'Error al obrir el KML',
+      'error_opening_kml': 'Error en obrir el fitxer KML',
       'item_deleted': 'Element eliminat'
     },
     'es': {
@@ -219,6 +219,7 @@ class AppTranslations {
       'save_to_plan': 'Guardar al plan',
       'hour': 'Hora',
       'minute': 'Minuto',
+      'error_opening_kml': 'Error al abrir el archivo KML',
       'item_deleted': 'Elemento eliminado'
     },
     'en': {
@@ -328,6 +329,7 @@ class AppTranslations {
       'save_to_plan': 'Save to plan',
       'hour': 'Hour',
       'minute': 'Minute',
+      'error_opening_kml': 'Error opening KML file',
       'item_deleted': 'Item deleted'
     },
     'fr': {
@@ -439,6 +441,7 @@ class AppTranslations {
       'save_to_plan': 'Enregistrer au plan',
       'hour': 'Heure',
       'minute': 'Minute',
+      'error_opening_kml': 'Erreur lors de l\'ouverture du fichier KML',
       'item_deleted': 'Élément supprimé'
     },
     'de': {
@@ -545,10 +548,11 @@ class AppTranslations {
       'select_date': 'Datum auswählen',
       'select_time': 'Zeit auswählen',
       'error_saving': 'Fehler beim Speichern',
-      'saved_to_plan': 'Zum Plan hinzugefügt',
+      'saved_to_plan': 'Im Plan gespeichert',
       'save_to_plan': 'Zum Plan hinzufügen',
       'hour': 'Stunde',
       'minute': 'Minute',
+      'error_opening_kml': 'Fehler beim Öffnen der KML-Datei',
       'item_deleted': 'Element gelöscht'
     }
   };

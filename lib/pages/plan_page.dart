@@ -19,6 +19,9 @@ class _PlanPageState extends State<PlanPage> {
   bool _isLoading = true;
   final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
 
+  // Añadir una constante para el límite de items
+  static const int MAX_PLAN_ITEMS = 20;
+
   @override
   void initState() {
     super.initState();
@@ -115,11 +118,42 @@ class _PlanPageState extends State<PlanPage> {
 
   Future<void> _savePlanItems() async {
     try {
+      // Limitar la cantidad de items
+      if (_planItems.length > MAX_PLAN_ITEMS) {
+        _planItems = _planItems.take(MAX_PLAN_ITEMS).toList();
+      }
+
+      // Limpiar datos innecesarios antes de guardar
+      final cleanItems = _planItems.map((item) {
+        final cleanItem = {
+          'id': item.id,
+          'title': item.title,
+          'type': item.type,
+          'imageUrl': item.imageUrl,
+          'plannedDate': item.plannedDate?.toIso8601String(),
+          'notes': item.notes,
+          // Solo guardar los datos esenciales del originalItem
+          'originalItem': {
+            'id': item.originalItem['id'],
+            'type': item.originalItem['type'],
+          },
+        };
+        return cleanItem;
+      }).toList();
+
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('plan_items',
-          json.encode(_planItems.map((item) => item.toJson()).toList()));
+      await prefs.setString('plan_items', json.encode(cleanItems));
     } catch (e) {
       print('Error saving plan items: $e');
+      // Mostrar mensaje al usuario
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppTranslations.translate('error_saving', _currentLanguage),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
