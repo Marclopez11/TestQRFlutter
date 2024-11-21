@@ -515,7 +515,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
                       child: FlutterMap(
                         options: MapOptions(
                           center: widget.route.location,
-                          zoom: 13.0,
+                          zoom: 15.0,
+                          interactiveFlags: InteractiveFlag.none,
+                          minZoom: 3.0,
+                          maxZoom: 18.0,
                         ),
                         children: [
                           TileLayer(
