@@ -12,6 +12,11 @@ import 'package:photo_view/photo_view_gallery.dart';
 import 'package:felanitx/main.dart';
 import 'package:felanitx/l10n/app_translations.dart';
 import 'package:felanitx/services/api_service.dart';
+import 'package:felanitx/models/plan_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
 
 class AccommodationDetailPage extends StatefulWidget {
   final Accommodation accommodation;
@@ -391,9 +396,7 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
                   ),
                   child: Center(
                     child: ElevatedButton(
-                      onPressed: () {
-                        // Lógica para guardar en plan de viaje
-                      },
+                      onPressed: _showAddToPlanModal,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
@@ -736,6 +739,311 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
       // Recargar los datos
       await _loadTaxonomyData();
     }
+  }
+
+  void _showAddToPlanModal() async {
+    final now = DateTime.now();
+    DateTime selectedDate = now;
+    TimeOfDay selectedTime = TimeOfDay.fromDateTime(now);
+
+    await initializeDateFormatting(_currentLanguage);
+    final dateFormat = DateFormat.yMMMd(_currentLanguage);
+
+    String _formatTime(TimeOfDay time) {
+      final hour = time.hour.toString().padLeft(2, '0');
+      final minute = time.minute.toString().padLeft(2, '0');
+      return '$hour:$minute';
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                materialTapTargetSize: MaterialTapTargetSize.padded,
+              ),
+              child: Localizations.override(
+                context: context,
+                locale: Locale(_currentLanguage),
+                child: Container(
+                  height: MediaQuery.of(context).size.height * 0.35,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(top: 8),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text(
+                          AppTranslations.translate(
+                              'add_to_plan', _currentLanguage),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () async {
+                                    final date = await showDatePicker(
+                                      context: context,
+                                      initialDate: selectedDate,
+                                      firstDate: DateTime.now(),
+                                      lastDate: DateTime.now()
+                                          .add(Duration(days: 365)),
+                                      locale: Locale(_currentLanguage),
+                                      builder: (context, child) {
+                                        return Theme(
+                                          data: Theme.of(context).copyWith(
+                                            colorScheme: ColorScheme.light(
+                                              primary: Theme.of(context)
+                                                  .primaryColor,
+                                              onPrimary: Colors.white,
+                                              surface: Colors.white,
+                                              onSurface: Colors.black,
+                                            ),
+                                            textButtonTheme:
+                                                TextButtonThemeData(
+                                              style: TextButton.styleFrom(
+                                                foregroundColor:
+                                                    Theme.of(context)
+                                                        .primaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                          child: child!,
+                                        );
+                                      },
+                                    );
+                                    if (date != null) {
+                                      setState(() => selectedDate = date);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border:
+                                          Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.calendar_today,
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            size: 20),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          dateFormat.format(selectedDate),
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () async {
+                                    final time = await showTimePicker(
+                                      context: context,
+                                      initialTime: selectedTime,
+                                      builder: (context, child) {
+                                        return Theme(
+                                          data: Theme.of(context).copyWith(
+                                            timePickerTheme:
+                                                TimePickerThemeData(
+                                              backgroundColor: Colors.white,
+                                            ),
+                                            textButtonTheme:
+                                                TextButtonThemeData(
+                                              style: TextButton.styleFrom(
+                                                foregroundColor:
+                                                    Theme.of(context)
+                                                        .primaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                          child: child!,
+                                        );
+                                      },
+                                    );
+                                    if (time != null) {
+                                      setState(() => selectedTime = time);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border:
+                                          Border.all(color: Colors.grey[300]!),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.access_time,
+                                            color:
+                                                Theme.of(context).primaryColor,
+                                            size: 20),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          _formatTime(selectedTime),
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(24),
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            try {
+                              final DateTime plannedDateTime = DateTime(
+                                selectedDate.year,
+                                selectedDate.month,
+                                selectedDate.day,
+                                selectedTime.hour,
+                                selectedTime.minute,
+                              );
+
+                              final planItem = PlanItem(
+                                title: widget.accommodation.title,
+                                type: 'accommodation',
+                                imageUrl: widget.accommodation.mainImage,
+                                plannedDate: plannedDateTime,
+                                originalItem: {
+                                  'id': widget.accommodation.id,
+                                  'type': 'accommodation',
+                                  'data': _accommodationToJson(
+                                      widget.accommodation),
+                                },
+                              );
+
+                              await _savePlanItem(planItem);
+                              Navigator.pop(context);
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.translate(
+                                        'saved_to_plan', _currentLanguage),
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            } catch (e) {
+                              print('Error saving plan item: $e');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    AppTranslations.translate(
+                                        'error_saving', _currentLanguage),
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                            minimumSize: Size(double.infinity, 45),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            AppTranslations.translate(
+                                'save_to_plan', _currentLanguage),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _savePlanItem(PlanItem newItem) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final itemsJson = prefs.getString('plan_items') ?? '[]';
+      final List<dynamic> items = json.decode(itemsJson);
+
+      items.add(newItem.toJson());
+      await prefs.setString('plan_items', json.encode(items));
+    } catch (e) {
+      print('Error saving plan item: $e');
+      throw e;
+    }
+  }
+
+  Map<String, dynamic> _accommodationToJson(Accommodation accommodation) {
+    return {
+      'uuid': [
+        {'value': accommodation.id}
+      ],
+      'title': [
+        {'value': accommodation.title}
+      ],
+      'field_accommodation_main_image': [
+        {'url': accommodation.mainImage}
+      ],
+      'field_accommodation_location': [
+        {
+          'value':
+              '${accommodation.location.latitude},${accommodation.location.longitude}'
+        }
+      ],
+    };
   }
 }
 
