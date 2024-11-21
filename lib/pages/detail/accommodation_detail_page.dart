@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:felanitx/models/accommodation.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -735,10 +734,6 @@ class _AccommodationDetailPageState extends State<AccommodationDetailPage> {
       });
 
       await _apiService.setLanguage(language);
-
-      // Limpiar la caché antes de recargar
-      await _taxonomyService.clearCache('tipushotel');
-      await _taxonomyService.clearCache('serveishotel');
 
       // Recargar los datos
       await _loadTaxonomyData();

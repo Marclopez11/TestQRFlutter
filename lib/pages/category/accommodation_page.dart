@@ -43,17 +43,58 @@ class _AccommodationPageState extends State<AccommodationPage> {
     super.initState();
     _loadInitialLanguage();
     _loadPreferences();
-    _loadAccommodations();
-    _loadHotelTypes();
+  }
+
+  Future<void> _loadInitialLanguage() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final language = await _apiService.getCurrentLanguage();
+      _currentLanguage = language;
+
+      // Primero cargamos los tipos de hotel
+      await _loadHotelTypes();
+
+      // Luego cargamos los alojamientos
+      await _loadAccommodations();
+
+      setState(() {
+        _currentLanguage = language;
+        _title = AppTranslations.translate('accommodations', language);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading initial language: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadHotelTypes() async {
+    try {
+      print('Loading hotel types for language: $_currentLanguage'); // Debug log
+
+      final hotelTypes = await _taxonomyService.getTaxonomyTerms('tipushotel',
+          language: _currentLanguage);
+
+      print('Loaded hotel types: $hotelTypes'); // Debug log
+
+      if (mounted) {
+        setState(() {
+          _hotelTypes = hotelTypes;
+        });
+      }
+    } catch (e) {
+      print('Error loading hotel types: $e');
+    }
   }
 
   Future<void> _loadAccommodations() async {
-    setState(() {
-      _isLoading = true;
-    });
     try {
-      final language = await _apiService.getCurrentLanguage();
-      final data = await _apiService.loadData('hotel', language);
+      final data = await _apiService.loadData('hotel', _currentLanguage);
 
       print('Datos recibidos de la API: $data');
 
@@ -61,15 +102,12 @@ class _AccommodationPageState extends State<AccommodationPage> {
         setState(() {
           _accommodations =
               data.map((item) => Accommodation.fromJson(item)).toList();
-          _isLoading = false;
         });
-
         print('Número de alojamientos cargados: ${_accommodations.length}');
       } else {
         print('Error: Los datos recibidos no son una lista válida');
         setState(() {
           _accommodations = [];
-          _isLoading = false;
         });
       }
     } catch (e, stackTrace) {
@@ -77,7 +115,6 @@ class _AccommodationPageState extends State<AccommodationPage> {
       print('Stack trace: $stackTrace');
       setState(() {
         _accommodations = [];
-        _isLoading = false;
       });
     }
   }
@@ -87,23 +124,6 @@ class _AccommodationPageState extends State<AccommodationPage> {
     setState(() {
       isGridView = prefs.getBool('isGridView') ?? false;
     });
-  }
-
-  Future<void> _loadHotelTypes() async {
-    try {
-      await _taxonomyService.debugCache('tipushotel', _currentLanguage);
-
-      final hotelTypes = await _taxonomyService.getTaxonomyTerms('tipushotel',
-          language: _currentLanguage);
-
-      print('Loaded hotel types: $hotelTypes'); // Debug log
-
-      setState(() {
-        _hotelTypes = hotelTypes;
-      });
-    } catch (e) {
-      print('Error loading hotel types: $e');
-    }
   }
 
   List<Accommodation> get filteredItems {
@@ -969,35 +989,13 @@ class _AccommodationPageState extends State<AccommodationPage> {
     if (_currentLanguage != language) {
       setState(() {
         _currentLanguage = language;
+        _isLoading = true;
       });
 
       await _apiService.setLanguage(language);
 
-      await _taxonomyService.clearCache('tipushotel');
-
+      // Primero cargamos los tipos de hotel
       await _loadHotelTypes();
-
-      if (mounted) {
-        final homePage = HomePage.of(context);
-        homePage?.reloadData();
-      }
-
-      setState(() {
-        _title = AppTranslations.translate('accommodations', language);
-      });
-
-      try {
-        final cachedData = await _apiService.loadCachedData('hotel', language);
-        if (cachedData.isNotEmpty) {
-          setState(() {
-            _accommodations =
-                cachedData.map((item) => Accommodation.fromJson(item)).toList();
-            _isLoading = false;
-          });
-        }
-      } catch (e) {
-        print('Error loading cached data: $e');
-      }
 
       try {
         final freshData = await _apiService.loadFreshData('hotel', language);
@@ -1008,6 +1006,22 @@ class _AccommodationPageState extends State<AccommodationPage> {
         });
       } catch (e) {
         print('Error loading fresh data: $e');
+
+        final cachedData = await _apiService.loadCachedData('hotel', language);
+        if (cachedData.isNotEmpty) {
+          setState(() {
+            _accommodations =
+                cachedData.map((item) => Accommodation.fromJson(item)).toList();
+          });
+        }
+        setState(() {
+          _isLoading = false;
+        });
+      }
+
+      if (mounted) {
+        final homePage = HomePage.of(context);
+        homePage?.reloadData();
       }
     }
   }
@@ -1178,18 +1192,6 @@ class _AccommodationPageState extends State<AccommodationPage> {
         ],
       ),
     );
-  }
-
-  Future<void> _loadInitialLanguage() async {
-    try {
-      final language = await _apiService.getCurrentLanguage();
-      setState(() {
-        _currentLanguage = language;
-        _title = AppTranslations.translate('accommodations', language);
-      });
-    } catch (e) {
-      print('Error loading initial language: $e');
-    }
   }
 
   String _getCategoryName(int categoryId) {

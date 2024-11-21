@@ -169,12 +169,12 @@ class ApiService {
     try {
       final url = _apiUrls[apiName]?[language];
       if (url == null) {
-        //print('URL not found for $apiName in language $language');
         return [];
       }
 
-      //print('Fetching fresh data from: $url');
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(Duration(seconds: 10)); // Añadimos timeout
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -182,23 +182,46 @@ class ApiService {
         await prefs.setString(cacheKey, json.encode(data));
         return data;
       } else {
-        print('Error fetching data: ${response.statusCode}');
+        // Si hay error en la respuesta, intentamos devolver datos en caché
+        final cachedData = prefs.getString(cacheKey);
+        if (cachedData != null) {
+          return json.decode(cachedData);
+        }
         return [];
       }
     } catch (e) {
       print('Error in loadFreshData: $e');
+      // Si hay error de conexión, intentamos devolver datos en caché
+      final cachedData = prefs.getString(cacheKey);
+      if (cachedData != null) {
+        return json.decode(cachedData);
+      }
       return [];
     }
   }
 
   Future<List<dynamic>> loadData(String apiName, String language) async {
-    final cachedData = await loadCachedData(apiName, language);
-    if (cachedData.isNotEmpty) {
-      // Si hay datos en caché, los devolvemos inmediatamente
-      return cachedData;
+    try {
+      // Primero intentamos obtener los datos de la caché
+      final cachedData = await loadCachedData(apiName, language);
+      if (cachedData.isNotEmpty) {
+        return cachedData;
+      }
+
+      // Solo si no hay datos en caché, intentamos cargar datos frescos
+      try {
+        final freshData = await loadFreshData(apiName, language);
+        return freshData;
+      } catch (e) {
+        print('Error loading fresh data: $e');
+        // Si falla la carga de datos frescos, devolvemos los datos en caché
+        // aunque estén vacíos
+        return cachedData;
+      }
+    } catch (e) {
+      print('Error in loadData: $e');
+      return [];
     }
-    // Si no hay datos en caché, cargamos datos frescos
-    return await loadFreshData(apiName, language);
   }
 
   Future<void> _saveLanguage() async {
@@ -228,6 +251,7 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       final cachedData = prefs.getString('categories');
 
+      // Primero intentamos usar los datos en caché
       if (cachedData != null) {
         final List<dynamic> decodedData = json.decode(cachedData);
         return decodedData
@@ -235,33 +259,35 @@ class ApiService {
             .toList();
       }
 
-      final response = await http.get(
-        Uri.parse('https://felanitx.drupal.auroracities.com/categoria'),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        await prefs.setString('categories', json.encode(data));
-        return data.map((json) => CategoryForItems.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load categories');
-      }
-    } catch (e) {
-      print('Error getting categories: $e');
+      // Solo si no hay caché, intentamos hacer la petición
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final cachedData = prefs.getString('categories');
-        if (cachedData != null) {
-          final List<dynamic> decodedData = json.decode(cachedData);
-          return decodedData
-              .map((json) => CategoryForItems.fromJson(json))
-              .toList();
+        final response = await http
+            .get(
+              Uri.parse('https://felanitx.drupal.auroracities.com/categoria'),
+            )
+            .timeout(Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          final List<dynamic> data = json.decode(response.body);
+          await prefs.setString('categories', json.encode(data));
+          return data.map((json) => CategoryForItems.fromJson(json)).toList();
         }
       } catch (e) {
-        print('Error getting cached categories: $e');
+        print('Error getting fresh categories: $e');
       }
-      return [];
+
+      // Si la petición falla, intentamos usar la caché una vez más
+      final lastResortCache = prefs.getString('categories');
+      if (lastResortCache != null) {
+        final List<dynamic> decodedData = json.decode(lastResortCache);
+        return decodedData
+            .map((json) => CategoryForItems.fromJson(json))
+            .toList();
+      }
+    } catch (e) {
+      print('Error in getCategories: $e');
     }
+    return [];
   }
 
   String getCategoryName(

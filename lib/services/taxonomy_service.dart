@@ -1,133 +1,113 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:felanitx/services/api_service.dart';
 
 class TaxonomyService {
-  static final TaxonomyService _instance = TaxonomyService._internal();
-  factory TaxonomyService() => _instance;
-  TaxonomyService._internal();
+  final ApiService _apiService = ApiService();
+  Map<String, String> _categoryTerms = {};
 
-  Future<Map<String, String>> getTaxonomyTerms(String vocabulary,
-      {String language = 'ca'}) async {
+  Future<Map<String, String>> getTaxonomyTerms(String taxonomy,
+      {String? language}) async {
     try {
-      //print(
-      //    'Getting taxonomy terms for $vocabulary in language $language'); // Debug log
-
-      // Primero intentamos obtener del almacenamiento local
-      final prefs = await SharedPreferences.getInstance();
-      final cacheKey = '${vocabulary}_$language';
-      final cachedData = prefs.getString(cacheKey);
-
-      if (cachedData != null) {
-        //print('Found cached data for $cacheKey'); // Debug log
-        try {
-          final List<dynamic> decodedData = json.decode(cachedData);
-          final Map<String, String> terms = {};
-
-          for (var term in decodedData) {
-            final id = term['tid'][0]['value'].toString();
-            final name = term['name'][0]['value'];
-            terms[id] = name;
-          }
-
-          //print('Cached terms: $terms'); // Debug log
-          return terms;
-        } catch (e) {
-          print('Error parsing cached data: $e');
-          // Si hay error al parsear la caché, la eliminamos
-          await prefs.remove(cacheKey);
-        }
+      // Caso especial para categorías
+      if (taxonomy == 'categoria') {
+        _categoryTerms = await _loadCategories();
+        return _categoryTerms;
       }
 
-      // Si no hay datos en caché o hubo error al parsearlos, hacemos la petición a la API
-      print(
-          'Fetching fresh data from API for $vocabulary in $language'); // Debug log
-      final response = await http.get(
-        Uri.parse(
-            'https://felanitx.drupal.auroracities.com/${vocabulary}_$language'),
-      );
+      // Get current language if not provided
+      language = language ?? await _apiService.getCurrentLanguage();
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        final Map<String, String> terms = {};
-
-        for (var term in data) {
-          final id = term['tid'][0]['value'].toString();
-          final name = term['name'][0]['value'];
-          terms[id] = name;
-        }
-
-        // Guardamos los datos originales en caché
-        await prefs.setString(cacheKey, json.encode(data));
-        //print('Saved new data to cache for $cacheKey'); // Debug log
-        //print('Fresh terms: $terms'); // Debug log
-
-        return terms;
-      } else {
-        throw Exception(
-            'Failed to load taxonomy terms: ${response.statusCode}');
-      }
-    } catch (e) {
-      //print('Error getting taxonomy terms: $e');
-
-      // Último intento de obtener datos en caché si hay un error
+      // Primero intentamos obtener datos frescos
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final cacheKey = '${vocabulary}_$language';
-        final cachedData = prefs.getString(cacheKey);
-
-        if (cachedData != null) {
-          final List<dynamic> decodedData = json.decode(cachedData);
-          final Map<String, String> terms = {};
-
-          for (var term in decodedData) {
-            final id = term['tid'][0]['value'].toString();
-            final name = term['name'][0]['value'];
-            terms[id] = name;
-          }
-
-          print('Recovered terms from cache after error: $terms'); // Debug log
-          return terms;
+        final freshData = await _apiService.loadFreshData(taxonomy, language);
+        if (freshData.isNotEmpty) {
+          return _parseTerms(freshData);
         }
       } catch (e) {
-        print('Error getting cached taxonomy terms: $e');
+        print('No se pudieron cargar datos frescos, usando caché: $e');
       }
 
+      // Si no hay datos frescos, usamos la caché
+      final cachedData = await _apiService.loadCachedData(taxonomy, language);
+      return _parseTerms(cachedData);
+    } catch (e) {
+      print('Error loading taxonomy terms for $taxonomy: $e');
       return {};
     }
   }
 
-  // Método para limpiar la caché cuando cambia el idioma
-  Future<void> clearCache(String vocabulary) async {
+  Future<Map<String, String>> _loadCategories() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final languages = ['ca', 'es', 'en', 'fr', 'de'];
+      final cachedData = prefs.getString('categories');
 
-      for (var language in languages) {
-        final cacheKey = '${vocabulary}_$language';
-        await prefs.remove(cacheKey);
-        print('Cleared cache for $cacheKey'); // Debug log
+      if (cachedData != null) {
+        final List<dynamic> decodedData = json.decode(cachedData);
+        return _parseCategoryTerms(decodedData);
       }
+
+      final response = await http.get(
+        Uri.parse('https://felanitx.drupal.auroracities.com/categoria'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        await prefs.setString('categories', json.encode(data));
+        return _parseCategoryTerms(data);
+      }
+
+      return {};
     } catch (e) {
-      print('Error clearing taxonomy cache: $e');
+      print('Error loading categories: $e');
+      return {};
     }
   }
 
-  // Método para verificar el contenido de la caché
-  Future<void> debugCache(String vocabulary, String language) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cacheKey = '${vocabulary}_$language';
-      final cachedData = prefs.getString(cacheKey);
+  Map<String, String> _parseCategoryTerms(List<dynamic> data) {
+    Map<String, String> terms = {};
+    for (var category in data) {
+      final id = category['tid']?[0]?['value']?.toString();
+      final nameCa = category['name_ca']?[0]?['value']?.toString();
+      final nameEs = category['name_es']?[0]?['value']?.toString();
+      final nameEn = category['name_en']?[0]?['value']?.toString();
+      final nameFr = category['name_fr']?[0]?['value']?.toString();
+      final nameDe = category['name_de']?[0]?['value']?.toString();
 
-      if (cachedData != null) {
-        print('Cache content for $cacheKey:');
-        print(cachedData);
-      } else {
-        print('No cache found for $cacheKey');
+      if (id != null) {
+        // Guardamos todas las traducciones
+        terms['${id}_ca'] = nameCa ?? '';
+        terms['${id}_es'] = nameEs ?? '';
+        terms['${id}_en'] = nameEn ?? '';
+        terms['${id}_fr'] = nameFr ?? '';
+        terms['${id}_de'] = nameDe ?? '';
       }
-    } catch (e) {
-      print('Error debugging cache: $e');
     }
+    return terms;
+  }
+
+  Map<String, String> _parseTerms(List<dynamic> data) {
+    Map<String, String> terms = {};
+    for (var term in data) {
+      final id = term['tid']?[0]?['value']?.toString();
+      final name = term['name']?[0]?['value']?.toString();
+
+      if (id != null && name != null) {
+        terms[id] = name;
+      }
+    }
+    return terms;
+  }
+
+  String getCategoryName(String id, String language) {
+    if (_categoryTerms.isEmpty) {
+      // Si las categorías no están cargadas, las cargamos
+      _loadCategories().then((terms) {
+        _categoryTerms = terms;
+      });
+      return id; // Devolvemos el ID mientras se cargan
+    }
+    return _categoryTerms['${id}_$language'] ?? id;
   }
 }
