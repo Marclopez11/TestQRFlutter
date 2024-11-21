@@ -47,12 +47,25 @@ class _PlanPageState extends State<PlanPage> {
     super.didChangeDependencies();
     if (ModalRoute.of(context)?.isCurrent == true) {
       _loadCurrentLanguage();
+      _loadPlanItems();
     }
   }
 
   Future<void> _initialize() async {
-    await _loadCurrentLanguage();
-    await _loadPlanItems();
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _loadCurrentLanguage();
+      await _loadPlanItems();
+    } catch (e) {
+      print('Error in initialization: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadCurrentLanguage() async {
@@ -69,30 +82,35 @@ class _PlanPageState extends State<PlanPage> {
   }
 
   Future<void> _loadPlanItems() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       final prefs = await SharedPreferences.getInstance();
       final itemsJson = prefs.getString('plan_items');
 
       if (itemsJson != null) {
         final List<dynamic> decodedItems = json.decode(itemsJson);
-        setState(() {
-          _planItems = decodedItems
-              .map((item) => PlanItem.fromJson(item))
-              .toList()
-            ..sort((a, b) => (a.plannedDate ?? DateTime.now())
-                .compareTo(b.plannedDate ?? DateTime.now()));
-        });
+        if (mounted) {
+          setState(() {
+            _planItems = decodedItems
+                .map((item) => PlanItem.fromJson(item))
+                .toList()
+              ..sort((a, b) => (a.plannedDate ?? DateTime.now())
+                  .compareTo(b.plannedDate ?? DateTime.now()));
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _planItems = [];
+          });
+        }
       }
     } catch (e) {
       print('Error loading plan items: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _planItems = [];
+        });
+      }
     }
   }
 
